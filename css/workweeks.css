@@ -1,0 +1,302 @@
+.week-selector {
+    overflow-x: auto;
+    white-space: nowrap;
+    padding: 0;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.week-selector::-webkit-scrollbar {
+    display: none;
+}
+
+.week-btn {
+    min-width: 80px;
+    margin: 0 4px;
+    transition: all 0.2s;
+}
+
+.week-btn.active {
+    background-color: var(--primary-blue);
+    color: white;
+    transform: scale(1.05);
+}
+
+.current-week {
+    margin-top: 1rem;
+    font-weight: bold;
+}
+.workpackage-pills {
+    display: flex;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding: 0.5rem 0;
+    @media (max-width: 768px) {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+        &::-webkit-scrollbar {
+            display: none;
+        }
+    }
+}
+.wp-item{
+    flex: 0 0 auto;
+}
+.wp-link {
+    background-color: #e9ecef;
+    border: 1px solid #dee2e6;
+    padding: 0.2rem 1rem;
+    transition: background-color 0.2s ease;
+    overflow-x: clip;
+    max-width: 12rem;
+    margin: 0 0.25rem;
+    cursor: pointer;
+    position:relative;
+}
+.wp-link:hover {
+    background-color: #bdddfb;
+}
+.wp-link.not-released {
+    border-left: 4px solid rgba(255, 0, 0, 0.8) !important;
+}
+.wp-link.not-released::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 10px;
+    background-image: linear-gradient(45deg,
+    rgba(255, 0, 0, 0.2) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 0, 0, 0.2) 50%,
+    rgba(255, 0, 0, 0.2) 75%,
+    transparent 75%,
+    transparent
+    );
+    background-size: 4px 4px;
+}
+.wp-link.overdue {
+    border:1px solid red;
+}
+.wp-link.on-hold::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 15px;
+    height: 15px;
+    background: purple;
+    clip-path: polygon(100% 0, 0 0, 100% 100%);
+}
+.wp-link.selected { background-color: #7CB9E8; }
+
+.workpackage-detail{
+    height: 100px;
+    width: 100%;
+    background-color: #f5f5f5;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 4px;
+    box-sizing: border-box;
+
+    align-items: center;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+.workpackage-container {
+    padding: 4px;
+    box-sizing: border-box;
+    display: flex;
+}
+.workpackage-statistics {
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    padding: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    display: flex;
+}
+
+.statistics-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.statistics-item {
+    background-color: white;
+    border: 1px solid #e9ecef;
+    border-radius: 3px;
+    padding: 8px 12px;
+    min-width: 150px;
+}
+
+.statistics-item .label {
+    font-size: 0.9em;
+    color: #6c757d;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.statistics-item .value {
+    font-weight: 500;
+    color: #212529;
+}
+
+.workpackage-container .info-group {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+}
+
+.workpackage-container .info-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.workpackage-container .label {
+    font-weight: bold;
+    color: #555;
+    white-space: nowrap;
+}
+
+.workpackage-container .value {
+    color: #333;
+}
+
+.workpackage-container .critical {
+    color: #e74c3c;
+}
+
+.workpackage-container .status-indicator {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+}
+
+.workpackage-container .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+}
+
+.workpackage-container .status-dot.good-dot {
+    background-color: #27ae60;  // green
+}
+
+.workpackage-container .status-dot.bad-dot {
+    background-color: #e74c3c;  // red
+}
+
+.workpackage-container .notes {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workpackage-container .notes-value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.workpackage-container.not-released {
+    border-left: 4px solid rgba(255, 0, 0, 0.8);
+}
+
+.workpackage-container.overdue {
+    border-color: red;
+}
+
+.workpackage-container.on-hold::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 15px;
+    height: 15px;
+    background: purple;
+    clip-path: polygon(100% 0, 0 0, 100% 100%);
+}
+.table-container {
+    overflow-x: auto;
+}
+#projectTable {
+    width: 100%;
+    font-size: small;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-family: Arial, sans-serif;
+    position: relative;
+}
+#projectTable .station-summary {
+    font-size: 0.9em;
+    display: block;
+    margin-top: 4px;
+    font-weight: normal;
+}
+
+#projectTable th, #projectTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+#projectTable th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+#projectTable thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f2f2f2;
+    z-index: 10;
+}
+#projectTable .station-summary td {
+    font-weight: bold;
+    background-color: #f2f2f2;
+}
+#projectTable .status-complete {
+    background-color: #90EE90 !important;
+    color: #155724;
+}
+#projectTable .status-notstarted {
+    background-color: #fff3cd !important;
+    color: #004085;
+}
+#projectTable .status-na {
+    background-color: transparent !important;
+    color: #004085;
+}
+#projectTable .status-partial {
+    background-color: #cce5ff !important;
+    color: #856404;
+}
+#projectTable .hold-row {
+    font-family: "Courier New", Courier, monospace;
+}
+#projectTable .hold-row td:nth-child(1) {
+    border-left: 2px solid #820041;
+    background-color: #fdccd3;
+}
+#projectTable .uncompleted-piecemark {
+    background-color: #ffbbbb;
+}
+#projectTable .col-complete {
+    background-color: #006400 !important;
+    color: #ffffff !important;
+}
+#projectTable .col-empty {
+    background-color: #333333 !important;
+    color: #ffffff !important;
+    text-align: center;
+}
+#projectTable .completed-row td {
+    background-color: #90EE90; /* Light green color */
+}
