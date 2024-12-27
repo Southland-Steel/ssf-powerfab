@@ -4,9 +4,9 @@ function calculateStationHours($route, $totalHours) {
     switch ($route) {
         case '04: SSF CUT & FAB':
             return [
-                'FIT' => $totalHours * 0.35,
-                'WELD' => $totalHours * 0.55,
-                'FINAL QC' => $totalHours * 0.10
+                'FIT' => $totalHours * 0.38,
+                'WELD' => $totalHours * 0.58,
+                'FINAL QC' => $totalHours * 0.04
             ];
         default:
             return [

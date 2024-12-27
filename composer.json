@@ -1,0 +1,5 @@
+{
+  "require": {
+    "catfan/medoo": "^v2.1.12"
+  }
+}
