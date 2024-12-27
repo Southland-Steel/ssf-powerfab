@@ -45,7 +45,6 @@ class WorkWeeks {
         if (this.workPackages) {
             this.workPackages.loadWorkPackageData(week);
             document.querySelector('tbody').innerHTML = '';
-            //this.workPackages.selectDefaultWorkPackage();
         }
     }
 

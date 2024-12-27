@@ -7,6 +7,48 @@ class WorkPackageData {
         this.data = [];
         this.table = document.getElementById('projectTable');
         this.initializeTable();
+        this.totals = {
+            totalHours: 0,
+            completedHours: 0,
+            remainingHours: 0,
+            totalWeight: 0,
+            completedWeight: 0,
+            remainingWeight: 0,
+            percentComplete: 0
+        };
+    }
+
+    calculateTotals() {
+        this.totals = {
+            totalHours: 0,
+            completedHours: 0,
+            remainingHours: 0,
+            totalWeight: 0,
+            completedWeight: 0,
+            remainingWeight: 0,
+            percentComplete: 0
+        };
+
+        this.data.forEach(assembly => {
+            const totalHours = parseFloat(assembly.TotalHours) || 0;
+            const weight = parseFloat(assembly.Weight) || 0;
+            const completionPercent = parseFloat(assembly.CompletionPercent) || 0;
+
+            this.totals.totalHours += totalHours;
+            this.totals.totalWeight += weight;
+            
+            this.totals.completedHours += (totalHours * (completionPercent / 100));
+            this.totals.completedWeight += (weight * (completionPercent / 100));
+        });
+
+        // Calculate remaining values
+        this.totals.remainingHours = this.totals.totalHours - this.totals.completedHours;
+        this.totals.remainingWeight = this.totals.totalWeight - this.totals.completedWeight;
+        this.totals.percentComplete = this.totals.totalHours > 0 
+            ? (this.totals.completedHours / this.totals.totalHours * 100) 
+            : 0;
+
+        return this.totals;
     }
 
     initializeTable() {

@@ -143,8 +143,6 @@ sort($weeks);
 
     const workWeeks = new WorkWeeks('Workweeks', weeks);
 
-    const workPackageData = new WorkPackageData();
-
 </script>
 </body>
 </html>

@@ -1,15 +1,14 @@
 class WorkPackages {
     constructor() {
-        this.workPackageData = null;
         this.container = document.querySelector('WorkPackages');
-        this.currentWorkPackagesData = null;
         this.container.innerHTML = `
                 <div class="workpackage-pills"></div>
                 <div class="workpackage-detail">
                     <div class="workpackage-container"></div>
-                    <div class="workpackage-statistics">xxx</div>
+                    <div class="workpackage-statistics"></div>
                 </div>
             `;
+        this.currentWorkPackagesData = null;
         this.addEventListeners();
     }
 
@@ -84,16 +83,6 @@ class WorkPackages {
         if (workPackages.length > 0) {
             //this.selectWorkPackage(workPackages[0].WorkPackageNumber);
         }
-    }
-
-    
-
-    selectDefaultWorkPackage() {
-        if (this.currentWorkPackagesData && this.currentWorkPackagesData.length > 0) {
-            this.selectWorkPackage(this.currentWorkPackagesData[0].WorkPackageNumber);
-            return true;
-        }
-        return false;
     }
 
     addEventListeners() {
@@ -185,33 +174,41 @@ class WorkPackages {
                 </div>
             </div>
         `;
-
-        this.renderWorkPackageStatistics(workPackage);
+        const totals = this.currentWorkPackagesData.calculateTotals();
+        this.renderWorkPackageStatistics(workPackage,totals);
     }
 
     // render how many hours, weight, and work packages are in the selected work package and the total remaining
-    renderWorkPackageStatistics(workPackage) {
-
+    renderWorkPackageStatistics(workPackage, totals) {
+        const formatNumber = (num) => {
+            return new Intl.NumberFormat('en-US', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 2
+            }).format(num);
+        };
+    
         const statisticsContainer = this.container.querySelector('.workpackage-statistics');
         statisticsContainer.innerHTML = `
             <div class="statistics-group">
                 <div class="statistics-item">
                     <span class="label">Total Hours:</span>
-                    <span class="value">${workPackage.TotalHours}</span>
+                    <span class="value">${formatNumber(totals.totalHours)}</span>
+                    <span class="label">Completed:</span>
+                    <span class="value">${formatNumber(totals.completedHours)}</span>
+                    <span class="label">Remaining:</span>
+                    <span class="value">${formatNumber(totals.remainingHours)}</span>
                 </div>
                 <div class="statistics-item">
                     <span class="label">Total Weight:</span>
-                    <span class="value">${workPackage.TotalWeight}</span>
+                    <span class="value">${formatNumber(totals.totalWeight)}</span>
+                    <span class="label">Completed:</span>
+                    <span class="value">${formatNumber(totals.completedWeight)}</span>
+                    <span class="label">Remaining:</span>
+                    <span class="value">${formatNumber(totals.remainingWeight)}</span>
                 </div>
                 <div class="statistics-item">
-                    <span class="label">Total WP:</span>
-                    <span class="value">${workPackage.TotalWP}</span>
-                    <span class="label">Remaining:</span>
-                    <span class="value">${workPackage.RemainingWP}</span>
-                    <span class="label">Remaining Hours:</span>
-                    <span class="value">${workPackage.RemainingHours}</span>
-                    <span class="label">Remaining Weight:</span>
-                    <span class="value">${workPackage.RemainingWeight}</span>
+                    <span class="label">Percent Complete:</span>
+                    <span class="value">${formatNumber(totals.percentComplete)}%</span>
                 </div>
             </div>
         `;
