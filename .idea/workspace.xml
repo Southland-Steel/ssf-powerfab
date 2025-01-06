@@ -4,12 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="initial commit">
-      <change beforePath="$PROJECT_DIR$/ajax_ssf_stationitems.php" beforeDir="false" afterPath="$PROJECT_DIR$/ajax_ssf_stationitems.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/datatables.php" beforeDir="false" afterPath="$PROJECT_DIR$/datatables.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inc_station_distributions.php" beforeDir="false" afterPath="$PROJECT_DIR$/inc_station_distributions.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/index.php" afterDir="false" />
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="timely commit">
+      <change afterPath="$PROJECT_DIR$/ajax_get_ssf_workweeks2.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks_old.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/js/WorkPackageData.js" beforeDir="false" afterPath="$PROJECT_DIR$/js/WorkPackageData.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/view_ssf_stations.php" beforeDir="false" afterPath="$PROJECT_DIR$/view_ssf_stations.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -72,6 +73,10 @@
       <workItem from="1735244268174" duration="22000" />
       <workItem from="1735244295869" duration="2227000" />
       <workItem from="1735247298930" duration="12000" />
+      <workItem from="1735565701536" duration="3866000" />
+      <workItem from="1735672735653" duration="2036000" />
+      <workItem from="1736175646891" duration="2995000" />
+      <workItem from="1736258501491" duration="18379000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -89,7 +94,15 @@
       <option name="project" value="LOCAL" />
       <updated>1735244431404</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="timely commit">
+      <option name="closed" value="true" />
+      <created>1736176011630</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1736176011630</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -114,6 +127,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="initial commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="initial commit" />
+    <MESSAGE value="timely commit" />
+    <option name="LAST_COMMIT_MESSAGE" value="timely commit" />
   </component>
 </project>

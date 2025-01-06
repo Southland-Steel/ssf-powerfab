@@ -204,7 +204,7 @@
         function fetchProductionData() {
             var selectedDate = $('#date-picker').val();
             $.ajax({
-                url: 'ajax_grid_stationitems.php', // Replace with your API endpoint
+                url: 'ajax_ssf_stationitems.php', // Replace with your API endpoint
                 method: 'GET',
                 dataType: 'json',
                 data: { date: selectedDate }, // Pass the selected date
