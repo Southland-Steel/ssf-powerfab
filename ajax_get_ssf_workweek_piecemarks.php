@@ -1,4 +1,3 @@
-// ajax_get_ssf_workweek_piecemarks.php modified to return minimal data
 <?php
 require_once 'config_ssf_db.php';
 

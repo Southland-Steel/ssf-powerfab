@@ -389,14 +389,24 @@ sort($weeks);
                 method: 'GET',
                 dataType: 'json',
                 data: {workweek: workweek}
+            }),
+            $.ajax({
+                url: 'ajax_get_ssf_workweek_piecemarks.php',
+                method: 'GET',
+                dataType: 'json',
+                data: { workweek: workweek }
             })
-        ).done(function(response) {
-            if (response.error) {
-                alert(response.error);
+        ).done(function(workweekResponse, piecemarkResponse) {
+            if (workweekResponse[0].error) {
+                alert(workweekResponse[0].error);
                 return;
             }
 
-            projectData = Array.isArray(response.items) ? response.items : [response.items];
+            const workweekData = Array.isArray(workweekResponse[0].items) ? workweekResponse[0].items : [workweekResponse[0].items];
+            const piecemarkData = piecemarkResponse[0].items;
+
+            // Merge the data using the function we created earlier
+            projectData = mergeData(workweekData, piecemarkData);
 
             createWPFilter();
             createRouteFilter();
@@ -416,6 +426,63 @@ sort($weeks);
             alert("Error loading project data. Please try again.");
         });
     }
+
+    function mergeData(workweekData, piecemarkData) {
+        // Create a map for faster lookups
+        const piecemarkMap = new Map(
+            piecemarkData.map(item => [item.ProductionControlItemSequenceID, item])
+        );
+
+        return workweekData.map(workweekItem => {
+            const pciseqId = workweekItem.ProductionControlItemSequenceID;
+            const piecemarkItem = piecemarkMap.get(pciseqId);
+
+            if (!piecemarkItem) {
+                return workweekItem;
+            }
+
+            // Add or update NESTED and CUT stations in the Stations array
+            const updatedStations = [...workweekItem.Stations];
+
+            // Add NESTED station
+            const nestedIndex = updatedStations.findIndex(s => s.StationDescription === 'NESTED');
+            if (nestedIndex === -1) {
+                updatedStations.push({
+                    StationDescription: 'NESTED',
+                    StationQuantityCompleted: piecemarkItem.QtyNested || 0,
+                    StationTotalQuantity: piecemarkItem.TotalPieceMarkQuantityNeeded || 0
+                });
+            } else {
+                updatedStations[nestedIndex].StationQuantityCompleted = piecemarkItem.QtyNested || 0;
+                updatedStations[nestedIndex].StationTotalQuantity = piecemarkItem.TotalPieceMarkQuantityNeeded || 0;
+            }
+
+            // Add CUT station
+            const cutIndex = updatedStations.findIndex(s => s.StationDescription === 'CUT');
+            if (cutIndex === -1) {
+                updatedStations.push({
+                    StationDescription: 'CUT',
+                    StationQuantityCompleted: piecemarkItem.QtyCut || 0,
+                    StationTotalQuantity: piecemarkItem.TotalPieceMarkQuantityNeeded || 0
+                });
+            } else {
+                updatedStations[cutIndex].StationQuantityCompleted = piecemarkItem.QtyCut || 0;
+                updatedStations[cutIndex].StationTotalQuantity = piecemarkItem.TotalPieceMarkQuantityNeeded || 0;
+            }
+
+            // Return merged item with updated stations
+            return {
+                ...workweekItem,
+                Stations: updatedStations,
+                QtyNested: piecemarkItem.QtyNested,
+                QtyCut: piecemarkItem.QtyCut,
+                AssemblyEachQuantity: piecemarkItem.AssemblyEachQuantity,
+                TotalPieceMarkQuantityNeeded: piecemarkItem.TotalPieceMarkQuantityNeeded,
+                CompletedAssemblies: piecemarkItem.CompletedAssemblies
+            };
+        });
+    }
+
 
     function createWPFilter() {
         const workPackageNumbers = [...new Set(projectData.map(item => item.WorkPackageNumber).filter(Boolean))];
@@ -566,10 +633,9 @@ sort($weeks);
         `;
 
             totalJobHours += parseFloat(assembly.TotalEstimatedManHours);
-
             orderedStations.forEach(stationName => {
                 const station = assembly.Stations.find(s => s.StationDescription === stationName);
-                if (station ) {
+                if (station) {
                     const statusClass = getStatusClass(station.StationQuantityCompleted, station.StationTotalQuantity);
                     const stationTotalHours = stationHours[stationName] || 0;
                     const stationUsedHours = (station.StationQuantityCompleted / station.StationTotalQuantity) * stationTotalHours;
@@ -577,20 +643,24 @@ sort($weeks);
 
                     let cellContent = '';
 
-                    if (['CNC', 'Kit-Up', 'TCNC'].includes(stationName)) {
-                        cellContent = `${station.StationQuantityCompleted} / ${station.StationTotalQuantity}`;
+                    if (['NESTED', 'CUT'].includes(stationName)) {
+                        const qty = stationName === 'NESTED' ? assembly.QtyNested : assembly.QtyCut;
+                        cellContent = `
+                ${qty} / ${assembly.TotalPieceMarkQuantityNeeded}<br>
+                Assemblies: ${assembly.CompletedAssemblies}
+            `;
+                        bodyHtml += `<td class="${getStatusClass(qty, assembly.TotalPieceMarkQuantityNeeded)}">
+                <a href="#" class="station-details" data-station="${stationName}" data-assembly="${assembly.ProductionControlItemSequenceID}">
+                    ${cellContent}
+                </a>
+            </td>`;
                     } else {
                         cellContent = `
-                        ${station.StationQuantityCompleted} / ${station.StationTotalQuantity}<br>
-                        HRS: ${formatNumber(stationUsedHours)} / ${formatNumber(stationTotalHours)}
-                    `;
+                ${station.StationQuantityCompleted} / ${station.StationTotalQuantity}<br>
+                HRS: ${formatNumber(stationUsedHours)} / ${formatNumber(stationTotalHours)}
+            `;
+                        bodyHtml += `<td class="${statusClass}">${cellContent}</td>`;
                     }
-
-                    if (['NESTED', 'CUT'].includes(stationName)) {
-                        cellContent = `<a href="#" class="station-details" data-station="${stationName}" data-assembly="${assembly.ProductionControlItemSequenceID}">${cellContent}</a>`;
-                    }
-
-                    bodyHtml += `<td class="${statusClass}">${cellContent}</td>`;
                 } else {
                     bodyHtml += `<td class="status-notstarted status-na">-</td>`;
                 }
@@ -614,41 +684,37 @@ sort($weeks);
 
     function showPiecemarkDetails(stationName, productionControlItemSequenceId) {
         const assembly = projectData.find(a => a.ProductionControlItemSequenceID === productionControlItemSequenceId);
-        if (!assembly) {
-            console.warn(`No assembly found for ProductionControlItemSequenceID: ${productionControlItemSequenceId}`);
-            return;
-        }
-
-        const station = assembly.Stations.find(s => s.StationDescription === stationName);
-        if (!station) {
-            console.warn(`No station ${stationName} found for assembly with ProductionControlItemSequenceID: ${productionControlItemSequenceId}`);
-            return;
-        }
+        if (!assembly) return;
 
         const modalTitle = `${stationName} Details for Assembly ${assembly.MainMark}`;
         $('#piecemarkModalLabel').text(modalTitle);
 
+        let tableHeader = `
+        <tr>
+            <th>Assembly Mark</th>
+            <th>Sequence Asm. Qty</th>
+            <th>Assembly Each</th>
+            <th>Total Need</th>
+            <th>${stationName === 'NESTED' ? 'CUT' : 'Completed'}</th>
+        </tr>
+    `;
+
         let tableBody = '';
-        if (station.PieceMarks && station.PieceMarks.length > 0) {
-            // Sort the PieceMarks array alphabetically by PieceMark
-            const sortedPieceMarks = station.PieceMarks.sort((a, b) => a.PieceMark.localeCompare(b.PieceMark));
+        const station = assembly.Stations.find(s => s.StationDescription === stationName);
+        const qty = stationName === 'NESTED' ? assembly.QtyNested : assembly.QtyCut;
+        const isCompleted = qty >= assembly.TotalPieceMarkQuantityNeeded;
 
-            sortedPieceMarks.forEach(piecemark => {
-                const isCompleted = piecemark.CompletedQuantity >= piecemark.TotalPieceMarkQuantity;
-                tableBody += `
-                <tr class="${!isCompleted ? 'uncompleted-piecemark' : ''}">
-                    <td>${piecemark.PieceMark}</td>
-                    <td>${piecemark.JobQuantity}</td>
-                    <td>${piecemark.AssemblyEachQuantity}</td>
-                    <td>${piecemark.TotalPieceMarkQuantity}</td>
-                    <td>${piecemark.CompletedQuantity}</td>
-                </tr>
-            `;
-            });
-        } else {
-            tableBody = '<tr><td colspan="5">No piecemark details available for this station.</td></tr>';
-        }
+        tableBody += `
+        <tr class="${!isCompleted ? 'uncompleted-piecemark' : ''}">
+            <td>${assembly.MainMark}</td>
+            <td>${assembly.SequenceMainMarkQuantity}</td>
+            <td>${assembly.AssemblyEachQuantity}</td>
+            <td>${assembly.TotalPieceMarkQuantityNeeded}</td>
+            <td>${qty}</td>
+        </tr>
+    `;
 
+        $('#piecemarkTable thead').html(tableHeader);
         $('#piecemarkTable tbody').html(tableBody);
 
         const modal = new bootstrap.Modal(document.getElementById('piecemarkModal'));
