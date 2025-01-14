@@ -1,4 +1,6 @@
 <?php
+// ajax_get_ssf_workweeks2.php
+
 require_once 'config_ssf_db.php';
 
 $workweek = $_GET['workweek'];
@@ -17,7 +19,6 @@ $sql = "SELECT
     pci.DimensionString,
     rt.Route as RouteName,
     stations.Description as StationDescription,
-    pcil.QuantityCutList,
     pciss.QuantityCompleted StationQuantityCompleted,
     pciss.TotalQuantity as StationTotalQuantity,
     pciss.LastDateCompleted,
@@ -42,15 +43,14 @@ $sql = "SELECT
  FROM workpackages as wp 
 	INNER JOIN productioncontroljobs as pcj ON pcj.ProductionControlID = wp.ProductionControlID
     INNER JOIN workshops as ws ON ws.WorkshopID = wp.WorkShopID
-    INNER JOIN productioncontrolsequences as pcseq ON pcseq.WorkPackageID = wp.WorkPackageID
-    INNER JOIN productioncontrolitemsequences as pciseq ON pciseq.SequenceID = pcseq.SequenceID
+    INNER JOIN productioncontrolsequences as pcseq ON pcseq.WorkPackageID = wp.WorkPackageID AND pcseq.AssemblyQuantity > 0
+    INNER JOIN productioncontrolitemsequences as pciseq ON pciseq.SequenceID = pcseq.SequenceID AND pciseq.Quantity > 0
     INNER JOIN productioncontrolassemblies as pca ON pca.ProductionControlAssemblyID = pciseq.ProductionControlAssemblyID
     INNER JOIN productioncontrolitems as pci ON pci.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
-    LEFT JOIN productioncontrolitemlinks as pcil ON pcil.ProductionControlItemID = pci.ProductionControlItemID
     INNER JOIN shapes ON shapes.ShapeID = pci.ShapeID AND shapes.Shape NOT IN ('HS','NU','WA')
     LEFT JOIN routes as rt on rt.RouteID = pci.RouteID
     INNER JOIN productioncontrolitemstationsummary as pciss ON pciss.ProductionControlItemID = pci.ProductionControlItemID AND pciss.SequenceID = pcseq.SequenceID AND pciss.ProductionControlID = pcseq.ProductionControlID
-    INNER JOIN stations ON stations.StationID = pciss.StationID AND stations.Description not in ('IFA','IFF')
+    INNER JOIN stations ON stations.StationID = pciss.StationID AND stations.Description not in ('IFA','IFF','CUT','NESTED')
  WHERE wp.completed = 0 AND wp.Group2 = ${workweek} AND pcseq.AssemblyQuantity > 0";
 
 $result = $db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
@@ -108,7 +108,6 @@ foreach ($result as $row) {
         'StationDescription' => $row['StationDescription'],
         'MainMark' => $row['MainMark'],
         'PieceMark' => $row['PieceMark'],
-        'QuantityCutList' => $row['QuantityCutList'],
         'StationQuantityCompleted' => $row['StationQuantityCompleted'],
         'LastDateCompleted' => $row['LastDateCompleted'],
         'StationTotalQuantity' => $row['StationTotalQuantity'],

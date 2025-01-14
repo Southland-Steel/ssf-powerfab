@@ -328,7 +328,7 @@ sort($weeks);
 </div>
 
 <script>
-    const orderedStations = ['NESTED','CUT','FIT','WELD','FINAL QC'];
+    const orderedStations = ['NESTED','CUT','FIT','WELD','SBA','FINAL QC'];
     var currentRouteFilter = 'all'; // Global variable for the selected route filter
     var currentWPFilter = 'all'; // Global variable for the selected work package filter
     var projectData = []; // Global variable to hold the loaded data
@@ -542,11 +542,8 @@ sort($weeks);
             } else {
                 const percentage = (completed / total * 100).toFixed(2);
                 const isComplete = parseFloat(percentage) === 100;
-                if (['CNC', 'TCNC','Kit-Up'].includes(station)) {
-                    bodyHtml += `<td class="sumcell ${isComplete ? 'col-complete' : ''}">${percentage}%</td>`;
-                } else {
-                    bodyHtml += `<td class="sumcell ${isComplete ? 'col-complete' : ''}">${formatNumber(completed)} / ${formatNumber(total)} <br>(${percentage}%)</td>`;
-                }
+                bodyHtml += `<td class="sumcell ${isComplete ? 'col-complete' : ''}">${formatNumber(completed)} / ${formatNumber(total)} <br>(${percentage}%)</td>`;
+
 
             }
         });
@@ -773,6 +770,17 @@ sort($weeks);
                 return {
                     'FIT': totalHours * 0.38,
                     'WELD': totalHours * 0.58,
+                    'SBA': totalHours * 0.58,
+                    'FINAL QC': totalHours * 0.04,
+                    'CUT': totalHours * 0.0001,
+                    'IFF': totalHours * 0.0001,
+                    'IFA': totalHours * 0.0001
+                };
+            case '10:  SBA':
+                return {
+                    'FIT': totalHours * 0.38,
+                    'WELD': totalHours * 0.58,
+                    'SBA': totalHours * 0.58,
                     'FINAL QC': totalHours * 0.04,
                     'CUT': totalHours * 0.0001,
                     'IFF': totalHours * 0.0001,
@@ -782,6 +790,7 @@ sort($weeks);
                 return {
                     'FIT': totalHours * 0.38,
                     'WELD': totalHours * 0.58,
+                    'SBA': totalHours * 0.58,
                     'FINAL QC': totalHours * 0.04,
                     'CUT': totalHours * 0.0001,
                     'IFF': totalHours * 0.0001,
