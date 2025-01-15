@@ -39,7 +39,8 @@ $sql = "SELECT
     pca.MainPieceProductionControlItemID,
     pci.ProductionControlItemID,
     pciss.ProductionControlItemStationSummaryID,
-    pciss.StationID
+    pciss.StationID,
+    pccat.Description as Category
  FROM workpackages as wp 
 	INNER JOIN productioncontroljobs as pcj ON pcj.ProductionControlID = wp.ProductionControlID
     INNER JOIN workshops as ws ON ws.WorkshopID = wp.WorkShopID
@@ -49,6 +50,7 @@ $sql = "SELECT
     INNER JOIN productioncontrolitems as pci ON pci.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
     INNER JOIN shapes ON shapes.ShapeID = pci.ShapeID AND shapes.Shape NOT IN ('HS','NU','WA')
     LEFT JOIN routes as rt on rt.RouteID = pci.RouteID
+    LEFT JOIN productioncontrolcategories as pccat on pccat.CategoryID = pci.CategoryID
     INNER JOIN productioncontrolitemstationsummary as pciss ON pciss.ProductionControlItemID = pci.ProductionControlItemID AND pciss.SequenceID = pcseq.SequenceID AND pciss.ProductionControlID = pcseq.ProductionControlID
     INNER JOIN stations ON stations.StationID = pciss.StationID AND stations.Description not in ('IFA','IFF','CUT','NESTED')
  WHERE wp.completed = 0 AND wp.Group2 = ${workweek} AND pcseq.AssemblyQuantity > 0";
@@ -77,6 +79,7 @@ foreach ($result as $row) {
             'Bay' => $row['Bay'],
             'WorkshopDescription' => $row['WorkshopDescription'],
             'MainMark' => $row['MainMark'],
+            'Category' => $row['Category'],
             'PieceMark' => $row['PieceMark'],
             'Shape' => $row['Shape'],
             'DimensionString' => $row['DimensionString'],

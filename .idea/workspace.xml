@@ -7,6 +7,7 @@
     <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="timely commit">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ajax_get_ssf_workweek_piecemarks.php" beforeDir="false" afterPath="$PROJECT_DIR$/ajax_get_ssf_workweek_piecemarks.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_workweeks2.php" beforeDir="false" afterPath="$PROJECT_DIR$/ajax_get_ssf_workweeks2.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/workweeks.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -76,7 +77,7 @@
       <workItem from="1735672735653" duration="2036000" />
       <workItem from="1736175646891" duration="2995000" />
       <workItem from="1736258501491" duration="25452000" />
-      <workItem from="1736867308284" duration="10027000" />
+      <workItem from="1736867308284" duration="23404000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -118,7 +119,15 @@
       <option name="project" value="LOCAL" />
       <updated>1736886801582</updated>
     </task>
-    <option name="localTasksCounter" value="6" />
+    <task id="LOCAL-00006" summary="timely commit">
+      <option name="closed" value="true" />
+      <created>1736889946199</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1736889946199</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

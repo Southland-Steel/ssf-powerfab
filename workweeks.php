@@ -81,12 +81,26 @@ sort($weeks);
             border-radius: 4px;
         }
 
+        #bayFilter {
+            margin-bottom: 0px !important;
+            margin-top: 5px !important;
+        }
+        #bayFilter button {
+            margin-bottom: 0px !important;
+        }
+        #wpFilter {
+            margin-bottom: 0px !important;
+            margin-top: 5px !important;
+        }
+        #wpFilter button {
+            margin-bottom: 0px !important;
+        }
         #routeFilter {
-            margin-bottom: 1rem;
+            margin-bottom: 0px !important;
+            margin-top: 5px !important;
         }
         #routeFilter button {
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0px !important;
         }
 
         .card-body .form-control {
@@ -194,6 +208,14 @@ sort($weeks);
         #bayFilter button{
             margin-bottom: 0px !important;
         }
+        #categoryFilter {
+            margin-bottom: 0px !important;
+            margin-top: 3px !important;
+        }
+        #categoryFilter button {
+            margin-bottom: 0px !important;
+        }
+
         .export-buttons {
             margin: 10px 0;
             display: none; /* Hide by default */
@@ -201,6 +223,47 @@ sort($weeks);
             position: absolute;
             top: 32px;
             right: 0px;
+        }
+
+        /* Common styles for all filter containers */
+        #bayFilter, #wpFilter, #routeFilter, #categoryFilter {
+            flex-wrap: wrap;
+            gap: 3px;  /* Replace margins with gap for better spacing */
+            padding: 2px 5px;
+            margin: 1px 0;
+            align-items: center;
+        }
+
+        /* Style for the filter buttons */
+        #bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button {
+            padding: 2px 8px;  /* Smaller padding */
+            font-size: 0.85rem;  /* Slightly smaller font */
+            margin: 0;  /* Remove margins, using gap instead */
+            height: 26px;  /* Fixed height for consistency */
+            line-height: 1;  /* Adjust line height */
+            white-space: nowrap;
+        }
+
+        /* Container for the table and filters */
+        .table-container {
+            margin-top: 3px;  /* Tighter spacing to table */
+        }
+
+        /* If you want to make filters horizontal but distinct */
+        .filters-wrapper {
+            flex-direction: column;
+            gap:3px;
+            align-items: center;
+            margin-bottom: 3px;
+        }
+
+        /* Optional: add subtle separators between filter groups */
+        .filter-group {
+            padding-right: 10px;
+        }
+
+        .filter-group:last-child {
+            border-right: none;
         }
 
         /* Media query for desktop screens */
@@ -248,9 +311,6 @@ sort($weeks);
                     </div>
                 </div>
             </div>
-            <div id="bayFilter" class="mb-3 d-flex flex-wrap">
-                <!-- Bay filter buttons will be dynamically inserted here -->
-            </div>
         </div>
         <div class="col-lg-3">
             <table id="weekschedule">
@@ -289,11 +349,19 @@ sort($weeks);
             </table>
         </div>
     </div>
-    <div id="wpFilter" class="mb-3 d-flex flex-wrap">
-        <!-- Work Package Number filter buttons will be dynamically inserted here -->
-    </div>
-    <div id="routeFilter" class="mb-3 d-flex flex-wrap">
-        <!-- Route filter buttons will be dynamically inserted here -->
+    <div class="filters-wrapper">
+        <div class="filter-group" id="bayFilter">
+            <!-- Bay filters -->
+        </div>
+        <div class="filter-group" id="wpFilter">
+            <!-- Work package filters -->
+        </div>
+        <div class="filter-group" id="routeFilter">
+            <!-- Route filters -->
+        </div>
+        <div class="filter-group" id="categoryFilter">
+            <!-- Category filters -->
+        </div>
     </div>
     <div class="table-container">
         <table id="projectTable" class="table table-bordered table-striped">
@@ -328,7 +396,7 @@ sort($weeks);
 </div>
 
 <script>
-    const orderedStations = ['NESTED','CUT','FIT','WELD','SBA','FINAL QC'];
+    const orderedStations = ['NESTED','CUT','PROFIT','ZEMAN','FIT','WELD','FINAL QC'];
     var currentRouteFilter = 'all'; // Global variable for the selected route filter
     var currentWPFilter = 'all'; // Global variable for the selected work package filter
     var projectData = []; // Global variable to hold the loaded data
@@ -373,10 +441,16 @@ sort($weeks);
 
     function filterData() {
         let filteredData = projectData.filter(item => {
-            let matchesRoute = currentRouteFilter === 'all' || item.RouteName === currentRouteFilter;
-            let matchesWP = currentWPFilter === 'all' || item.WorkPackageNumber === currentWPFilter;
-            let matchesBay = currentBayFilter === 'all' || item.BayName === currentBayFilter;
-            return matchesRoute && matchesWP && matchesBay;
+            let matchesRoute = currentRouteFilter === 'all' ||
+                (currentRouteFilter === 'undefined' ? !item.RouteName : item.RouteName === currentRouteFilter);
+            let matchesWP = currentWPFilter === 'all' ||
+                (currentWPFilter === 'undefined' ? !item.WorkPackageNumber : item.WorkPackageNumber === currentWPFilter);
+            let matchesBay = currentBayFilter === 'all' ||
+                (currentBayFilter === 'undefined' ? !item.Bay : item.Bay === currentBayFilter);
+            let matchesCategory = currentCategoryFilter === 'all' ||
+                (currentCategoryFilter === 'undefined' ? !item.Category : item.Category === currentCategoryFilter);
+
+            return matchesRoute && matchesWP && matchesBay && matchesCategory;
         });
 
         populateTable(filteredData);
@@ -411,12 +485,14 @@ sort($weeks);
             createWPFilter();
             createRouteFilter();
             createBayFilter();
+            createCategoryFilter();
 
             createTableHeader();
 
             currentRouteFilter = 'all';
             currentWPFilter = 'all';
             currentBayFilter = 'all';
+            currentCategoryFilter = 'all';
             filterData();
 
             $('#jobTitle').text(`Workweek: ${workweek}`);
@@ -429,56 +505,78 @@ sort($weeks);
 
     function mergeData(workweekData, piecemarkData) {
         // Create a map for faster lookups
-        const piecemarkMap = new Map(
-            piecemarkData.map(item => [item.ProductionControlItemSequenceID, item])
-        );
+        const piecemarkMap = new Map();
+
+        // Group piecemark data by ProductionControlItemSequenceID
+        piecemarkData.forEach(piece => {
+            if (!piecemarkMap.has(piece.ProductionControlItemSequenceID)) {
+                piecemarkMap.set(piece.ProductionControlItemSequenceID, []);
+            }
+            piecemarkMap.get(piece.ProductionControlItemSequenceID).push(piece);
+        });
 
         return workweekData.map(workweekItem => {
             const pciseqId = workweekItem.ProductionControlItemSequenceID;
-            const piecemarkItem = piecemarkMap.get(pciseqId);
+            const pieces = piecemarkMap.get(pciseqId);
 
-            if (!piecemarkItem) {
+            if (!pieces) {
                 return workweekItem;
             }
 
-            // Add or update NESTED and CUT stations in the Stations array
-            const updatedStations = [...workweekItem.Stations];
+            // Update existing NESTED and CUT stations or add new ones
+            let updatedStations = workweekItem.Stations || [];
 
-            // Add NESTED station
-            const nestedIndex = updatedStations.findIndex(s => s.StationDescription === 'NESTED');
-            if (nestedIndex === -1) {
-                updatedStations.push({
-                    StationDescription: 'NESTED',
-                    StationQuantityCompleted: piecemarkItem.QtyNested || 0,
-                    StationTotalQuantity: piecemarkItem.TotalPieceMarkQuantityNeeded || 0
-                });
-            } else {
-                updatedStations[nestedIndex].StationQuantityCompleted = piecemarkItem.QtyNested || 0;
-                updatedStations[nestedIndex].StationTotalQuantity = piecemarkItem.TotalPieceMarkQuantityNeeded || 0;
-            }
+            ['NESTED', 'CUT'].forEach(stationType => {
+                const totalAssembliesNeeded = pieces[0].SequenceQuantity;
 
-            // Add CUT station
-            const cutIndex = updatedStations.findIndex(s => s.StationDescription === 'CUT');
-            if (cutIndex === -1) {
-                updatedStations.push({
-                    StationDescription: 'CUT',
-                    StationQuantityCompleted: piecemarkItem.QtyCut || 0,
-                    StationTotalQuantity: piecemarkItem.TotalPieceMarkQuantityNeeded || 0
-                });
-            } else {
-                updatedStations[cutIndex].StationQuantityCompleted = piecemarkItem.QtyCut || 0;
-                updatedStations[cutIndex].StationTotalQuantity = piecemarkItem.TotalPieceMarkQuantityNeeded || 0;
-            }
+                if (stationType === 'NESTED') {
+                    // For NESTED, we need to subtract pieces already cut
+                    const cutCompleted = Math.min(...pieces.map(p => p.QtyCut || 0));
+                    const nestedCompleted = Math.min(...pieces.map(p => p.QtyNested || 0));
 
-            // Return merged item with updated stations
+                    // Total needed is assemblies needed minus what's already been cut
+                    const totalNeeded = Math.max(0, totalAssembliesNeeded - cutCompleted);
+
+                    const stationData = {
+                        StationDescription: 'NESTED',
+                        StationQuantityCompleted: nestedCompleted,
+                        StationTotalQuantity: totalNeeded,
+                        Pieces: pieces
+                    };
+
+                    const stationIndex = updatedStations.findIndex(s => s.StationDescription === 'NESTED');
+                    if (stationIndex === -1) {
+                        updatedStations.push(stationData);
+                    } else {
+                        updatedStations[stationIndex] = stationData;
+                    }
+                } else {
+                    // CUT station logic remains the same
+                    const cutCompleted = Math.min(...pieces.map(p => p.QtyCut || 0));
+
+                    const stationData = {
+                        StationDescription: 'CUT',
+                        StationQuantityCompleted: cutCompleted,
+                        StationTotalQuantity: totalAssembliesNeeded,
+                        Pieces: pieces
+                    };
+
+                    const stationIndex = updatedStations.findIndex(s => s.StationDescription === 'CUT');
+                    if (stationIndex === -1) {
+                        updatedStations.push(stationData);
+                    } else {
+                        updatedStations[stationIndex] = stationData;
+                    }
+                }
+            });
+
+            // Return merged item
             return {
                 ...workweekItem,
                 Stations: updatedStations,
-                QtyNested: piecemarkItem.QtyNested,
-                QtyCut: piecemarkItem.QtyCut,
-                AssemblyEachQuantity: piecemarkItem.AssemblyEachQuantity,
-                TotalPieceMarkQuantityNeeded: piecemarkItem.TotalPieceMarkQuantityNeeded,
-                CompletedAssemblies: piecemarkItem.CompletedAssemblies
+                Pieces: pieces,
+                AssemblyEachQuantity: pieces[0]?.AssemblyEachQuantity || 0,
+                TotalPieceMarkQuantityNeeded: pieces[0]?.TotalPieceMarkQuantityNeeded || 0
             };
         });
     }
@@ -507,15 +605,20 @@ sort($weeks);
     }
 
     function createBayFilter() {
-        const bayNames = [...new Set(projectData.map(item => item.BayName).filter(Boolean))];
+        const bayNames = [...new Set(projectData.map(item => item.Bay).filter(Boolean))];
         let bayFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterBay(\'all\', this)">All Bays</button>';
+        let hasUndefined = projectData.some(item => !item.Bay);
 
-        // Create buttons for each WorkPackageNumber
+        // Create buttons for each Bay
         bayNames.forEach(bay => {
             bayFilterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterBay('${bay}', this)">${bay}</button>`;
         });
 
-        // Insert WorkPackageNumber buttons into #wpFilter
+        // Add Undefined button if there are items without a Bay
+        if (hasUndefined) {
+            bayFilterHtml += `<button class="btn btn-warning me-2 mb-2" onclick="filterBay('undefined', this)">Undefined</button>`;
+        }
+
         $('#bayFilter').html(bayFilterHtml);
     }
 
@@ -531,10 +634,42 @@ sort($weeks);
     function createRouteFilter() {
         const routes = [...new Set(projectData.map(item => item.RouteName).filter(Boolean))];
         let filterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterRoute(\'all\', this)">All Routes</button>';
+        let hasUndefined = projectData.some(item => !item.RouteName);
+
         routes.forEach(route => {
             filterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterRoute('${route}', this)">${route}</button>`;
         });
+
+        if (hasUndefined) {
+            filterHtml += `<button class="btn btn-warning me-2 mb-2" onclick="filterRoute('undefined', this)">Undefined</button>`;
+        }
+
         $('#routeFilter').html(filterHtml);
+    }
+
+    function createCategoryFilter() {
+        const categories = [...new Set(projectData.map(item => item.Category).filter(Boolean))];
+        let categoryFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterCategory(\'all\', this)">All Asm. Categories</button>';
+        let hasUndefined = projectData.some(item => !item.Category);
+
+        categories.forEach(category => {
+            categoryFilterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterCategory('${category}', this)">${category}</button>`;
+        });
+
+        if (hasUndefined) {
+            categoryFilterHtml += `<button class="btn btn-warning me-2 mb-2" onclick="filterCategory('undefined', this)">Undefined</button>`;
+        }
+
+        $('#categoryFilter').html(categoryFilterHtml);
+    }
+
+    function filterCategory(category, button) {
+        currentCategoryFilter = category;
+        filterData();
+
+        // Update button styles
+        $('#categoryFilter button').removeClass('btn-primary').addClass('btn-secondary');
+        $(button).removeClass('btn-secondary').addClass('btn-primary');
     }
 
     function filterRoute(route, button) {
@@ -624,8 +759,8 @@ sort($weeks);
 
             bodyHtml += `
         <tr class="${isCompleted ? 'completed-row' : ''} ${isOnHold ? 'hold-row' : ''}">
-            <td title="ProductionControlID: ${assembly.ProductionControlID}">${assembly.JobNumber}<br>${assembly.RouteName}</td>
-            <td title="SequenceID: ${assembly.SequenceID}, ProductionControlItemID: ${assembly.ProductionControlItemID}">${assembly.SequenceDescription}-${assembly.LotNumber}<br>${assembly.MainMark}</td>
+            <td title="ProductionControlID: ${assembly.ProductionControlID}">${assembly.JobNumber} - ${assembly.RouteName}<br>${assembly.Category}</td>
+            <td title="SequenceID: ${assembly.SequenceID}, ProductionControlItemID: ${assembly.ProductionControlItemID}">${assembly.SequenceDescription} [${assembly.LotNumber}]<br>${assembly.MainMark}</td>
             <td title="ProductionControlItemSequenceID: ${assembly.ProductionControlItemSequenceID}">${assembly.WorkPackageNumber}</td>
             <td>${assembly.SequenceMainMarkQuantity}</td>
             <td>${formatNumberWithCommas(assembly.NetAssemblyWeightEach)}# / ${formatNumberWithCommas(assembly.TotalNetWeight)}#</td>
@@ -644,23 +779,26 @@ sort($weeks);
                     let cellContent = '';
 
                     if (['NESTED', 'CUT'].includes(stationName)) {
-                        const qty = stationName === 'NESTED' ? assembly.QtyNested : assembly.QtyCut;
-                        cellContent = `
-                ${qty} / ${assembly.TotalPieceMarkQuantityNeeded}<br>
-                Assemblies: ${assembly.CompletedAssemblies}
-            `;
-                        bodyHtml += `<td class="${getStatusClass(qty, assembly.TotalPieceMarkQuantityNeeded)}">
+                                const qty = stationName === 'NESTED' ? station.StationQuantityCompleted : station.StationQuantityCompleted;
+                                const totalNeeded = station.StationTotalQuantity;
+                                const completedAssemblies = Math.floor(qty / assembly.AssemblyEachQuantity);
+                                const totalAssemblies = Math.floor(totalNeeded / assembly.AssemblyEachQuantity);
+                                const statusClass = getStatusClass(completedAssemblies, totalAssemblies);
+
+                                cellContent = `${completedAssemblies} / ${totalAssemblies}`;
+
+                                bodyHtml += `<td class="${statusClass}">
                 <a href="#" class="station-details" data-station="${stationName}" data-assembly="${assembly.ProductionControlItemSequenceID}">
                     ${cellContent}
                 </a>
             </td>`;
-                    } else {
-                        cellContent = `
+                            } else {
+                                cellContent = `
                 ${station.StationQuantityCompleted} / ${station.StationTotalQuantity}<br>
                 HRS: ${formatNumber(stationUsedHours)} / ${formatNumber(stationTotalHours)}
             `;
-                        bodyHtml += `<td class="${statusClass}">${cellContent}</td>`;
-                    }
+                                bodyHtml += `<td class="${statusClass}">${cellContent}</td>`;
+                            }
                 } else {
                     bodyHtml += `<td class="status-notstarted status-na">-</td>`;
                 }
@@ -669,6 +807,16 @@ sort($weeks);
         });
 
         $('#projectTable tbody').html(bodyHtml);
+
+        $('#projectTable tbody tr').on('click', function() {
+            // Get the ProductionControlItemSequenceID from the WP cell's title attribute
+            const pciseqId = $(this).find('td:nth-child(3)').attr('title').split(': ')[1];
+
+            const rowData = projectData.find(item =>
+                item.ProductionControlItemSequenceID.toString() === pciseqId
+            );
+
+        });
 
         // Add click event listener for station details
         $('.station-details').on('click', function(e) {
@@ -686,31 +834,49 @@ sort($weeks);
         const assembly = projectData.find(a => a.ProductionControlItemSequenceID === productionControlItemSequenceId);
         if (!assembly) return;
 
-        const modalTitle = `${stationName} Details for Assembly ${assembly.MainMark}`;
-        $('#piecemarkModalLabel').text(modalTitle);
+        const modalTitle = `${stationName} Details for Assembly ${assembly.MainMark} <br>(Total Assemblies Needed: ${assembly.SequenceMainMarkQuantity})`;
+        $('#piecemarkModalLabel').html(modalTitle);
 
         let tableHeader = `
         <tr>
-            <th>Assembly Mark</th>
-            <th>Sequence Asm. Qty</th>
-            <th>Assembly Each</th>
-            <th>Total Need</th>
-            <th>${stationName === 'NESTED' ? 'CUT' : 'Completed'}</th>
+            <th>Piece Mark</th>
+            <th>Pieces per Assembly</th>
+            <th>Total Piecemarks Needed</th>
+            <th>Piecemarks Completed</th>
+            <th>Status</th>
         </tr>
     `;
 
-        let tableBody = '';
         const station = assembly.Stations.find(s => s.StationDescription === stationName);
-        const qty = stationName === 'NESTED' ? assembly.QtyNested : assembly.QtyCut;
-        const isCompleted = qty >= assembly.TotalPieceMarkQuantityNeeded;
+        if (!station || !station.Pieces) return;
 
+        let tableBody = '';
+        let minCompletedAssemblies = Infinity;
+
+        station.Pieces.forEach(piece => {
+            const completed = stationName === 'NESTED' ? piece.QtyNested : piece.QtyCut;
+            const needed = piece.TotalPieceMarkQuantityNeeded;
+            const assembliesComplete = Math.floor(completed / piece.AssemblyEachQuantity);
+            minCompletedAssemblies = Math.min(minCompletedAssemblies, assembliesComplete);
+
+            const status = completed >= needed ? 'Complete' : `${((completed/needed) * 100).toFixed(1)}%`;
+
+            tableBody += `
+            <tr class="${completed >= needed ? '' : 'uncompleted-piecemark'}">
+                <td>${piece.PieceMark}</td>
+                <td>${piece.AssemblyEachQuantity}</td>
+                <td>${needed}</td>
+                <td>${completed}</td>
+                <td>${status}</td>
+            </tr>
+        `;
+        });
+
+        // Add summary row
         tableBody += `
-        <tr class="${!isCompleted ? 'uncompleted-piecemark' : ''}">
-            <td>${assembly.MainMark}</td>
-            <td>${assembly.SequenceMainMarkQuantity}</td>
-            <td>${assembly.AssemblyEachQuantity}</td>
-            <td>${assembly.TotalPieceMarkQuantityNeeded}</td>
-            <td>${qty}</td>
+        <tr class="table-info">
+            <td colspan="4"><strong>Total Assemblies Complete:</strong></td>
+            <td><strong>${minCompletedAssemblies === Infinity ? 0 : minCompletedAssemblies}</strong></td>
         </tr>
     `;
 
@@ -773,7 +939,9 @@ sort($weeks);
     }
 
     function getStatusClass(completed, total) {
-        if (completed === 0) {
+        if (completed === 0 && total === 0) {
+            return 'status-complete';  // Return complete status for 0/0
+        } else if (completed === 0) {
             return 'status-notstarted';
         } else if (completed === total) {
             return 'status-complete';
@@ -870,178 +1038,6 @@ sort($weeks);
                 };
         }
     }
-    function prepareExportData() {
-        const exportData = [];
-        const stationTotals = {
-            totalJobHours: 0,
-            totalUsedHours: 0,
-            stations: {}
-        };
-
-        // Initialize station totals
-        orderedStations.forEach(station => {
-            stationTotals.stations[station] = {
-                completed: 0,
-                total: 0,
-                completedHours: 0,
-                totalHours: 0
-            };
-        });
-
-        // Process each assembly
-        projectData.forEach(assembly => {
-            const stationHours = calculateStationHours(assembly.RouteName, assembly.TotalEstimatedManHours);
-            const assemblyData = {
-                jobNumber: assembly.JobNumber,
-                routeName: assembly.RouteName,
-                sequenceDescription: assembly.SequenceDescription,
-                lotNumber: assembly.LotNumber,
-                mainMark: assembly.MainMark,
-                workPackageNumber: assembly.WorkPackageNumber,
-                SequenceMainMarkQuantity: assembly.SequenceMainMarkQuantity,
-                netWeightEach: assembly.NetAssemblyWeightEach,
-                totalNetWeight: assembly.TotalNetWeight,
-                hoursEach: assembly.AssemblyManHoursEach,
-                totalHours: assembly.TotalEstimatedManHours,
-                stations: {}
-            };
-
-            // Add total hours to station totals
-            stationTotals.totalJobHours += parseFloat(assembly.TotalEstimatedManHours);
-
-            // Process each station
-            orderedStations.forEach(stationName => {
-                const station = assembly.Stations.find(s => s.StationDescription === stationName);
-                if (station) {
-                    const stationTotalHours = stationHours[stationName] || 0;
-                    const stationUsedHours = (station.StationQuantityCompleted / station.StationTotalQuantity) * stationTotalHours;
-
-                    assemblyData.stations[stationName] = {
-                        quantityCompleted: station.StationQuantityCompleted,
-                        quantityTotal: station.StationTotalQuantity,
-                        hoursUsed: stationUsedHours,
-                        hoursTotal: stationTotalHours,
-                        piecemarks: station.PieceMarks || []
-                    };
-
-                    // Update station totals
-                    stationTotals.stations[stationName].completed += station.StationQuantityCompleted;
-                    stationTotals.stations[stationName].total += station.StationTotalQuantity;
-                    stationTotals.stations[stationName].completedHours += stationUsedHours;
-                    stationTotals.stations[stationName].totalHours += stationTotalHours;
-                    stationTotals.totalUsedHours += stationUsedHours;
-                } else {
-                    assemblyData.stations[stationName] = {
-                        quantityCompleted: 0,
-                        quantityTotal: 0,
-                        hoursUsed: 0,
-                        hoursTotal: 0,
-                        piecemarks: []
-                    };
-                }
-            });
-
-            exportData.push(assemblyData);
-        });
-
-        return { exportData, stationTotals };
-    }
-
-    function exportToJSON() {
-        const { exportData, stationTotals } = prepareExportData();
-        const jsonData = {
-            assemblies: exportData,
-            stationTotals: stationTotals
-        };
-
-        const dataStr = JSON.stringify(jsonData, null, 2);
-        const blob = new Blob([dataStr], { type: 'application/json' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `workpackage_data_${new Date().toISOString().split('T')[0]}.json`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    }
-
-    function exportToCSV() {
-        const { exportData, stationTotals } = prepareExportData();
-
-        // Prepare CSV headers
-        let csvContent = [
-            'Job Number,Route Name,Sequence Description,Lot Number,Main Mark,Work Package Number,' +
-            'Sequence Quantity,Net Weight Each,Total Net Weight,Hours Each,Total Hours'
-        ];
-
-        // Add station headers
-        orderedStations.forEach(station => {
-            csvContent[0] += `,${station} Completed,${station} Total,${station} Hours Used,${station} Hours Total`;
-        });
-
-        // Add assembly data
-        exportData.forEach(assembly => {
-            let row = [
-                assembly.jobNumber,
-                assembly.routeName,
-                assembly.sequenceDescription,
-                assembly.lotNumber,
-                assembly.mainMark,
-                assembly.workPackageNumber,
-                assembly.SequenceMainMarkQuantity,
-                assembly.netWeightEach,
-                assembly.totalNetWeight,
-                assembly.hoursEach,
-                assembly.totalHours
-            ];
-
-            // Add station data
-            orderedStations.forEach(station => {
-                const stationData = assembly.stations[station];
-                row.push(
-                    stationData.quantityCompleted,
-                    stationData.quantityTotal,
-                    stationData.hoursUsed.toFixed(2),
-                    stationData.hoursTotal.toFixed(2)
-                );
-            });
-
-            csvContent.push(row.join(','));
-        });
-
-        // Add station totals
-        csvContent.push('\nStation Totals');
-        let totalsRow = ['Total Hours', stationTotals.totalJobHours.toFixed(2)];
-        csvContent.push(totalsRow.join(','));
-
-        totalsRow = ['Used Hours', stationTotals.totalUsedHours.toFixed(2)];
-        csvContent.push(totalsRow.join(','));
-
-        orderedStations.forEach(station => {
-            const stationTotal = stationTotals.stations[station];
-            const totalsRow = [
-                `${station} Totals`,
-                `Completed: ${stationTotal.completed}`,
-                `Total: ${stationTotal.total}`,
-                `Hours Used: ${stationTotal.completedHours.toFixed(2)}`,
-                `Hours Total: ${stationTotal.totalHours.toFixed(2)}`
-            ];
-            csvContent.push(totalsRow.join(','));
-        });
-
-        // Create and download CSV file
-        const blob = new Blob([csvContent.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `workpackage_data_${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    }
-
 
 </script>
 </body>

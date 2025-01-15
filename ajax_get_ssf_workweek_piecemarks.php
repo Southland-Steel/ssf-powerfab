@@ -6,10 +6,22 @@ $workweek = $_GET['workweek'];
 $sql = "WITH QuantityCalcs AS (
     SELECT 
         pciseq.ProductionControlItemSequenceID,
+        REPLACE(pci.PieceMark,CHAR(1),'') AS PieceMark,
+        REPLACE(pca.MainMark, CHAR(1),'') AS AssemblyMark,
         MAX(CASE WHEN stations.Description = 'NESTED' THEN pcilink.QuantityCutList ELSE 0 END) as QtyNested,
         MAX(CASE WHEN stations.Description = 'CUT' THEN pciss.QuantityCompleted ELSE 0 END) as QtyCut,
+        pciss.TotalQuantity as TotalStationQuantity,
         ROUND(pci.Quantity / pca.AssemblyQuantity) as AssemblyEachQuantity,
-        ROUND(pci.Quantity / pca.AssemblyQuantity * pciseq.Quantity) as TotalPieceMarkQuantityNeeded
+        pci.Quantity as PieceQuantity,
+        pca.AssemblyQuantity,
+        pciseq.Quantity as SequenceQuantity,
+        ROUND((pci.Quantity / pca.AssemblyQuantity) * pciseq.Quantity) as TotalPieceMarkQuantityNeeded,
+        pcj.JobNumber,
+        pcseq.WorkPackageID,
+        pcseq.SequenceID,
+        pca.MainPieceProductionControlItemID,
+        pci.ProductionControlItemID,
+        rt.Route as RouteName
     FROM (
         SELECT WorkPackageID
         FROM workpackages
@@ -28,20 +40,44 @@ $sql = "WITH QuantityCalcs AS (
     INNER JOIN stations
         ON pciss.StationID = stations.StationID
         AND stations.Description IN ('NESTED','CUT')
+    LEFT JOIN workpackages as wp ON wp.WorkPackageID = pcseq.WorkPackageID
+    LEFT JOIN routes as rt ON rt.RouteID = pci.RouteID
     GROUP BY 
         pciseq.ProductionControlItemSequenceID,
+        pci.PieceMark,
+        pca.MainMark,
         pci.Quantity,
         pca.AssemblyQuantity,
-        pciseq.Quantity
+        pciseq.Quantity,
+        pcj.JobNumber,
+        pcseq.WorkPackageID,
+        pcseq.SequenceID,
+        pca.MainPieceProductionControlItemID,
+        pci.ProductionControlItemID,
+        rt.Description
 )
 SELECT 
     ProductionControlItemSequenceID,
+    PieceMark,
+    AssemblyMark,
     QtyNested,
     QtyCut,
     AssemblyEachQuantity,
+    PieceQuantity,
+    AssemblyQuantity,
+    SequenceQuantity,
     TotalPieceMarkQuantityNeeded,
-    FLOOR(GREATEST(QtyNested, QtyCut) / AssemblyEachQuantity) as CompletedAssemblies
-FROM QuantityCalcs";
+    JobNumber,
+    WorkPackageID,
+    SequenceID,
+    MainPieceProductionControlItemID,
+    ProductionControlItemID,
+    RouteName,
+    FLOOR(LEAST(
+        NULLIF(QtyNested / AssemblyEachQuantity, 0),
+        NULLIF(QtyCut / AssemblyEachQuantity, 0)
+    )) as CompletedAssemblies
+FROM QuantityCalcs;";
 
 $stmt = $db->prepare($sql);
 $stmt->bindParam(':workweek', $workweek, PDO::PARAM_STR);
