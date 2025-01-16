@@ -21,7 +21,8 @@ $sql = "WITH QuantityCalcs AS (
         pcseq.SequenceID,
         pca.MainPieceProductionControlItemID,
         pci.ProductionControlItemID,
-        rt.Route as RouteName
+        rt.Route as RouteName,
+        shapes.Shape
     FROM (
         SELECT WorkPackageID
         FROM workpackages
@@ -32,6 +33,7 @@ $sql = "WITH QuantityCalcs AS (
     INNER JOIN productioncontrolitemsequences as pciseq ON pciseq.SequenceID = pcseq.SequenceID
     INNER JOIN productioncontrolassemblies as pca ON pciseq.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
     INNER JOIN productioncontrolitems as pci ON pci.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
+    INNER JOIN shapes on shapes.ShapeID = pci.ShapeID
     INNER JOIN productioncontrolitemlinks as pcilink ON pcilink.ProductionControlItemID = pci.ProductionControlItemID
     INNER JOIN productioncontrolitemstationsummary as pciss
         ON pci.ProductionControlItemID = pciss.ProductionControlItemID
@@ -73,6 +75,7 @@ SELECT
     MainPieceProductionControlItemID,
     ProductionControlItemID,
     RouteName,
+    Shape,
     FLOOR(LEAST(
         NULLIF(QtyNested / AssemblyEachQuantity, 0),
         NULLIF(QtyCut / AssemblyEachQuantity, 0)

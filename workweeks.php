@@ -37,7 +37,7 @@ sort($weeks);
         }
         table {
             width: 100%;
-            font-size: small;
+            font-size: 12px;
             border-collapse: collapse;
             margin-bottom: 20px;
         }
@@ -80,6 +80,22 @@ sort($weeks);
             border: 1px solid #dee2e6;
             border-radius: 4px;
         }
+        .wpnotreleased {
+            color: #ffd700 !important;  /* Yellow text */
+            font-style: italic !important;
+        }
+
+        .wponhold {
+            background-color: #dc3545 !important;  /* Bootstrap danger red */
+            border-color: #dc3545 !important;
+            color: white !important;
+        }
+
+        /* When button is hovered */
+        .wponhold:hover {
+            background-color: #bb2d3b !important;  /* Slightly darker red on hover */
+            border-color: #bb2d3b !important;
+        }
 
         #bayFilter {
             margin-bottom: 0px !important;
@@ -108,6 +124,7 @@ sort($weeks);
         }
         .station-summary {
             font-weight: bold;
+            font-size: 12px;
             background-color: #f8f9fa;
         }
         .week-btn {
@@ -142,6 +159,12 @@ sort($weeks);
         }
         .btn-ssf{
             background-color: #99332b;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            pointer-events: none;
         }
         .hold-row{
             font-family: "Courier New", Courier, monospace;
@@ -362,6 +385,9 @@ sort($weeks);
         <div class="filter-group" id="categoryFilter">
             <!-- Category filters -->
         </div>
+        <div class="filter-group" id="categoryFilter">
+            <!-- Sequence filters -->
+        </div>
     </div>
     <div class="table-container">
         <table id="projectTable" class="table table-bordered table-striped">
@@ -399,6 +425,9 @@ sort($weeks);
     const orderedStations = ['NESTED','CUT','PROFIT','ZEMAN','FIT','WELD','FINAL QC'];
     var currentRouteFilter = 'all'; // Global variable for the selected route filter
     var currentWPFilter = 'all'; // Global variable for the selected work package filter
+    var currentBayFilter = 'all';
+    var currentCategoryFilter = 'all';
+    var currentSequenceFilter = 'all';
     var projectData = []; // Global variable to hold the loaded data
 
     $(document).ready(function() {
@@ -449,8 +478,10 @@ sort($weeks);
                 (currentBayFilter === 'undefined' ? !item.Bay : item.Bay === currentBayFilter);
             let matchesCategory = currentCategoryFilter === 'all' ||
                 (currentCategoryFilter === 'undefined' ? !item.Category : item.Category === currentCategoryFilter);
+            let matchesSequence = currentSequenceFilter === 'all' ||
+                (currentSequenceFilter === 'undefined' ? !item.SequenceDescription : item.SequenceDescription === currentSequenceFilter);
 
-            return matchesRoute && matchesWP && matchesBay && matchesCategory;
+            return matchesRoute && matchesWP && matchesBay && matchesCategory && matchesSequence;
         });
 
         populateTable(filteredData);
@@ -486,6 +517,7 @@ sort($weeks);
             createRouteFilter();
             createBayFilter();
             createCategoryFilter();
+            updateFilterButtons();
 
             createTableHeader();
 
@@ -581,14 +613,37 @@ sort($weeks);
         });
     }
 
-
     function createWPFilter() {
         const workPackageNumbers = [...new Set(projectData.map(item => item.WorkPackageNumber).filter(Boolean))];
         let wpFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterWP(\'all\', this)">All Work Packages</button>';
 
         // Create buttons for each WorkPackageNumber
         workPackageNumbers.forEach(wp => {
-            wpFilterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterWP('${wp}', this)">${wp}</button>`;
+            // Find all items for this work package
+            const wpItems = projectData.filter(item => item.WorkPackageNumber === wp);
+
+            // Check if any items are not released or on hold
+            const isNotReleased = wpItems.some(item => item.ReleasedToFab === 0);
+            const isOnHold = wpItems.some(item => item.OnHold === 1);
+
+            // Create tooltip text if needed
+            let tooltip = '';
+            if (isNotReleased && isOnHold) {
+                tooltip = 'Work Package not released and on hold';
+            } else if (isNotReleased) {
+                tooltip = 'Work Package not released';
+            } else if (isOnHold) {
+                tooltip = 'Work Package on hold';
+            }
+
+            // Add appropriate classes
+            const extraClasses = [];
+            if (isNotReleased) extraClasses.push('wpnotreleased');
+            if (isOnHold) extraClasses.push('wponhold');
+
+            wpFilterHtml += `<button class="btn btn-secondary me-2 mb-2 ${extraClasses.join(' ')}"
+            onclick="filterWP('${wp}', this)"
+            ${tooltip ? `title="${tooltip}"` : ''}>${wp}</button>`;
         });
 
         // Insert WorkPackageNumber buttons into #wpFilter
@@ -602,6 +657,8 @@ sort($weeks);
         // Update button styles
         $('#wpFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
+
+        updateFilterButtons();
     }
 
     function createBayFilter() {
@@ -629,6 +686,8 @@ sort($weeks);
         // Update button styles
         $('#bayFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
+
+        updateFilterButtons();
     }
 
     function createRouteFilter() {
@@ -670,6 +729,8 @@ sort($weeks);
         // Update button styles
         $('#categoryFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
+
+        updateFilterButtons();
     }
 
     function filterRoute(route, button) {
@@ -679,6 +740,35 @@ sort($weeks);
         // Update button styles
         $('#routeFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
+
+        updateFilterButtons();
+    }
+
+    function createSequenceFilter() {
+        const sequences = [...new Set(projectData.map(item => item.SequenceDescription).filter(Boolean))];
+        let sequenceFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterSequence(\'all\', this)">All Sequences</button>';
+        let hasUndefined = projectData.some(item => !item.SequenceDescription);
+
+        sequences.forEach(sequence => {
+            sequenceFilterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterSequence('${sequence}', this)">${sequence}</button>`;
+        });
+
+        if (hasUndefined) {
+            sequenceFilterHtml += `<button class="btn btn-warning me-2 mb-2" onclick="filterSequence('undefined', this)">Undefined</button>`;
+        }
+
+        $('#sequenceFilter').html(sequenceFilterHtml);
+    }
+
+    function filterSequence(sequence, button) {
+        currentSequenceFilter = sequence;
+        filterData();
+
+        // Update button styles
+        $('#sequenceFilter button').removeClass('btn-primary').addClass('btn-secondary');
+        $(button).removeClass('btn-secondary').addClass('btn-primary');
+
+        updateFilterButtons();
     }
 
     function createTableHeader() {
@@ -698,107 +788,224 @@ sort($weeks);
         $('#projectTable thead').html(headerHtml);
     }
 
-    function populateTable(data) {
-        data.sort((a, b) => {
-            const aCompleted = checkCompletion(a.Stations);
-            const bCompleted = checkCompletion(b.Stations);
-            if (aCompleted === bCompleted) return 0;
-            return aCompleted ? 1 : -1; // 1 means a goes after b, -1 means a goes before b
-        });
-
-
-        let bodyHtml = '';
-        let totalJobHours = 0;
-        let totalUsedHours = 0;
+    function calculateStationTotals(data) {
         let stationTotals = {};
 
         orderedStations.forEach(station => {
-            stationTotals[station] = { completed: 0, total: 0 };
+            stationTotals[station] = {
+                completed: 0,
+                total: 0,
+                hours: {
+                    completed: 0,
+                    total: 0
+                },
+                weight: {
+                    completed: 0,
+                    total: 0
+                }
+            };
         });
 
-        // First row for station summaries
-        bodyHtml += '<tr class="station-summary"><td colspan="6">Station Totals:</td>';
-
-        // Calculate totals
         data.forEach(assembly => {
-            const stationHours = calculateStationHours(assembly.RouteName, assembly.TotalEstimatedManHours);
-            orderedStations.forEach(stationName => {
-                const station = assembly.Stations.find(s => s.StationDescription === stationName);
-                if (station) {
+            const stationHours = calculateStationHours(assembly.RouteName, assembly.Category, assembly.TotalEstimatedManHours);
+            const assemblyWeight = parseFloat(assembly.TotalNetWeight || 0);
+
+            assembly.Stations.forEach(station => {
+                const stationName = station.StationDescription;
+                if (orderedStations.includes(stationName)) {
+                    // Sum up quantities
+                    stationTotals[stationName].completed += station.StationQuantityCompleted || 0;
+                    stationTotals[stationName].total += station.StationTotalQuantity || 0;
+
+                    // Calculate completion ratio for this station
+                    const completionRatio = station.StationQuantityCompleted / station.StationTotalQuantity;
+
+                    // Calculate and sum up hours
                     const stationTotalHours = stationHours[stationName] || 0;
-                    const stationUsedHours = (station.StationQuantityCompleted / station.StationTotalQuantity) * stationTotalHours;
-                    stationTotals[stationName].completed += stationUsedHours;
-                    stationTotals[stationName].total += stationTotalHours;
+                    const completedHours = stationTotalHours * completionRatio;
+
+                    stationTotals[stationName].hours.completed += completedHours;
+                    stationTotals[stationName].hours.total += stationTotalHours;
+
+                    // Calculate and sum up weights
+                    stationTotals[stationName].weight.completed += assemblyWeight * completionRatio;
+                    stationTotals[stationName].weight.total += assemblyWeight;
                 }
             });
         });
 
-        // Add station summary data to the first row
+        return stationTotals;
+    }
+
+    function addStationSummaryRow(stationTotals, data) {
+        const totalLineItems = data.length;
+        const totalAsmQuantity = data.reduce((sum, item) => sum + (parseInt(item.SequenceMainMarkQuantity) || 0), 0);
+        const completedLineItems = data.filter(item => checkCompletion(item.Stations)).length;
+        const completedAssemblies = data.reduce((sum, item) => {
+            if (checkCompletion(item.Stations)) {
+                return sum + (parseInt(item.SequenceMainMarkQuantity) || 0);
+            }
+            return sum;
+        }, 0);
+
+        let bodyHtml = `<tr class="station-summary">
+    <td colspan="6">
+        Station Totals: (completed of total)<br>
+        Line Items: ${completedLineItems} of ${totalLineItems}<br>
+        Assemblies: ${completedAssemblies} of ${totalAsmQuantity}
+    </td>`;
+
         orderedStations.forEach(station => {
-            const completed = stationTotals[station].completed;
-            const total = stationTotals[station].total;
-
-            if (total === 0) {
-                // Option 1: Dark gray with white text
-                bodyHtml += `<td class="col-empty">-</td>`;
+            const totals = stationTotals[station];
+            if (!totals || totals.total === 0) {
+                bodyHtml += '<td class="col-empty">-</td>';
             } else {
-                const percentage = (completed / total * 100).toFixed(2);
-                const isComplete = parseFloat(percentage) === 100;
-                bodyHtml += `<td class="sumcell ${isComplete ? 'col-complete' : ''}">${formatNumber(completed)} / ${formatNumber(total)} <br>(${percentage}%)</td>`;
+                const qtyPercentage = safeDivide(totals.completed * 100, totals.total);
+                const hoursPercentage = safeDivide(totals.hours.completed * 100, totals.hours.total);
+                const weightPercentage = safeDivide(totals.weight.completed * 100, totals.weight.total);
+                const isComplete = Math.abs(qtyPercentage - 100) < 0.01;
 
-
+                if (station === 'NESTED') {
+                    bodyHtml += `
+            <td class="sumcell ${isComplete ? 'col-complete' : ''}">
+                ASMNEED: ${totals.completed} / ${totals.total}<br>
+                PCNEED: ${totals.pieces_completed || 0} / ${totals.pieces_total || 0}<br>
+                ASMWT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))}
+            </td>`;
+                } else if (station === 'CUT') {
+                    const pcQtyPercentage = safeDivide(totals.pieces_completed * 100, totals.pieces_total);
+                    bodyHtml += `
+    <td class="sumcell ${isComplete ? 'col-complete' : ''}">
+        ASMQTY: ${totals.completed} / ${totals.total} (${qtyPercentage.toFixed(1)}%)<br>
+        PCQTY: ${totals.pieces_completed || 0} / ${totals.pieces_total || 0} (${pcQtyPercentage.toFixed(1)}%)<br>
+        ASMWT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))} (${weightPercentage.toFixed(1)}%)
+    </td>`;
+                } else {
+                    bodyHtml += `
+            <td class="sumcell ${isComplete ? 'col-complete' : ''}">
+                QTY: ${totals.completed} / ${totals.total} (${qtyPercentage.toFixed(1)}%)<br>
+                HRS: ${formatNumberWithCommas(Math.round(totals.hours.completed))} / ${formatNumberWithCommas(Math.round(totals.hours.total))} (${hoursPercentage.toFixed(1)}%)<br>
+                WT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))} (${weightPercentage.toFixed(1)}%)
+            </td>`;
+                }
             }
         });
-        bodyHtml += '</tr>';
+
+        return bodyHtml + '</tr>';
+    }
+
+    function calculateTotalUsedHours(data) {
+        let totalUsed = 0;
+
+        data.forEach(assembly => {
+            if (!assembly || !assembly.Stations) return;
+
+            const totalHours = parseFloat(assembly.TotalEstimatedManHours || 0);
+            const stationHours = calculateStationHours(
+                assembly.RouteName || 'DEFAULT',
+                assembly.Category || 'DEFAULT',
+                totalHours
+            );
+
+            // For each station, calculate the hours used based on completion percentage
+            assembly.Stations.forEach(station => {
+                if (!station || !orderedStations.includes(station.StationDescription)) return;
+
+                const stationTotal = parseFloat(station.StationTotalQuantity || 0);
+                const stationCompleted = parseFloat(station.StationQuantityCompleted || 0);
+                const completionRatio = safeDivide(stationCompleted, stationTotal);
+                const stationAllocatedHours = stationHours[station.StationDescription] || 0;
+
+                totalUsed += stationAllocatedHours * completionRatio;
+            });
+        });
+
+        return totalUsed;
+    }
+
+    function populateTable(data) {
+        // Sort data to show completed items at the bottom
+        data.sort((a, b) => {
+            const aCompleted = checkCompletion(a.Stations);
+            const bCompleted = checkCompletion(b.Stations);
+            if (aCompleted === bCompleted) return 0;
+            return aCompleted ? 1 : -1;
+        });
+
+        let bodyHtml = '';
+        const totalJobHours = calculateTotalHours(data);
+        const totalUsedHours = calculateTotalUsedHours(data);
+        const remainingHours = totalJobHours - totalUsedHours;
+        const stationTotals = calculateStationTotals(data);
+
+        // Add station summary row
+        bodyHtml += addStationSummaryRow(stationTotals, data);
 
         // Add individual assembly rows
         data.forEach(assembly => {
             const isCompleted = checkCompletion(assembly.Stations);
             const isOnHold = (assembly.ReleasedToFab != 1);
-            const stationHours = calculateStationHours(assembly.RouteName, assembly.TotalEstimatedManHours);
+            const stationHours = calculateStationHours(assembly.RouteName, assembly.Category, assembly.TotalEstimatedManHours);
 
             bodyHtml += `
-        <tr class="${isCompleted ? 'completed-row' : ''} ${isOnHold ? 'hold-row' : ''}">
-            <td title="ProductionControlID: ${assembly.ProductionControlID}">${assembly.JobNumber} - ${assembly.RouteName}<br>${assembly.Category}</td>
-            <td title="SequenceID: ${assembly.SequenceID}, ProductionControlItemID: ${assembly.ProductionControlItemID}">${assembly.SequenceDescription} [${assembly.LotNumber}]<br>${assembly.MainMark}</td>
-            <td title="ProductionControlItemSequenceID: ${assembly.ProductionControlItemSequenceID}">${assembly.WorkPackageNumber}</td>
-            <td>${assembly.SequenceMainMarkQuantity}</td>
-            <td>${formatNumberWithCommas(assembly.NetAssemblyWeightEach)}# / ${formatNumberWithCommas(assembly.TotalNetWeight)}#</td>
-            <td>${formatNumber(assembly.AssemblyManHoursEach)} / ${formatNumber(assembly.TotalEstimatedManHours)}</td>
+            <tr class="${isCompleted ? 'completed-row' : ''} ${isOnHold ? 'hold-row' : ''}">
+                <td title="ProductionControlID: ${assembly.ProductionControlID}">
+                    ${assembly.JobNumber}<br>${assembly.RouteName}
+                </td>
+                <td title="SequenceID: ${assembly.SequenceID}, ProductionControlItemID: ${assembly.ProductionControlItemID}">
+                    ${assembly.SequenceDescription} [${assembly.LotNumber}]<br>${assembly.MainMark}<br>${assembly.Category}
+                </td>
+                <td title="ProductionControlItemSequenceID: ${assembly.ProductionControlItemSequenceID}">
+                    ${assembly.WorkPackageNumber}
+                </td>
+                <td>${assembly.SequenceMainMarkQuantity}</td>
+                <td>${formatNumberWithCommas(assembly.NetAssemblyWeightEach)}# / ${formatNumberWithCommas(assembly.TotalNetWeight)}#</td>
+                <td>${formatNumber(assembly.AssemblyManHoursEach)} / ${formatNumber(assembly.TotalEstimatedManHours)}</td>
         `;
 
-            totalJobHours += parseFloat(assembly.TotalEstimatedManHours);
+            // Add cells for each station
             orderedStations.forEach(stationName => {
                 const station = assembly.Stations.find(s => s.StationDescription === stationName);
                 if (station) {
                     const statusClass = getStatusClass(station.StationQuantityCompleted, station.StationTotalQuantity);
                     const stationTotalHours = stationHours[stationName] || 0;
-                    const stationUsedHours = (station.StationQuantityCompleted / station.StationTotalQuantity) * stationTotalHours;
-                    totalUsedHours += stationUsedHours;
+                    const stationUsedHours = safeDivide(station.StationQuantityCompleted * stationTotalHours, station.StationTotalQuantity);
 
                     let cellContent = '';
 
                     if (['NESTED', 'CUT'].includes(stationName)) {
-                                const qty = stationName === 'NESTED' ? station.StationQuantityCompleted : station.StationQuantityCompleted;
-                                const totalNeeded = station.StationTotalQuantity;
-                                const completedAssemblies = Math.floor(qty / assembly.AssemblyEachQuantity);
-                                const totalAssemblies = Math.floor(totalNeeded / assembly.AssemblyEachQuantity);
-                                const statusClass = getStatusClass(completedAssemblies, totalAssemblies);
+                        const qty = station.StationQuantityCompleted;
+                        const totalNeeded = station.StationTotalQuantity;
+                        const completedAssemblies = Math.floor(safeDivide(qty, assembly.AssemblyEachQuantity));
+                        const totalAssemblies = Math.floor(safeDivide(totalNeeded, assembly.AssemblyEachQuantity));
+                        const statusClass = getStatusClass(completedAssemblies, totalAssemblies);
 
-                                cellContent = `${completedAssemblies} / ${totalAssemblies}`;
+                        // Calculate total pieces (sum of all individual piecemarks)
+                        const totalPiecesCompleted = station.Pieces ? station.Pieces.reduce((sum, piece) =>
+                            sum + parseInt(stationName === 'NESTED' ? piece.QtyNested || 0 : piece.QtyCut || 0), 0) : 0;
+                        const totalPiecesNeeded = station.Pieces ? station.Pieces.reduce((sum, piece) =>
+                            sum + parseInt(piece.TotalPieceMarkQuantityNeeded || 0), 0) : 0;
 
-                                bodyHtml += `<td class="${statusClass}">
-                <a href="#" class="station-details" data-station="${stationName}" data-assembly="${assembly.ProductionControlItemSequenceID}">
-                    ${cellContent}
-                </a>
-            </td>`;
-                            } else {
-                                cellContent = `
-                ${station.StationQuantityCompleted} / ${station.StationTotalQuantity}<br>
-                HRS: ${formatNumber(stationUsedHours)} / ${formatNumber(stationTotalHours)}
-            `;
-                                bodyHtml += `<td class="${statusClass}">${cellContent}</td>`;
-                            }
+                        bodyHtml += `
+                        <td class="${statusClass}">
+                            <a href="#" class="station-details" data-station="${stationName}"
+                               data-assembly="${assembly.ProductionControlItemSequenceID}">
+                                ASM: ${completedAssemblies} / ${totalAssemblies}
+                            </a>
+                            <br>PCS: ${totalPiecesCompleted} / ${totalPiecesNeeded}
+                        </td>`;
+                    } else {
+                        const completionRatio = safeDivide(station.StationQuantityCompleted, station.StationTotalQuantity);
+                        const assemblyWeight = parseFloat(assembly.TotalNetWeight || 0);
+                        const stationCompletedWeight = assemblyWeight * completionRatio;
+
+                        cellContent = `
+                        ${station.StationQuantityCompleted} / ${station.StationTotalQuantity}<br>
+                        HRS: ${formatNumber(stationUsedHours)} / ${formatNumber(stationTotalHours)}<br>
+                        WT: ${formatNumberWithCommas(Math.round(stationCompletedWeight))}#
+                    `;
+                        bodyHtml += `<td class="${statusClass}">${cellContent}</td>`;
+                    }
                 } else {
                     bodyHtml += `<td class="status-notstarted status-na">-</td>`;
                 }
@@ -808,17 +1015,14 @@ sort($weeks);
 
         $('#projectTable tbody').html(bodyHtml);
 
+        // Add click handlers
         $('#projectTable tbody tr').on('click', function() {
-            // Get the ProductionControlItemSequenceID from the WP cell's title attribute
             const pciseqId = $(this).find('td:nth-child(3)').attr('title').split(': ')[1];
-
             const rowData = projectData.find(item =>
                 item.ProductionControlItemSequenceID.toString() === pciseqId
             );
-
         });
 
-        // Add click event listener for station details
         $('.station-details').on('click', function(e) {
             e.preventDefault();
             const stationName = $(this).data('station');
@@ -826,7 +1030,7 @@ sort($weeks);
             showPiecemarkDetails(stationName, assemblyId);
         });
 
-        const remainingHours = totalJobHours - totalUsedHours;
+        // Update summary data
         updateDataSummary(data, totalJobHours, totalUsedHours, remainingHours);
     }
 
@@ -863,7 +1067,7 @@ sort($weeks);
 
             tableBody += `
             <tr class="${completed >= needed ? '' : 'uncompleted-piecemark'}">
-                <td>${piece.PieceMark}</td>
+                <td>${piece.Shape}-${piece.PieceMark}</td>
                 <td>${piece.AssemblyEachQuantity}</td>
                 <td>${needed}</td>
                 <td>${completed}</td>
@@ -888,32 +1092,26 @@ sort($weeks);
     }
 
     function updateDataSummary(data, totalJobHours, totalUsedHours, remainingHours) {
-        if (data.length === 0) {
+        if (!data || data.length === 0) {
             $('#dataSummary').html('<strong>No data available</strong>');
             return;
         }
 
         const totalWeight = calculateTotalWeight(data);
         const completedWeight = calculateCompletedWeight(data);
-        const totalTons = totalWeight / 2000; // Convert pounds to tons
-        const hoursPerTon = totalTons > 0 ? totalJobHours / totalTons : 0;
-        const lbsPerHour = totalJobHours > 0 ? totalWeight / totalJobHours : 0;
+        const totalTons = safeDivide(totalWeight, 2000);
+        const hoursPerTon = safeDivide(totalJobHours, totalTons);
+        const lbsPerHour = safeDivide(totalWeight, totalJobHours);
 
-        const percentageCompleteByHours = totalJobHours > 0 ? (totalUsedHours / totalJobHours) * 100 : 0;
-        const percentageCompleteByWeight = (completedWeight / totalWeight) * 100;
+        const percentageCompleteByHours = safeDivide(totalUsedHours * 100, totalJobHours);
+        const percentageCompleteByWeight = safeDivide(completedWeight * 100, totalWeight);
 
-        // Assuming job number and description are the same for all rows
-        const jobNumber = data[0].JobNumber;
-        const jobDescription = data[0].ProjectDescription || 'N/A';
-
-        // Update job title and description
-
-        // Update hours summary
+        // Update hours summary with safe number formatting
         $('#hoursSummary').html(`
         Visible Total Hours: ${formatNumberWithCommas(totalJobHours)}<br>
         Visible Hours Complete: ${formatNumberWithCommas(totalUsedHours)} (${percentageCompleteByHours.toFixed(2)}%)<br>
         Visible Hours Remaining: ${formatNumberWithCommas(remainingHours)}<br>
-        Visible Hours per Ton: ${hoursPerTon.toFixed(2)}<span style="font-size: 0.8rem; font-weight: bold; color: #3a0202  "> -
+        Visible Hours per Ton: ${hoursPerTon.toFixed(2)}<span style="font-size: 0.8rem; font-weight: bold; color: #3a0202"> -
         ${lbsPerHour.toFixed(2)} (lbs/hr)</span>
     `);
 
@@ -921,7 +1119,6 @@ sort($weeks);
         $('#weightSummary').html(`
         Visible Total Weight: ${formatNumberWithCommas(totalWeight)} lbs (${formatNumberWithCommas(totalTons)} tons)<br>
         Visible Green Flag Weight: ${formatNumberWithCommas(completedWeight)} lbs (${percentageCompleteByWeight.toFixed(2)}%)<br>
-
     `);
     }
 
@@ -960,10 +1157,8 @@ sort($weeks);
 
 
     function formatNumberWithCommas(number) {
-        if (!isNaN(number) && number !== null && number !== undefined) {
-            return Number(number).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
-        return number;
+        if (isNaN(number) || number === null || number === undefined) return "0";
+        return Number(parseFloat(number).toFixed(0)).toLocaleString();
     }
 
     function calculateCompletedWeight(data) {
@@ -998,45 +1193,227 @@ sort($weeks);
         return ((completedStations / totalStations) * 100).toFixed(2);
     }
 
-    function calculateStationHours(route, totalHours) {
-        switch (route) {
-            case '04: SSF CUT & FAB':
-                return {
-                    'FIT': totalHours * 0.38,
-                    'WELD': totalHours * 0.58,
-                    'SBA': totalHours * 0.58,
-                    'FINAL QC': totalHours * 0.04,
-                    'CUT': totalHours * 0.0001,
-                    'IFF': totalHours * 0.0001,
-                    'IFA': totalHours * 0.0001
-                };
-            case '10:  SBA':
-                return {
-                    'FIT': totalHours * 0.38,
-                    'WELD': totalHours * 0.58,
-                    'SBA': totalHours * 0.58,
-                    'FINAL QC': totalHours * 0.04,
-                    'CUT': totalHours * 0.0001,
-                    'IFF': totalHours * 0.0001,
-                    'IFA': totalHours * 0.0001
-                };
-            case '00: PLANNED':
-                return {
-                    'FIT': totalHours * 0.38,
-                    'WELD': totalHours * 0.58,
-                    'SBA': totalHours * 0.58,
-                    'FINAL QC': totalHours * 0.04,
-                    'CUT': totalHours * 0.0001,
-                    'IFF': totalHours * 0.0001,
-                    'IFA': totalHours * 0.0001
-                };
-            default:
-                return {
-                    'FIT': 0,
-                    'WELD': 0,
-                    'FINAL QC': totalHours
-                };
-        }
+    function safeDivide(numerator, denominator) {
+        if (!denominator || isNaN(denominator)) return 0;
+        const result = numerator / denominator;
+        return isNaN(result) ? 0 : result;
+    }
+
+    function calculateStationTotals(data) {
+        let stationTotals = {};
+
+        orderedStations.forEach(station => {
+            stationTotals[station] = {
+                completed: 0,
+                total: 0,
+                pieces_completed: 0,
+                pieces_total: 0,
+                hours: {
+                    completed: 0,
+                    total: 0
+                },
+                weight: {
+                    completed: 0,
+                    total: 0
+                }
+            };
+        });
+
+        data.forEach(assembly => {
+            if (!assembly || !assembly.Stations) return;
+
+            const stationHours = calculateStationHours(
+                assembly.RouteName || 'DEFAULT',
+                assembly.Category || 'DEFAULT',
+                parseFloat(assembly.TotalEstimatedManHours || 0)
+            );
+
+            const assemblyWeight = parseFloat(assembly.TotalNetWeight || 0);
+
+            assembly.Stations.forEach(station => {
+                if (!station) return;
+
+                const stationName = station.StationDescription;
+                if (!orderedStations.includes(stationName)) return;
+
+                let completed = parseFloat(station.StationQuantityCompleted || 0);
+                let total = parseFloat(station.StationTotalQuantity || 0);
+
+                // Sum up quantities
+                stationTotals[stationName].completed += completed;
+                stationTotals[stationName].total += total;
+
+                // Calculate hours and weights
+                const completionRatio = safeDivide(completed, total);
+                const stationTotalHours = stationHours[stationName] || 0;
+                const completedHours = stationTotalHours * completionRatio;
+
+                stationTotals[stationName].hours.completed += completedHours;
+                stationTotals[stationName].hours.total += stationTotalHours;
+                stationTotals[stationName].weight.completed += assemblyWeight * completionRatio;
+                stationTotals[stationName].weight.total += assemblyWeight;
+
+                // Calculate piece totals for NESTED and CUT stations
+                if (['NESTED', 'CUT'].includes(stationName) && station.Pieces) {
+                    station.Pieces.forEach(piece => {
+                        if (stationName === 'NESTED') {
+                            stationTotals[stationName].pieces_completed += parseInt(piece.QtyNested || 0);
+                        } else {
+                            stationTotals[stationName].pieces_completed += parseInt(piece.QtyCut || 0);
+                        }
+                        stationTotals[stationName].pieces_total += parseInt(piece.TotalPieceMarkQuantityNeeded || 0);
+                    });
+                }
+            });
+        });
+
+        return stationTotals;
+    }
+
+    function updateFilterButtons() {
+        // First disable all buttons except 'All' buttons
+        $('#bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button').each(function() {
+            const buttonText = $(this).text();
+            if (!buttonText.startsWith('All')) {
+                $(this).prop('disabled', true);
+            }
+        });
+
+        // Get filtered data based on current filters
+        const filteredData = projectData.filter(item => {
+            const matchesRoute = currentRouteFilter === 'all' ||
+                (currentRouteFilter === 'undefined' ? !item.RouteName : item.RouteName === currentRouteFilter);
+            const matchesWP = currentWPFilter === 'all' ||
+                (currentWPFilter === 'undefined' ? !item.WorkPackageNumber : item.WorkPackageNumber === currentWPFilter);
+            const matchesBay = currentBayFilter === 'all' ||
+                (currentBayFilter === 'undefined' ? !item.Bay : item.Bay === currentBayFilter);
+            const matchesCategory = currentCategoryFilter === 'all' ||
+                (currentCategoryFilter === 'undefined' ? !item.Category : item.Category === currentCategoryFilter);
+
+            return matchesRoute && matchesWP && matchesBay && matchesCategory;
+        });
+
+        // Enable buttons based on filtered data
+        filteredData.forEach(item => {
+            if (item.Bay) {
+                $(`#bayFilter button:contains('${item.Bay}')`).prop('disabled', false);
+            } else {
+                $(`#bayFilter button:contains('Undefined')`).prop('disabled', false);
+            }
+
+            if (item.WorkPackageNumber) {
+                $(`#wpFilter button:contains('${item.WorkPackageNumber}')`).prop('disabled', false);
+            } else {
+                $(`#wpFilter button:contains('Undefined')`).prop('disabled', false);
+            }
+
+            if (item.RouteName) {
+                $(`#routeFilter button:contains('${item.RouteName}')`).prop('disabled', false);
+            } else {
+                $(`#routeFilter button:contains('Undefined')`).prop('disabled', false);
+            }
+
+            if (item.Category) {
+                $(`#categoryFilter button:contains('${item.Category}')`).prop('disabled', false);
+            } else {
+                $(`#categoryFilter button:contains('Undefined')`).prop('disabled', false);
+            }
+        });
+    }
+
+    function calculateStationHours(route, category, totalHours) {
+        // Define the distribution matrix based on route and category
+        const distributions = {
+            '04: SSF CUT & FAB': {
+                'BEAMS': {
+                    'NESTED': 0.01,
+                    'CUT': 0.06,
+                    'FIT': 0.38,
+                    'WELD': 0.51,
+                    'FINAL QC': 0.04
+                },
+                'COLUMNS': {
+                    'NESTED': 0.01,
+                    'CUT': 0.06,
+                    'FIT': 0.40,
+                    'WELD': 0.49,
+                    'FINAL QC': 0.04
+                },
+                // Add more categories as needed
+                'DEFAULT': {
+                    'NESTED': 0.01,
+                    'CUT': 0.06,
+                    'FIT': 0.38,
+                    'WELD': 0.51,
+                    'FINAL QC': 0.04
+                }
+            },
+            // Add more routes as needed
+            'DEFAULT': {
+                'DEFAULT': {
+                    'NESTED': 0.01,
+                    'CUT': 0.06,
+                    'FIT': 0.38,
+                    'WELD': 0.51,
+                    'FINAL QC': 0.04
+                }
+            }
+        };
+
+        // Get the distribution for the specific route and category, or fall back to defaults
+        const routeDist = distributions[route] || distributions['DEFAULT'];
+        const categoryDist = routeDist[category] || routeDist['DEFAULT'];
+
+        // Calculate hours for each station
+        let result = {};
+        orderedStations.forEach(station => {
+            result[station] = totalHours * (categoryDist[station] || 0);
+        });
+
+        return result;
+    }
+
+    function analyzeRouteCategoryStations() {
+        const combinations = new Set();
+
+        projectData.forEach(item => {
+            const route = item.RouteName || 'undefined';
+            const category = item.Category || 'undefined';
+
+            // Get current distribution if it exists
+            const currentDist = {};
+            const hours = calculateStationHours(route, category, 100);  // Use 100 to get percentages directly
+            if (hours) {
+                Object.entries(hours).forEach(([station, value]) => {
+                    currentDist[station] = value;
+                });
+            }
+
+            item.Stations.forEach(station => {
+                const stationName = station.StationDescription;
+                const percentage = currentDist[stationName] || '';
+                combinations.add(`${route}\t${category}\t${stationName}\t${percentage}`);
+            });
+        });
+
+        // Create one big string
+        const output = 'Route\tCategory\tStation\tPercentage\n' +
+            Array.from(combinations)
+                .sort()
+                .join('\n');
+
+        // Create a temporary textarea to copy from
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = output;
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextArea);
+
+        console.log('Data has been copied to clipboard. Here it is for reference:');
+        console.log(output);
+
+        return 'Data copied to clipboard!';
     }
 
 </script>

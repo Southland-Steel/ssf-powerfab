@@ -53,7 +53,7 @@ $sql = "SELECT
     LEFT JOIN productioncontrolcategories as pccat on pccat.CategoryID = pci.CategoryID
     INNER JOIN productioncontrolitemstationsummary as pciss ON pciss.ProductionControlItemID = pci.ProductionControlItemID AND pciss.SequenceID = pcseq.SequenceID AND pciss.ProductionControlID = pcseq.ProductionControlID
     INNER JOIN stations ON stations.StationID = pciss.StationID AND stations.Description not in ('IFA','IFF','CUT','NESTED')
- WHERE wp.completed = 0 AND wp.Group2 = ${workweek} AND pcseq.AssemblyQuantity > 0";
+ WHERE wp.completed = 0 AND wp.Group2 = ${workweek} AND pcseq.AssemblyQuantity > 0 AND pci.MainPiece = 1";
 
 $result = $db->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 
