@@ -224,20 +224,18 @@ sort($weeks);
             left: 500px;
             top:-10px;
         }
-        #bayFilter{
+        #categoryFilter{
             margin-bottom: 0px !important;
             margin-top: 3px !important;
         }
-        #bayFilter button{
+        #categoryFilter button{
             margin-bottom: 0px !important;
         }
-        #categoryFilter {
+        #sequenceFilter {
             margin-bottom: 0px !important;
             margin-top: 3px !important;
         }
-        #categoryFilter button {
-            margin-bottom: 0px !important;
-        }
+
 
         .export-buttons {
             margin: 10px 0;
@@ -249,7 +247,7 @@ sort($weeks);
         }
 
         /* Common styles for all filter containers */
-        #bayFilter, #wpFilter, #routeFilter, #categoryFilter {
+        #bayFilter, #wpFilter, #routeFilter, #categoryFilter, #sequenceFilter {
             flex-wrap: wrap;
             gap: 3px;  /* Replace margins with gap for better spacing */
             padding: 2px 5px;
@@ -258,13 +256,17 @@ sort($weeks);
         }
 
         /* Style for the filter buttons */
-        #bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button {
+        #bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button, #sequenceFilter button {
             padding: 2px 8px;  /* Smaller padding */
             font-size: 0.85rem;  /* Slightly smaller font */
             margin: 0;  /* Remove margins, using gap instead */
             height: 26px;  /* Fixed height for consistency */
             line-height: 1;  /* Adjust line height */
             white-space: nowrap;
+        }
+        #sequenceFilter button {
+            margin-bottom: 0px !important;
+            font-size: 0.65rem;
         }
 
         /* Container for the table and filters */
@@ -385,7 +387,7 @@ sort($weeks);
         <div class="filter-group" id="categoryFilter">
             <!-- Category filters -->
         </div>
-        <div class="filter-group" id="categoryFilter">
+        <div class="filter-group" id="sequenceFilter">
             <!-- Sequence filters -->
         </div>
     </div>
@@ -478,10 +480,14 @@ sort($weeks);
                 (currentBayFilter === 'undefined' ? !item.Bay : item.Bay === currentBayFilter);
             let matchesCategory = currentCategoryFilter === 'all' ||
                 (currentCategoryFilter === 'undefined' ? !item.Category : item.Category === currentCategoryFilter);
-            let matchesSequence = currentSequenceFilter === 'all' ||
-                (currentSequenceFilter === 'undefined' ? !item.SequenceDescription : item.SequenceDescription === currentSequenceFilter);
 
-            return matchesRoute && matchesWP && matchesBay && matchesCategory && matchesSequence;
+            // Modified sequence-lot matching
+            let matchesSequenceLot = currentSequenceFilter === 'all' ||
+                (currentSequenceFilter === 'undefined' ?
+                    (!item.SequenceDescription || !item.LotNumber) :
+                    `${item.SequenceDescription} [${item.LotNumber}]` === currentSequenceFilter);
+
+            return matchesRoute && matchesWP && matchesBay && matchesCategory && matchesSequenceLot;
         });
 
         populateTable(filteredData);
@@ -517,6 +523,7 @@ sort($weeks);
             createRouteFilter();
             createBayFilter();
             createCategoryFilter();
+            createSequenceFilter();
             updateFilterButtons();
 
             createTableHeader();
@@ -745,23 +752,30 @@ sort($weeks);
     }
 
     function createSequenceFilter() {
-        const sequences = [...new Set(projectData.map(item => item.SequenceDescription).filter(Boolean))];
-        let sequenceFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterSequence(\'all\', this)">All Sequences</button>';
-        let hasUndefined = projectData.some(item => !item.SequenceDescription);
+        // Create a unique set of sequence-lot combinations
+        const sequenceLots = [...new Set(projectData.map(item =>
+            item.SequenceDescription && item.LotNumber ?
+                `${item.SequenceDescription} [${item.LotNumber}]` :
+                null
+        ).filter(Boolean))];
 
-        sequences.forEach(sequence => {
-            sequenceFilterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterSequence('${sequence}', this)">${sequence}</button>`;
+        let sequenceFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterSequenceLot(\'all\', this)">All Sequences</button>';
+        let hasUndefined = projectData.some(item => !item.SequenceDescription || !item.LotNumber);
+
+        // Sort the sequence-lot combinations
+        sequenceLots.sort().forEach(seqLot => {
+            sequenceFilterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterSequenceLot('${seqLot}', this)">${seqLot}</button>`;
         });
 
         if (hasUndefined) {
-            sequenceFilterHtml += `<button class="btn btn-warning me-2 mb-2" onclick="filterSequence('undefined', this)">Undefined</button>`;
+            sequenceFilterHtml += `<button class="btn btn-warning me-2 mb-2" onclick="filterSequenceLot('undefined', this)">Undefined</button>`;
         }
 
         $('#sequenceFilter').html(sequenceFilterHtml);
     }
 
-    function filterSequence(sequence, button) {
-        currentSequenceFilter = sequence;
+    function filterSequenceLot(seqLot, button) {
+        currentSequenceFilter = seqLot;
         filterData();
 
         // Update button styles
@@ -1272,7 +1286,7 @@ sort($weeks);
 
     function updateFilterButtons() {
         // First disable all buttons except 'All' buttons
-        $('#bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button').each(function() {
+        $('#bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button, #sequenceFilter button').each(function() {
             const buttonText = $(this).text();
             if (!buttonText.startsWith('All')) {
                 $(this).prop('disabled', true);
@@ -1289,8 +1303,12 @@ sort($weeks);
                 (currentBayFilter === 'undefined' ? !item.Bay : item.Bay === currentBayFilter);
             const matchesCategory = currentCategoryFilter === 'all' ||
                 (currentCategoryFilter === 'undefined' ? !item.Category : item.Category === currentCategoryFilter);
+            const matchesSequenceLot = currentSequenceFilter === 'all' ||
+                (currentSequenceFilter === 'undefined' ?
+                    (!item.SequenceDescription || !item.LotNumber) :
+                    `${item.SequenceDescription} [${item.LotNumber}]` === currentSequenceFilter);
 
-            return matchesRoute && matchesWP && matchesBay && matchesCategory;
+            return matchesRoute && matchesWP && matchesBay && matchesCategory && matchesSequenceLot;
         });
 
         // Enable buttons based on filtered data
@@ -1317,6 +1335,14 @@ sort($weeks);
                 $(`#categoryFilter button:contains('${item.Category}')`).prop('disabled', false);
             } else {
                 $(`#categoryFilter button:contains('Undefined')`).prop('disabled', false);
+            }
+
+            // Update for sequence-lot combination
+            if (item.SequenceDescription && item.LotNumber) {
+                const seqLot = `${item.SequenceDescription} [${item.LotNumber}]`;
+                $(`#sequenceFilter button:contains('${seqLot}')`).prop('disabled', false);
+            } else {
+                $(`#sequenceFilter button:contains('Undefined')`).prop('disabled', false);
             }
         });
     }
