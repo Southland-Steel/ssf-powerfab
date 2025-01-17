@@ -10,6 +10,7 @@ $sql = "WITH QuantityCalcs AS (
         REPLACE(pca.MainMark, CHAR(1),'') AS AssemblyMark,
         MAX(CASE WHEN stations.Description = 'NESTED' THEN pcilink.QuantityCutList ELSE 0 END) as QtyNested,
         MAX(CASE WHEN stations.Description = 'CUT' THEN pciss.QuantityCompleted ELSE 0 END) as QtyCut,
+        MAX(CASE WHEN stations.Description = 'KIT' THEN pciss.QuantityCompleted ELSE 0 END) as QtyKitted,
         pciss.TotalQuantity as TotalStationQuantity,
         ROUND(pci.Quantity / pca.AssemblyQuantity) as AssemblyEachQuantity,
         pci.Quantity as PieceQuantity,
@@ -41,7 +42,7 @@ $sql = "WITH QuantityCalcs AS (
         AND pciss.SequenceID = pciseq.SequenceID
     INNER JOIN stations
         ON pciss.StationID = stations.StationID
-        AND stations.Description IN ('NESTED','CUT')
+        AND stations.Description IN ('NESTED', 'CUT', 'KIT')
     LEFT JOIN workpackages as wp ON wp.WorkPackageID = pcseq.WorkPackageID
     LEFT JOIN routes as rt ON rt.RouteID = pci.RouteID
     GROUP BY 
@@ -64,6 +65,7 @@ SELECT
     AssemblyMark,
     QtyNested,
     QtyCut,
+    QtyKitted,
     AssemblyEachQuantity,
     PieceQuantity,
     AssemblyQuantity,
@@ -78,7 +80,8 @@ SELECT
     Shape,
     FLOOR(LEAST(
         NULLIF(QtyNested / AssemblyEachQuantity, 0),
-        NULLIF(QtyCut / AssemblyEachQuantity, 0)
+        NULLIF(QtyCut / AssemblyEachQuantity, 0),
+        NULLIF(QtyKitted / AssemblyEachQuantity, 0)
     )) as CompletedAssemblies
 FROM QuantityCalcs;";
 

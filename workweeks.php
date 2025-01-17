@@ -355,20 +355,23 @@ sort($weeks);
                 <tbody>
                 <tr>
                     <td>CNC</td>
-                    <td><?= getAdjustedWorkWeek($workweek, 5); ?></td>
+                    <td><?= getAdjustedWorkWeek($workweek, 6); ?></td>
                 </tr>
                 <tr>
-                    <td>Cut, Kit</td>
-                    <td><?= getAdjustedWorkWeek($workweek, 2); ?></td>
+                    <td>Cut</td>
+                    <td><?= getAdjustedWorkWeek($workweek, 4); ?></td>
+                </tr>
+                <tr>
+                    <td>Kit</td>
+                    <td><?= getAdjustedWorkWeek($workweek, 3); ?></td>
+                </tr>
+                <tr>
+                    <td>Fit</td>
+                    <td><?= getAdjustedWorkWeek($workweek, 1); ?></td>
                 </tr>
                 <tr style="position: relative">
-                    <td>Fit &amp; Weld &amp; Final QC</td>
-                    <td><?= getAdjustedWorkWeek($workweek, 0); ?>
-                        <div class="export-buttons" style="display: none;">
-                            <button class="btn btn-success" onclick="exportToCSV()">Export to CSV</button>
-                            <button class="btn btn-info" onclick="exportToJSON()">Export to JSON</button>
-                        </div>
-                    </td>
+                    <td>Weld &amp; Final QC</td>
+                    <td><?= getAdjustedWorkWeek($workweek, 0); ?></td>
                 </tr>
                 </tbody>
             </table>
@@ -424,7 +427,7 @@ sort($weeks);
 </div>
 
 <script>
-    const orderedStations = ['NESTED','CUT','PROFIT','ZEMAN','FIT','WELD','FINAL QC'];
+    const orderedStations = ['NESTED','CUT','KIT','PROFIT','ZEMAN','FIT','WELD','FINAL QC'];
     var currentRouteFilter = 'all'; // Global variable for the selected route filter
     var currentWPFilter = 'all'; // Global variable for the selected work package filter
     var currentBayFilter = 'all';
@@ -562,10 +565,10 @@ sort($weeks);
                 return workweekItem;
             }
 
-            // Update existing NESTED and CUT stations or add new ones
+            // Update existing NESTED, CUT, and KIT stations or add new ones
             let updatedStations = workweekItem.Stations || [];
 
-            ['NESTED', 'CUT'].forEach(stationType => {
+            ['NESTED', 'CUT', 'KIT'].forEach(stationType => {
                 const totalAssembliesNeeded = pieces[0].SequenceQuantity;
 
                 if (stationType === 'NESTED') {
@@ -589,18 +592,19 @@ sort($weeks);
                     } else {
                         updatedStations[stationIndex] = stationData;
                     }
-                } else {
-                    // CUT station logic remains the same
-                    const cutCompleted = Math.min(...pieces.map(p => p.QtyCut || 0));
+                } else if (stationType === 'CUT' || stationType === 'KIT') {
+                    // CUT and KIT station logic is now the same
+                    const qtyField = stationType === 'CUT' ? 'QtyCut' : 'QtyKitted';
+                    const completed = Math.min(...pieces.map(p => p[qtyField] || 0));
 
                     const stationData = {
-                        StationDescription: 'CUT',
-                        StationQuantityCompleted: cutCompleted,
+                        StationDescription: stationType,
+                        StationQuantityCompleted: completed,
                         StationTotalQuantity: totalAssembliesNeeded,
                         Pieces: pieces
                     };
 
-                    const stationIndex = updatedStations.findIndex(s => s.StationDescription === 'CUT');
+                    const stationIndex = updatedStations.findIndex(s => s.StationDescription === stationType);
                     if (stationIndex === -1) {
                         updatedStations.push(stationData);
                     } else {
@@ -755,9 +759,10 @@ sort($weeks);
         // Create a unique set of sequence-lot combinations
         const sequenceLots = [...new Set(projectData.map(item =>
             item.SequenceDescription && item.LotNumber ?
-                `${item.SequenceDescription} [${item.LotNumber}]` :
+                `${item.SequenceDescription}<br>[${item.LotNumber}]` :
                 null
         ).filter(Boolean))];
+
 
         let sequenceFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterSequenceLot(\'all\', this)">All Sequences</button>';
         let hasUndefined = projectData.some(item => !item.SequenceDescription || !item.LotNumber);
@@ -896,11 +901,11 @@ sort($weeks);
     </td>`;
                 } else {
                     bodyHtml += `
-            <td class="sumcell ${isComplete ? 'col-complete' : ''}">
-                QTY: ${totals.completed} / ${totals.total} (${qtyPercentage.toFixed(1)}%)<br>
-                HRS: ${formatNumberWithCommas(Math.round(totals.hours.completed))} / ${formatNumberWithCommas(Math.round(totals.hours.total))} (${hoursPercentage.toFixed(1)}%)<br>
-                WT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))} (${weightPercentage.toFixed(1)}%)
-            </td>`;
+                    <td class="sumcell ${isComplete ? 'col-complete' : ''}">
+                        QTY: ${totals.completed} / ${totals.total} (${qtyPercentage.toFixed(1)}%)<br>
+                        HRS: ${formatNumberWithCommas(Math.round(totals.hours.completed))} / ${formatNumberWithCommas(Math.round(totals.hours.total))} (${hoursPercentage.toFixed(1)}%)<br>
+                        WT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))} (${weightPercentage.toFixed(1)}%)
+                    </td>`;
                 }
             }
         });
@@ -987,7 +992,7 @@ sort($weeks);
 
                     let cellContent = '';
 
-                    if (['NESTED', 'CUT'].includes(stationName)) {
+                    if (['NESTED', 'CUT', 'KIT'].includes(stationName)) {
                         const qty = station.StationQuantityCompleted;
                         const totalNeeded = station.StationTotalQuantity;
                         const completedAssemblies = Math.floor(safeDivide(qty, assembly.AssemblyEachQuantity));
@@ -995,19 +1000,25 @@ sort($weeks);
                         const statusClass = getStatusClass(completedAssemblies, totalAssemblies);
 
                         // Calculate total pieces (sum of all individual piecemarks)
-                        const totalPiecesCompleted = station.Pieces ? station.Pieces.reduce((sum, piece) =>
-                            sum + parseInt(stationName === 'NESTED' ? piece.QtyNested || 0 : piece.QtyCut || 0), 0) : 0;
+                        const totalPiecesCompleted = station.Pieces ? station.Pieces.reduce((sum, piece) => {
+                            let pieceQty = 0;
+                            if (stationName === 'NESTED') pieceQty = piece.QtyNested || 0;
+                            else if (stationName === 'CUT') pieceQty = piece.QtyCut || 0;
+                            else if (stationName === 'KIT') pieceQty = piece.QtyKitted || 0;
+                            return sum + parseInt(pieceQty);
+                        }, 0) : 0;
+
                         const totalPiecesNeeded = station.Pieces ? station.Pieces.reduce((sum, piece) =>
                             sum + parseInt(piece.TotalPieceMarkQuantityNeeded || 0), 0) : 0;
 
                         bodyHtml += `
-                        <td class="${statusClass}">
-                            <a href="#" class="station-details" data-station="${stationName}"
-                               data-assembly="${assembly.ProductionControlItemSequenceID}">
-                                ASM: ${completedAssemblies} / ${totalAssemblies}
-                            </a>
-                            <br>PCS: ${totalPiecesCompleted} / ${totalPiecesNeeded}
-                        </td>`;
+                    <td class="${statusClass}">
+                        <a href="#" class="station-details" data-station="${stationName}"
+                           data-assembly="${assembly.ProductionControlItemSequenceID}">
+                            ASM: ${completedAssemblies} / ${totalAssemblies}
+                        </a>
+                        <br>PCS: ${totalPiecesCompleted} / ${totalPiecesNeeded}
+                    </td>`;
                     } else {
                         const completionRatio = safeDivide(station.StationQuantityCompleted, station.StationTotalQuantity);
                         const assemblyWeight = parseFloat(assembly.TotalNetWeight || 0);
@@ -1072,7 +1083,11 @@ sort($weeks);
         let minCompletedAssemblies = Infinity;
 
         station.Pieces.forEach(piece => {
-            const completed = stationName === 'NESTED' ? piece.QtyNested : piece.QtyCut;
+            let completed;
+            if (stationName === 'NESTED') completed = piece.QtyNested;
+            else if (stationName === 'CUT') completed = piece.QtyCut;
+            else if (stationName === 'KIT') completed = piece.QtyKitted;
+
             const needed = piece.TotalPieceMarkQuantityNeeded;
             const assembliesComplete = Math.floor(completed / piece.AssemblyEachQuantity);
             minCompletedAssemblies = Math.min(minCompletedAssemblies, assembliesComplete);
@@ -1306,7 +1321,8 @@ sort($weeks);
             const matchesSequenceLot = currentSequenceFilter === 'all' ||
                 (currentSequenceFilter === 'undefined' ?
                     (!item.SequenceDescription || !item.LotNumber) :
-                    `${item.SequenceDescription} [${item.LotNumber}]` === currentSequenceFilter);
+                    `${item.SequenceDescription}
+                    [${item.LotNumber}]` === currentSequenceFilter);
 
             return matchesRoute && matchesWP && matchesBay && matchesCategory && matchesSequenceLot;
         });
