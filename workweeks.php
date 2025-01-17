@@ -977,7 +977,7 @@ sort($weeks);
                 <td title="ProductionControlItemSequenceID: ${assembly.ProductionControlItemSequenceID}">
                     ${assembly.WorkPackageNumber}
                 </td>
-                <td>${assembly.SequenceMainMarkQuantity}</td>
+                <td title="ProductionControlAssemblyID: ${assembly.ProductionControlAssemblyID}">${assembly.SequenceMainMarkQuantity}</td>
                 <td>${formatNumberWithCommas(assembly.NetAssemblyWeightEach)}# / ${formatNumberWithCommas(assembly.TotalNetWeight)}#</td>
                 <td>${formatNumber(assembly.AssemblyManHoursEach)} / ${formatNumber(assembly.TotalEstimatedManHours)}</td>
         `;

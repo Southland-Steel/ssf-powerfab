@@ -36,6 +36,7 @@ $sql = "SELECT
     wp.WorkPackageID,
 	wp.WorkshopID,
     pciseq.ProductionControlAssemblyID,
+    pca.ProductionControlAssemblyID,
     pca.MainPieceProductionControlItemID,
     pci.ProductionControlItemID,
     pciss.ProductionControlItemStationSummaryID,
@@ -101,6 +102,7 @@ foreach ($result as $row) {
             'ProductionControlAssemblyID' => $row['ProductionControlAssemblyID'],
             'MainPieceProductionControlItemID' => $row['MainPieceProductionControlItemID'],
             'ProductionControlItemID' => $row['ProductionControlItemID'],
+            'ProductionControlAssemblyID' => $row['ProductionControlAssemblyID'],
             'isCompleted' => false, // is completed if the final qc station is completed
             'stations' => []  // Initialize empty array for station data
         ];
