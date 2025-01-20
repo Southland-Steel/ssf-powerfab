@@ -153,12 +153,14 @@ try {
             top: 0;
             z-index: 10;
             cursor: pointer;
-            padding: 12px 15px;
+            font-size: 0.85rem;
+            padding: 4px 8px;
         }
 
         .custom-table td {
             border-bottom: 1px solid #dee2e6;
-            padding: 12px 15px;
+            padding: 2px 8px;
+            font-size: 0.85rem;
             white-space: nowrap;
         }
 
@@ -207,6 +209,21 @@ try {
     <div class="table-container">
         <div class="table-header">
             <h2 class="mb-4">SSF Detail Piecemarks</h2>
+            <div id="sortPreferences" class="mb-3">
+                <strong>Sort Priority: </strong>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="sortPref" id="nestedSort" value="nested">
+                    <label class="form-check-label" for="nestedSort">Nested</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="sortPref" id="cutSort" value="cut">
+                    <label class="form-check-label" for="cutSort">Cut</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="sortPref" id="kitSort" value="kit">
+                    <label class="form-check-label" for="kitSort">Kit</label>
+                </div>
+            </div>
         </div>
         <div class="table-wrapper">
             <table id="piecemarkTable" class="custom-table">
@@ -214,11 +231,11 @@ try {
                 <tr>
                     <th data-column="JobNumber" role="columnheader" aria-sort="none">
                         <span>Job Number</span>
-                        <span class="d-block">SeqLot</span>
+                        <span class="d-block">Seqence</span>
                     </th>
                     <th data-column="WorkPackageNumber" role="columnheader" aria-sort="none">
-                        <span>WP</span>
-                        <span class="d-block">QAssembly</span>
+                        <span>Lot</span>
+                        <span class="d-block">WorkPackage</span>
                     </th>
                     <th data-column="MainMark" role="columnheader" aria-sort="none">
                         <span>Main</span>
@@ -231,8 +248,9 @@ try {
                     <th data-column="Shape" role="columnheader" aria-sort="none">Shape</th>
                     <th data-column="DimensionString" role="columnheader" aria-sort="none">Dimension</th>
                     <th data-column="InchLength" role="columnheader" aria-sort="none">Length (Inches)</th>
-                    <th data-column="QuantityNested" role="columnheader" aria-sort="none">Nesting</th>
-                    <th data-column="QuantityCutlisted" role="columnheader" aria-sort="none">Cut</th>
+                    <th data-column="PiecesPerSequence" role="columnheader" aria-sort="none">Needed</th>
+                    <th data-column="QuantityNested" role="columnheader" aria-sort="none">Nested</th>
+                    <th data-column="QuantityCut" role="columnheader" aria-sort="none">Cut</th>
                     <th data-column="Kit" role="columnheader" aria-sort="none">Kit</th>
                 </tr>
                 </thead>
@@ -262,9 +280,9 @@ try {
 
     function checkStatus(row) {
         return {
-            isNested: row.QuantityNested > 0,
-            isCutlisted: row.QuantityCutlisted > 0,
-            needsAttention: row.QuantityNested < row.QuantityCutlisted
+            isNested: row.QuantityNested >= row.PiecesPerSequence - row.QuantityCut,
+            isCut: row.QuantityCut < row.PiecesPerSequence,
+            needsAttention: 0
         };
     }
 
@@ -281,45 +299,50 @@ try {
             document.querySelector('.table-header').appendChild(filterContainer);
         }
 
+        // Create category filter buttons
         let categoryFilterHtml = `
-        <div class="mb-2">
-            <strong>Category Filter: </strong>
-            <button class="filter-btn active" onclick="filterCategory('all', this)">All Categories</button>`;
-
+    <div class="mb-2">
+        <strong>Category Filter: </strong>
+        <button class="filter-btn active" onclick="filterCategory('all', this)">All Categories</button>`;
         categories.forEach(category => {
-            categoryFilterHtml += `
+            if (category) {
+                categoryFilterHtml += `
             <button class="filter-btn" onclick="filterCategory('${category}', this)">
                 ${category}
             </button>`;
+            }
         });
+        categoryFilterHtml += '</div>';
 
+        // Create route filter buttons
         let routeFilterHtml = `
-        <div class="mb-2">
-            <strong>Route Filter: </strong>
-            <button class="filter-btn active" onclick="filterRoute('all', this)">All Routes</button>`;
-
+    <div class="mb-2">
+        <strong>Route Filter: </strong>
+        <button class="filter-btn active" onclick="filterRoute('all', this)">All Routes</button>`;
         routes.forEach(route => {
             if (route) {
                 routeFilterHtml += `
-                <button class="filter-btn" onclick="filterRoute('${route}', this)">
-                    ${route}
-                </button>`;
+            <button class="filter-btn" onclick="filterRoute('${route}', this)">
+                ${route}
+            </button>`;
             }
         });
+        routeFilterHtml += '</div>';
 
+        // Create shape filter buttons
         let shapeFilterHtml = `
-        <div class="mb-2">
-            <strong>Shape Filter: </strong>
-            <button class="filter-btn active" onclick="filterShape('all', this)">All Shapes</button>`;
-
+    <div class="mb-2">
+        <strong>Shape Filter: </strong>
+        <button class="filter-btn active" onclick="filterShape('all', this)">All Shapes</button>`;
         shapes.forEach(shape => {
             if (shape) {
                 shapeFilterHtml += `
-                <button class="filter-btn" onclick="filterShape('${shape}', this)">
-                    ${shape}
-                </button>`;
+            <button class="filter-btn" onclick="filterShape('${shape}', this)">
+                ${shape}
+            </button>`;
             }
         });
+        shapeFilterHtml += '</div>';
 
         filterContainer.innerHTML = categoryFilterHtml + routeFilterHtml + shapeFilterHtml;
     }
@@ -352,9 +375,12 @@ try {
     }
 
     function updateFilterButtons() {
-        // First disable all buttons except 'All' buttons
-        document.querySelectorAll('#filterContainer .filter-btn').forEach(button => {
-            if (!button.textContent.trim().startsWith('All')) {
+        // Enable all "All" buttons first
+        document.querySelectorAll('#filterContainer button').forEach(button => {
+            if (button.textContent.trim().startsWith('All')) {
+                button.disabled = false;
+                button.classList.remove('opacity-50');
+            } else {
                 button.disabled = true;
                 button.classList.add('opacity-50');
             }
@@ -365,62 +391,71 @@ try {
             const matchesCategory = currentCategoryFilter === 'all' ||
                 item.CategoryName === currentCategoryFilter;
             const matchesRoute = currentRouteFilter === 'all' ||
-                (currentRouteFilter === 'undefined' ? !item.Route : item.Route === currentRouteFilter);
+                item.Route === currentRouteFilter;
             const matchesShape = currentShapeFilter === 'all' ||
-                (currentShapeFilter === 'undefined' ? !item.Shape : item.Shape === currentShapeFilter);
+                item.Shape === currentShapeFilter;
 
             return matchesCategory && matchesRoute && matchesShape;
         });
 
-        // Enable buttons based on filtered data
+        // Create sets of available values in the filtered data
+        const availableCategories = new Set();
+        const availableRoutes = new Set();
+        const availableShapes = new Set();
+
         filteredData.forEach(item => {
-            if (item.Route) {
-                document.querySelectorAll('#filterContainer div:nth-child(2) .filter-btn').forEach(button => {
-                    if (button.textContent.trim() === item.Route) {
-                        button.disabled = false;
-                        button.classList.remove('opacity-50');
-                    }
-                });
-            }
+            if (item.CategoryName) availableCategories.add(item.CategoryName);
+            if (item.Route) availableRoutes.add(item.Route);
+            if (item.Shape) availableShapes.add(item.Shape);
+        });
 
-            if (item.CategoryName) {
-                document.querySelectorAll('#filterContainer div:nth-child(1) .filter-btn').forEach(button => {
-                    if (button.textContent.trim() === item.CategoryName) {
-                        button.disabled = false;
-                        button.classList.remove('opacity-50');
-                    }
-                });
+        // Enable category buttons that have matching data
+        document.querySelectorAll('#filterContainer div:nth-child(1) .filter-btn').forEach(button => {
+            const category = button.textContent.trim();
+            if (category !== 'All Categories' && availableCategories.has(category)) {
+                button.disabled = false;
+                button.classList.remove('opacity-50');
             }
+        });
 
-            if (item.Shape) {
-                document.querySelectorAll('#filterContainer div:nth-child(3) .filter-btn').forEach(button => {
-                    if (button.textContent.trim() === item.Shape) {
-                        button.disabled = false;
-                        button.classList.remove('opacity-50');
-                    }
-                });
+        // Enable route buttons that have matching data
+        document.querySelectorAll('#filterContainer div:nth-child(2) .filter-btn').forEach(button => {
+            const route = button.textContent.trim();
+            if (route !== 'All Routes' && availableRoutes.has(route)) {
+                button.disabled = false;
+                button.classList.remove('opacity-50');
+            }
+        });
+
+        // Enable shape buttons that have matching data
+        document.querySelectorAll('#filterContainer div:nth-child(3) .filter-btn').forEach(button => {
+            const shape = button.textContent.trim();
+            if (shape !== 'All Shapes' && availableShapes.has(shape)) {
+                button.disabled = false;
+                button.classList.remove('opacity-50');
             }
         });
     }
 
     function applyFilters() {
         let filteredData = currentData.filter(item => {
-            let matchesCategory = currentCategoryFilter === 'all' ||
+            const matchesCategory = currentCategoryFilter === 'all' ||
                 item.CategoryName === currentCategoryFilter;
-
-            let matchesRoute = currentRouteFilter === 'all' ||
-                (currentRouteFilter === 'undefined' ? !item.Route : item.Route === currentRouteFilter);
-
-            let matchesShape = currentShapeFilter === 'all' ||
-                (currentShapeFilter === 'undefined' ? !item.Shape : item.Shape === currentShapeFilter);
+            const matchesRoute = currentRouteFilter === 'all' ||
+                item.Route === currentRouteFilter;
+            const matchesShape = currentShapeFilter === 'all' ||
+                item.Shape === currentShapeFilter;
 
             return matchesCategory && matchesRoute && matchesShape;
         });
 
+        // Sort the filtered data
         filteredData = sortData(filteredData, currentSort.column, currentSort.direction);
+
+        // Render the table with filtered data
         renderTable(filteredData);
 
-        // Update filter buttons after applying filters
+        // Update filter buttons based on the current state
         updateFilterButtons();
     }
 
@@ -429,7 +464,7 @@ try {
         const tr = document.createElement('tr');
 
         if (status.needsAttention) tr.classList.add('row-warning');
-        if (status.isNested && status.isCutlisted) tr.classList.add('row-success');
+        if (status.isNested && status.isCut) tr.classList.add('row-success');
 
         tr.innerHTML = `
             <td>${row.JobNumber}<br/>${row.SequenceName}</td>
@@ -439,8 +474,9 @@ try {
             <td>${row.Shape}</td>
             <td>${row.DimensionString}</td>
             <td>${formatNumber(row.InchLength)}</td>
+            <td>${row.PiecesPerSequence}</td>
             <td>${row.QuantityNested}</td>
-            <td>${row.QuantityCutlisted}</td>
+            <td>${row.QuantityCut}</td>
             <td>0</td>
         `;
 
@@ -448,8 +484,45 @@ try {
     }
 
     function sortData(data, column, direction = 'asc') {
+        const sortPreference = localStorage.getItem('sortPreference') || 'cut';
         const sortableData = [...data];
+
         return sortableData.sort((a, b) => {
+            // First apply completion status sorting
+            const aComplete = a.QuantityCut >= a.PiecesPerSequence;
+            const bComplete = b.QuantityCut >= b.PiecesPerSequence;
+
+            // Always put incomplete items at the top
+            if (aComplete && !bComplete) return 1;
+            if (!aComplete && bComplete) return -1;
+
+            // Then apply the selected sort preference
+            if (sortPreference === 'nested') {
+                // Sort by QuantityNested
+                if (a.QuantityNested !== b.QuantityNested) {
+                    return direction === 'asc'
+                        ? a.QuantityNested - b.QuantityNested
+                        : b.QuantityNested - a.QuantityNested;
+                }
+            }
+            else if (sortPreference === 'cut') {
+                // Sort by QuantityCut
+                if (a.QuantityCut !== b.QuantityCut) {
+                    return direction === 'asc'
+                        ? a.QuantityCut - b.QuantityCut
+                        : b.QuantityCut - a.QuantityCut;
+                }
+            }
+            else if (sortPreference === 'kit') {
+                // Sort by Kit
+                if (a.Kit !== b.Kit) {
+                    return direction === 'asc'
+                        ? a.Kit - b.Kit
+                        : b.Kit - a.Kit;
+                }
+            }
+
+            // If items are equal by primary sort, use the column sort as secondary
             let valueA = a[column];
             let valueB = b[column];
 
@@ -533,6 +606,20 @@ try {
         }
     }
 
+    function initializeSortPreferences() {
+        // Get saved preference from localStorage, defaulting to 'cut' if none exists
+        const savedPref = localStorage.getItem('sortPreference') || 'cut';
+        document.querySelector(`input[value="${savedPref}"]`).checked = true;
+
+        // Add event listeners to radio buttons
+        document.querySelectorAll('input[name="sortPref"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                localStorage.setItem('sortPreference', e.target.value);
+                applyFilters(); // Re-sort the table
+            });
+        });
+    }
+
     function initializePage() {
         const currentWeek = <?= $workweek ?>;
         const weeks = <?= json_encode($weeks); ?>;
@@ -540,11 +627,11 @@ try {
 
         weeks.forEach(week => {
             weeklist.push(`
-                <button class="week-btn ${week == currentWeek ? 'active' : ''}"
-                        onclick="loadData('${week}')"
-                        aria-pressed="${week == currentWeek ? 'true' : 'false'}">
-                    ${week}
-                </button>`);
+            <button class="week-btn ${week == currentWeek ? 'active' : ''}"
+                    onclick="loadData('${week}')"
+                    aria-pressed="${week == currentWeek ? 'true' : 'false'}">
+                ${week}
+            </button>`);
         });
 
         $(document).on('click', '.week-btn', function() {
@@ -555,6 +642,7 @@ try {
         $('#activeFabWorkpackages').html(`<strong>Work Weeks:</strong> ${weeklist.join(' ')}`);
 
         setupSortHandlers();
+        initializeSortPreferences(); // Add this line
         loadData(currentWeek);
     }
 

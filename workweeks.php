@@ -297,6 +297,61 @@ sort($weeks);
                 display: flex; /* Show on desktops */
             }
         }
+        #jsonContent {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            line-height: 1.4;
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+        }
+        #jsonContent .json-key {
+            color: #881391;
+            font-weight: 500;
+        }
+        #jsonContent .json-string {
+            color: #22863a;
+        }
+        #jsonContent .json-number {
+            color: #005cc5;
+        }
+        #jsonContent .json-boolean {
+            color: #b31d28;
+        }
+        #jsonContent .json-null {
+            color: #6a737d;
+        }
+        .collapsible {
+            cursor: pointer;
+            user-select: none;
+        }
+        .collapse-icon {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            line-height: 12px;
+            text-align: center;
+            background-color: #e9ecef;
+            border-radius: 3px;
+            margin-right: 4px;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        .collapsed > .collapsible-content {
+            display: none;
+        }
+        .json-indent {
+            margin-left: 20px;
+        }
+        .expandable-container {
+            position: relative;
+        }
+        .array-length {
+            color: #6c757d;
+            font-size: 11px;
+            margin-left: 4px;
+        }
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
@@ -421,6 +476,28 @@ sort($weeks);
                     <tbody>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="jsonModal" tabindex="-1" aria-labelledby="jsonModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="jsonModalLabel">Project Data Details</h5>
+                <div class="ms-3">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="expandAllJson()">Expand All</button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="collapseAllJson()">Collapse All</button>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="jsonContent" style="max-height: 70vh; overflow-y: auto;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" onclick="copyJsonToClipboard()">Copy to Clipboard</button>
             </div>
         </div>
     </div>
@@ -891,7 +968,7 @@ sort($weeks);
                 PCNEED: ${totals.pieces_completed || 0} / ${totals.pieces_total || 0}<br>
                 ASMWT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))}
             </td>`;
-                } else if (station === 'CUT') {
+                } else if (station === 'CUT' || station === 'KIT' ) {
                     const pcQtyPercentage = safeDivide(totals.pieces_completed * 100, totals.pieces_total);
                     bodyHtml += `
     <td class="sumcell ${isComplete ? 'col-complete' : ''}">
@@ -972,7 +1049,9 @@ sort($weeks);
                     ${assembly.JobNumber}<br>${assembly.RouteName}
                 </td>
                 <td title="SequenceID: ${assembly.SequenceID}, ProductionControlItemID: ${assembly.ProductionControlItemID}">
-                    ${assembly.SequenceDescription} [${assembly.LotNumber}]<br>${assembly.MainMark}<br>${assembly.Category}
+                    ${assembly.SequenceDescription} [${assembly.LotNumber}]<br>
+                    <a href="#" onclick="showJsonModal('${assembly.ProductionControlItemSequenceID}'); return false;" class="text-decoration-none">${assembly.MainMark}</a>
+                    <br>${assembly.Category}
                 </td>
                 <td title="ProductionControlItemSequenceID: ${assembly.ProductionControlItemSequenceID}">
                     ${assembly.WorkPackageNumber}
@@ -993,11 +1072,9 @@ sort($weeks);
                     let cellContent = '';
 
                     if (['NESTED', 'CUT', 'KIT'].includes(stationName)) {
-                        const qty = station.StationQuantityCompleted;
-                        const totalNeeded = station.StationTotalQuantity;
-                        const completedAssemblies = Math.floor(safeDivide(qty, assembly.AssemblyEachQuantity));
-                        const totalAssemblies = Math.floor(safeDivide(totalNeeded, assembly.AssemblyEachQuantity));
-                        const statusClass = getStatusClass(completedAssemblies, totalAssemblies);
+                        const totalNeeded = parseInt(assembly.SequenceMainMarkQuantity) || 0;
+                        const completedAssemblies = calculateCompletedAssemblies(station.Pieces, stationName);
+                        const statusClass = getStatusClass(completedAssemblies, totalNeeded);
 
                         // Calculate total pieces (sum of all individual piecemarks)
                         const totalPiecesCompleted = station.Pieces ? station.Pieces.reduce((sum, piece) => {
@@ -1012,13 +1089,13 @@ sort($weeks);
                             sum + parseInt(piece.TotalPieceMarkQuantityNeeded || 0), 0) : 0;
 
                         bodyHtml += `
-                    <td class="${statusClass}">
-                        <a href="#" class="station-details" data-station="${stationName}"
-                           data-assembly="${assembly.ProductionControlItemSequenceID}">
-                            ASM: ${completedAssemblies} / ${totalAssemblies}
-                        </a>
-                        <br>PCS: ${totalPiecesCompleted} / ${totalPiecesNeeded}
-                    </td>`;
+        <td class="${statusClass}">
+            <a href="#" class="station-details" data-station="${stationName}"
+               data-assembly="${assembly.ProductionControlItemSequenceID}">
+                ASM: ${completedAssemblies} / ${totalNeeded}
+            </a>
+            <br>PCS: ${totalPiecesCompleted} / ${totalPiecesNeeded}
+        </td>`;
                     } else {
                         const completionRatio = safeDivide(station.StationQuantityCompleted, station.StationTotalQuantity);
                         const assemblyWeight = parseFloat(assembly.TotalNetWeight || 0);
@@ -1057,6 +1134,29 @@ sort($weeks);
 
         // Update summary data
         updateDataSummary(data, totalJobHours, totalUsedHours, remainingHours);
+    }
+
+    function calculateCompletedAssemblies(pieces, stationName) {
+        if (!pieces || pieces.length === 0) return 0;
+
+        // Calculate how many assemblies can be built based on each piece
+        const assembliesByPiece = pieces.map(piece => {
+            // Get the quantity completed for this station
+            let completedQty = 0;
+            if (stationName === 'NESTED') completedQty = parseInt(piece.QtyNested) || 0;
+            else if (stationName === 'CUT') completedQty = parseInt(piece.QtyCut) || 0;
+            else if (stationName === 'KIT') completedQty = parseInt(piece.QtyKitted) || 0;
+
+            // Get how many pieces are needed per assembly
+            const piecesPerAssembly = parseInt(piece.AssemblyEachQuantity) || 1;
+
+            // Calculate how many assemblies can be built with this piece
+            return Math.floor(completedQty / piecesPerAssembly);
+        });
+
+        // Return the minimum number of assemblies that can be built
+        // This ensures we only count complete assemblies where all pieces are available
+        return Math.min(...assembliesByPiece);
     }
 
     function showPiecemarkDetails(stationName, productionControlItemSequenceId) {
@@ -1456,6 +1556,94 @@ sort($weeks);
         console.log(output);
 
         return 'Data copied to clipboard!';
+    }
+
+    function formatCollapsibleJson(obj, level = 0) {
+        if (obj === null) return '<span class="json-null">null</span>';
+        if (typeof obj !== 'object') {
+            if (typeof obj === 'string') return `<span class="json-string">"${obj}"</span>`;
+            if (typeof obj === 'boolean') return `<span class="json-boolean">${obj}</span>`;
+            if (typeof obj === 'number') return `<span class="json-number">${obj}</span>`;
+            return obj;
+        }
+
+        const isArray = Array.isArray(obj);
+        const items = Object.entries(obj);
+        const length = items.length;
+
+        if (length === 0) return isArray ? '[]' : '{}';
+
+        const indent = '  '.repeat(level);
+        const closingBracket = isArray ? ']' : '}';
+        const collapsibleClass = level > 0 ? 'collapsed' : '';
+
+        let result = `<div class="expandable-container ${collapsibleClass}">`;
+        result += `<span class="collapse-icon" onclick="toggleCollapse(this)">▼</span>`;
+        result += isArray ? '[' : '{';
+        result += `<span class="array-length">${length} item${length > 1 ? 's' : ''}</span>`;
+        result += '<div class="collapsible-content json-indent">';
+
+        items.forEach(([key, value], index) => {
+            result += '<div>';
+            if (!isArray) {
+                result += `<span class="json-key">"${key}"</span>: `;
+            }
+            result += formatCollapsibleJson(value, level + 1);
+            if (index < length - 1) result += ',';
+            result += '</div>';
+        });
+
+        result += '</div>' + closingBracket + '</div>';
+        return result;
+    }
+
+    function toggleCollapse(icon) {
+        const container = icon.parentElement;
+        container.classList.toggle('collapsed');
+        icon.textContent = container.classList.contains('collapsed') ? '►' : '▼';
+    }
+
+    function expandAllJson() {
+        const containers = document.querySelectorAll('.expandable-container');
+        containers.forEach(container => {
+            container.classList.remove('collapsed');
+            container.querySelector('.collapse-icon').textContent = '▼';
+        });
+    }
+
+    function collapseAllJson() {
+        const containers = document.querySelectorAll('.expandable-container');
+        containers.forEach(container => {
+            if (!container.parentElement.id || container.parentElement.id !== 'jsonContent') {
+                container.classList.add('collapsed');
+                container.querySelector('.collapse-icon').textContent = '►';
+            }
+        });
+    }
+
+    function showJsonModal(pciseqId) {
+        const rowData = projectData.find(item =>
+            item.ProductionControlItemSequenceID.toString() === pciseqId.toString()
+        );
+
+        if (rowData) {
+            document.getElementById('jsonContent').innerHTML = formatCollapsibleJson(rowData);
+            const jsonModal = new bootstrap.Modal(document.getElementById('jsonModal'));
+            jsonModal.show();
+        }
+    }
+
+    function copyJsonToClipboard() {
+        const rowData = JSON.stringify(
+            JSON.parse(document.getElementById('jsonContent').textContent),
+            null,
+            2
+        );
+        navigator.clipboard.writeText(rowData).then(() => {
+            alert('JSON copied to clipboard!');
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
     }
 
 </script>

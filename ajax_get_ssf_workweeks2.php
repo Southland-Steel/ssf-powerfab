@@ -104,7 +104,7 @@ foreach ($result as $row) {
             'ProductionControlItemID' => $row['ProductionControlItemID'],
             'ProductionControlAssemblyID' => $row['ProductionControlAssemblyID'],
             'isCompleted' => false, // is completed if the final qc station is completed
-            'stations' => []  // Initialize empty array for station data
+            'Stations' => []  // Initialize empty array for station data
         ];
     }
 

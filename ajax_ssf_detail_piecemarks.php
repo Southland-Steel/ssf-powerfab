@@ -40,8 +40,8 @@ try {
         pciseq.Quantity as SequenceAssemblyQuantity,
         ROUND(pci.Quantity / pca.AssemblyQuantity) as PiecesPerAssembly,
         ROUND(pci.Quantity / pca.AssemblyQuantity * pciseq.Quantity) as PiecesPerSequence,
-        (pci.QuantityTFS + pci.QuantityCutList) as QuantityNested,
-        (pci.QuantityCutList + pci.QuantityTFS) as QuantityCutlisted,
+        (pci.QuantityCutList + pci.QuantityTFS) as QuantityNested,
+        (pci.QuantityTFS) as QuantityCut,
         stations.Description as StationName
         FROM workpackages as wp 
         INNER JOIN productioncontroljobs as pcj ON pcj.ProductionControlID = wp.ProductionControlID AND pcj.JobStatusID IN (1,6)

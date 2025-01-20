@@ -5,10 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="timely commit">
-      <change afterPath="$PROJECT_DIR$/ajax_ssf_detail_piecemarks.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/view_ssf_detail_piecemarks.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ajax_get_ssf_workweeks2.php" beforeDir="false" afterPath="$PROJECT_DIR$/ajax_get_ssf_workweeks2.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ajax_ssf_detail_piecemarks.php" beforeDir="false" afterPath="$PROJECT_DIR$/ajax_ssf_detail_piecemarks.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/view_ssf_detail_piecemarks.php" beforeDir="false" afterPath="$PROJECT_DIR$/view_ssf_detail_piecemarks.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/workweeks.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -56,8 +56,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-PS-241.17890.8" />
-        <option value="bundled-php-predefined-ba97393d7c68-48a1a656d44e-com.jetbrains.php.sharedIndexes-PS-241.17890.8" />
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-PS-241.19416.23" />
+        <option value="bundled-php-predefined-ba97393d7c68-48a1a656d44e-com.jetbrains.php.sharedIndexes-PS-241.19416.23" />
       </set>
     </attachedChunks>
   </component>
@@ -78,7 +78,8 @@
       <workItem from="1735672735653" duration="2036000" />
       <workItem from="1736175646891" duration="2995000" />
       <workItem from="1736258501491" duration="25452000" />
-      <workItem from="1736867308284" duration="72713000" />
+      <workItem from="1736867308284" duration="78352000" />
+      <workItem from="1737379701932" duration="9336000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -168,7 +169,15 @@
       <option name="project" value="LOCAL" />
       <updated>1737131591001</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="timely commit">
+      <option name="closed" value="true" />
+      <created>1737147416694</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1737147416694</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
