@@ -35,6 +35,28 @@ sort($weeks);
             padding: 5px;
             line-height: 1.6;
         }
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255,255,255,0.7);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .loading-spinner {
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-size: 18px;
+            font-weight: bold;
+            color: #99332B;
+        }
         table {
             width: 100%;
             font-size: 12px;
@@ -118,6 +140,9 @@ sort($weeks);
         #routeFilter button {
             margin-bottom: 0px !important;
         }
+        .card-body{
+            padding: 3px;
+        }
 
         .card-body .form-control {
             margin-bottom: 10px;
@@ -126,6 +151,26 @@ sort($weeks);
             font-weight: bold;
             font-size: 12px;
             background-color: #f8f9fa;
+        }
+        .station-summary td{
+            padding:2px;
+        }
+        .summary-data p{
+            margin:1px;
+            font-size: 12px;
+        }
+        .summary-data h6{
+            margin:1px;
+            font-size: 14px;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        .table-columns th{
+            font-size: 12px;
+            padding:2px;
+        }
+        .table-datarow td{
+            padding: 1px 5px;
         }
         .week-btn {
             padding: 2px 20px;
@@ -176,8 +221,25 @@ sort($weeks);
         .uncompleted-piecemark {
             background-color: #ffbbbb; /* Light green background */
         }
+        #weekschedule{
+            margin-bottom: 1px;
+        }
+        #weekschedule td{
+            padding: 2px 5px;
+        }
+        #weekschedule th{
+            padding: 3px 5px;
+        }
         #weekschedule td:nth-child(2){
             text-align: center;
+        }
+        .card-header{
+            font-size: 14px;
+            padding: 4px 5px;
+        }
+        .card-title{
+            font-size: 14px;
+            padding: 4px 5px;
         }
         .completed-row {
             background-color: #90EE90; /* Light green color */
@@ -213,6 +275,7 @@ sort($weeks);
         #projectData{
             position:relative;
             display: block;
+            margin-top:10px;
         }
         .col-empty {
             background-color: #333333 !important;
@@ -365,9 +428,9 @@ sort($weeks);
     <!-- Active fabrication jobs will be inserted here -->
 </div>
 
-<div id="projectData" class="container-fluid mt-4">
-    <h2 class="mb-4" style="margin-bottom:0 !important;">Workweek Details</h2>
-    <img src="images/ssf-horiz.png" alt="Southland Steel" class="toplogo" height="50px">
+<div id="projectData" class="container-fluid mt-3">
+    <h2 class="mb-4" style="margin-bottom:0 !important; font-size: 1.5rem;">Workweek Details</h2>
+    <img src="images/ssf-horiz.png" alt="Southland Steel" class="toplogo" height="40px">
     <div class="row mb-4" style="margin-bottom:5px !important;">
         <div class="col-lg-9">
             <div id="projectSummary" class="card btn-ssf">
@@ -380,11 +443,11 @@ sort($weeks);
                             <h5 class="card-title" id="jobTitle">Job: </h5>
                             <p class="card-text" id="jobDescription"></p>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-4 summary-data">
                             <h6>Hours</h6>
                             <p id="hoursSummary"></p>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-4 summary-data">
                             <h6>Weight</h6>
                             <p id="weightSummary"></p>
                         </div>
@@ -552,20 +615,32 @@ sort($weeks);
 
     function filterData() {
         let filteredData = projectData.filter(item => {
-            let matchesRoute = currentRouteFilter === 'all' ||
-                (currentRouteFilter === 'undefined' ? !item.RouteName : item.RouteName === currentRouteFilter);
-            let matchesWP = currentWPFilter === 'all' ||
-                (currentWPFilter === 'undefined' ? !item.WorkPackageNumber : item.WorkPackageNumber === currentWPFilter);
-            let matchesBay = currentBayFilter === 'all' ||
-                (currentBayFilter === 'undefined' ? !item.Bay : item.Bay === currentBayFilter);
-            let matchesCategory = currentCategoryFilter === 'all' ||
-                (currentCategoryFilter === 'undefined' ? !item.Category : item.Category === currentCategoryFilter);
+            // Get values or 'undefined' for each field
+            const route = item.RouteName || 'undefined';
+            const wp = item.WorkPackageNumber || 'undefined';
+            const bay = item.Bay || 'undefined';
+            const category = item.Category || 'undefined';
+            const seqLot = item.SequenceDescription && item.LotNumber ?
+                `${item.SequenceDescription} [${item.LotNumber}]` : 'undefined';
 
-            // Modified sequence-lot matching
-            let matchesSequenceLot = currentSequenceFilter === 'all' ||
-                (currentSequenceFilter === 'undefined' ?
-                    (!item.SequenceDescription || !item.LotNumber) :
-                    `${item.SequenceDescription} [${item.LotNumber}]` === currentSequenceFilter);
+            // Check if buttons exist for these values (to match updateFilterButtons logic)
+            const routeMatch = $(`button[data-route='${route}']`).length > 0;
+            const wpMatch = $(`button[data-wp='${wp}']`).length > 0;
+            const bayMatch = $(`button[data-bay='${bay}']`).length > 0;
+            const categoryMatch = $(`button[data-category='${category}']`).length > 0;
+            const seqLotMatch = $(`button[data-seqlot='${seqLot}']`).length > 0;
+
+            // Match against current filters
+            const matchesRoute = currentRouteFilter === 'all' || route === currentRouteFilter ||
+                (currentRouteFilter === 'undefined' && !routeMatch);
+            const matchesWP = currentWPFilter === 'all' || wp === currentWPFilter ||
+                (currentWPFilter === 'undefined' && !wpMatch);
+            const matchesBay = currentBayFilter === 'all' || bay === currentBayFilter ||
+                (currentBayFilter === 'undefined' && !bayMatch);
+            const matchesCategory = currentCategoryFilter === 'all' || category === currentCategoryFilter ||
+                (currentCategoryFilter === 'undefined' && !categoryMatch);
+            const matchesSequenceLot = currentSequenceFilter === 'all' || seqLot === currentSequenceFilter ||
+                (currentSequenceFilter === 'undefined' && !seqLotMatch);
 
             return matchesRoute && matchesWP && matchesBay && matchesCategory && matchesSequenceLot;
         });
@@ -574,6 +649,15 @@ sort($weeks);
     }
 
     function loadProjectData(workweek) {
+        // Disable all filter buttons during load
+        $('#bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button, #sequenceFilter button')
+            .prop('disabled', true);
+
+        // Show loading overlay with spinner
+        $('<div id="loading-overlay">')
+            .append('<div class="loading-spinner">Loading workweek data...</div>')
+            .appendTo('body');
+
         $.when(
             $.ajax({
                 url: 'ajax_get_ssf_workweeks2.php',
@@ -589,15 +673,24 @@ sort($weeks);
             })
         ).done(function(workweekResponse, piecemarkResponse) {
             if (workweekResponse[0].error) {
+                console.error("Error loading data:", workweekResponse[0].error);
                 alert(workweekResponse[0].error);
                 return;
             }
 
-            const workweekData = Array.isArray(workweekResponse[0].items) ? workweekResponse[0].items : [workweekResponse[0].items];
+            const workweekData = Array.isArray(workweekResponse[0].items) ?
+                workweekResponse[0].items : [workweekResponse[0].items];
             const piecemarkData = piecemarkResponse[0].items;
 
-            // Merge the data using the function we created earlier
+            // Update global projectData
             projectData = mergeData(workweekData, piecemarkData);
+
+            // Reset all filters to 'all' before recreating them
+            currentRouteFilter = 'all';
+            currentWPFilter = 'all';
+            currentBayFilter = 'all';
+            currentCategoryFilter = 'all';
+            currentSequenceFilter = 'all';
 
             createWPFilter();
             createRouteFilter();
@@ -607,18 +700,17 @@ sort($weeks);
             updateFilterButtons();
 
             createTableHeader();
-
-            currentRouteFilter = 'all';
-            currentWPFilter = 'all';
-            currentBayFilter = 'all';
-            currentCategoryFilter = 'all';
             filterData();
+            updateFilterButtons();
 
             $('#jobTitle').text(`Workweek: ${workweek}`);
             $('#big-text').text(`${workweek}`);
         }).fail(function(xhr, status, error) {
             console.error("Error fetching data:", error);
             alert("Error loading project data. Please try again.");
+        }).always(function() {
+            // Remove loading overlay
+            $('#loading-overlay').remove();
         });
     }
 
@@ -703,7 +795,7 @@ sort($weeks);
 
     function createWPFilter() {
         const workPackageNumbers = [...new Set(projectData.map(item => item.WorkPackageNumber).filter(Boolean))];
-        let wpFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterWP(\'all\', this)">All Work Packages</button>';
+        let wpFilterHtml = '<button class="btn btn-primary me-2 mb-2" data-wp="all" onclick="filterWP(\'all\', this)">All Work Packages</button>';
 
         // Create buttons for each WorkPackageNumber
         workPackageNumbers.forEach(wp => {
@@ -730,6 +822,7 @@ sort($weeks);
             if (isOnHold) extraClasses.push('wponhold');
 
             wpFilterHtml += `<button class="btn btn-secondary me-2 mb-2 ${extraClasses.join(' ')}"
+            data-wp="${wp}"
             onclick="filterWP('${wp}', this)"
             ${tooltip ? `title="${tooltip}"` : ''}>${wp}</button>`;
         });
@@ -738,57 +831,33 @@ sort($weeks);
         $('#wpFilter').html(wpFilterHtml);
     }
 
-    function filterWP(workPackage, button) {
-        currentWPFilter = workPackage;
-        filterData();
-
-        // Update button styles
-        $('#wpFilter button').removeClass('btn-primary').addClass('btn-secondary');
-        $(button).removeClass('btn-secondary').addClass('btn-primary');
-
-        updateFilterButtons();
-    }
-
     function createBayFilter() {
         const bayNames = [...new Set(projectData.map(item => item.Bay).filter(Boolean))];
-        let bayFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterBay(\'all\', this)">All Bays</button>';
+        let bayFilterHtml = '<button class="btn btn-primary me-2 mb-2" data-bay="all" onclick="filterBay(\'all\', this)">All Bays</button>';
         let hasUndefined = projectData.some(item => !item.Bay);
 
-        // Create buttons for each Bay
         bayNames.forEach(bay => {
-            bayFilterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterBay('${bay}', this)">${bay}</button>`;
+            bayFilterHtml += `<button class="btn btn-secondary me-2 mb-2" data-bay="${bay}" onclick="filterBay('${bay}', this)">${bay}</button>`;
         });
 
-        // Add Undefined button if there are items without a Bay
         if (hasUndefined) {
-            bayFilterHtml += `<button class="btn btn-warning me-2 mb-2" onclick="filterBay('undefined', this)">Undefined</button>`;
+            bayFilterHtml += `<button class="btn btn-warning me-2 mb-2" data-bay="undefined" onclick="filterBay('undefined', this)">Undefined</button>`;
         }
 
         $('#bayFilter').html(bayFilterHtml);
     }
 
-    function filterBay(bay, button) {
-        currentBayFilter = bay;
-        filterData();
-
-        // Update button styles
-        $('#bayFilter button').removeClass('btn-primary').addClass('btn-secondary');
-        $(button).removeClass('btn-secondary').addClass('btn-primary');
-
-        updateFilterButtons();
-    }
-
     function createRouteFilter() {
         const routes = [...new Set(projectData.map(item => item.RouteName).filter(Boolean))];
-        let filterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterRoute(\'all\', this)">All Routes</button>';
+        let filterHtml = '<button class="btn btn-primary me-2 mb-2" data-route="all" onclick="filterRoute(\'all\', this)">All Routes</button>';
         let hasUndefined = projectData.some(item => !item.RouteName);
 
         routes.forEach(route => {
-            filterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterRoute('${route}', this)">${route}</button>`;
+            filterHtml += `<button class="btn btn-secondary me-2 mb-2" data-route="${route}" onclick="filterRoute('${route}', this)">${route}</button>`;
         });
 
         if (hasUndefined) {
-            filterHtml += `<button class="btn btn-warning me-2 mb-2" onclick="filterRoute('undefined', this)">Undefined</button>`;
+            filterHtml += `<button class="btn btn-warning me-2 mb-2" data-route="undefined" onclick="filterRoute('undefined', this)">Undefined</button>`;
         }
 
         $('#routeFilter').html(filterHtml);
@@ -796,80 +865,85 @@ sort($weeks);
 
     function createCategoryFilter() {
         const categories = [...new Set(projectData.map(item => item.Category).filter(Boolean))];
-        let categoryFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterCategory(\'all\', this)">All Asm. Categories</button>';
+        let categoryFilterHtml = '<button class="btn btn-primary me-2 mb-2" data-category="all" onclick="filterCategory(\'all\', this)">All Asm. Categories</button>';
         let hasUndefined = projectData.some(item => !item.Category);
 
         categories.forEach(category => {
-            categoryFilterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterCategory('${category}', this)">${category}</button>`;
+            categoryFilterHtml += `<button class="btn btn-secondary me-2 mb-2" data-category="${category}" onclick="filterCategory('${category}', this)">${category}</button>`;
         });
 
         if (hasUndefined) {
-            categoryFilterHtml += `<button class="btn btn-warning me-2 mb-2" onclick="filterCategory('undefined', this)">Undefined</button>`;
+            categoryFilterHtml += `<button class="btn btn-warning me-2 mb-2" data-category="undefined" onclick="filterCategory('undefined', this)">Undefined</button>`;
         }
 
         $('#categoryFilter').html(categoryFilterHtml);
     }
 
-    function filterCategory(category, button) {
-        currentCategoryFilter = category;
+    function createSequenceFilter() {
+        const sequenceLots = [...new Set(projectData.map(item =>
+            item.SequenceDescription && item.LotNumber ?
+                `${item.SequenceDescription} [${item.LotNumber}]` :
+                null
+        ).filter(Boolean))];
+
+        let sequenceFilterHtml = '<button class="btn btn-primary me-2 mb-2" data-seqlot="all" onclick="filterSequenceLot(\'all\', this)">All Sequences</button>';
+        let hasUndefined = projectData.some(item => !item.SequenceDescription || !item.LotNumber);
+
+        sequenceLots.sort().forEach(seqLot => {
+            const displaySeqLot = seqLot.replace('[', '<br>[');
+            sequenceFilterHtml += `<button class="btn btn-secondary me-2 mb-2" data-seqlot="${seqLot}" onclick="filterSequenceLot('${seqLot}', this)">${displaySeqLot}</button>`;
+        });
+
+        if (hasUndefined) {
+            sequenceFilterHtml += `<button class="btn btn-warning me-2 mb-2" data-seqlot="undefined" onclick="filterSequenceLot('undefined', this)">Undefined</button>`;
+        }
+
+        $('#sequenceFilter').html(sequenceFilterHtml);
+    }
+
+    function filterBay(bay, button) {
+        currentBayFilter = bay;
         filterData();
-
-        // Update button styles
-        $('#categoryFilter button').removeClass('btn-primary').addClass('btn-secondary');
+        $('#bayFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
+        updateFilterButtons();
+    }
 
+    function filterWP(workPackage, button) {
+        currentWPFilter = workPackage;
+        filterData();
+        $('#wpFilter button').removeClass('btn-primary').addClass('btn-secondary');
+        $(button).removeClass('btn-secondary').addClass('btn-primary');
         updateFilterButtons();
     }
 
     function filterRoute(route, button) {
         currentRouteFilter = route;
         filterData();
-
-        // Update button styles
         $('#routeFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
-
         updateFilterButtons();
     }
 
-    function createSequenceFilter() {
-        // Create a unique set of sequence-lot combinations
-        const sequenceLots = [...new Set(projectData.map(item =>
-            item.SequenceDescription && item.LotNumber ?
-                `${item.SequenceDescription}<br>[${item.LotNumber}]` :
-                null
-        ).filter(Boolean))];
-
-
-        let sequenceFilterHtml = '<button class="btn btn-primary me-2 mb-2" onclick="filterSequenceLot(\'all\', this)">All Sequences</button>';
-        let hasUndefined = projectData.some(item => !item.SequenceDescription || !item.LotNumber);
-
-        // Sort the sequence-lot combinations
-        sequenceLots.sort().forEach(seqLot => {
-            sequenceFilterHtml += `<button class="btn btn-secondary me-2 mb-2" onclick="filterSequenceLot('${seqLot}', this)">${seqLot}</button>`;
-        });
-
-        if (hasUndefined) {
-            sequenceFilterHtml += `<button class="btn btn-warning me-2 mb-2" onclick="filterSequenceLot('undefined', this)">Undefined</button>`;
-        }
-
-        $('#sequenceFilter').html(sequenceFilterHtml);
+    function filterCategory(category, button) {
+        currentCategoryFilter = category;
+        filterData();
+        $('#categoryFilter button').removeClass('btn-primary').addClass('btn-secondary');
+        $(button).removeClass('btn-secondary').addClass('btn-primary');
+        updateFilterButtons();
     }
 
     function filterSequenceLot(seqLot, button) {
         currentSequenceFilter = seqLot;
         filterData();
-
-        // Update button styles
         $('#sequenceFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
-
         updateFilterButtons();
     }
 
     function createTableHeader() {
         let headerHtml = `
-                <tr>
+                <tr class="table-columns">
                     <th>Job<br>Route</th>
                     <th>SeqLot<br>Main</th>
                     <th>WP</th>
@@ -1044,7 +1118,7 @@ sort($weeks);
             const stationHours = calculateStationHours(assembly.RouteName, assembly.Category, assembly.TotalEstimatedManHours);
 
             bodyHtml += `
-            <tr class="${isCompleted ? 'completed-row' : ''} ${isOnHold ? 'hold-row' : ''}">
+            <tr class="table-datarow ${isCompleted ? 'completed-row' : ''} ${isOnHold ? 'hold-row' : ''}">
                 <td title="ProductionControlID: ${assembly.ProductionControlID}">
                     ${assembly.JobNumber}<br>${assembly.RouteName}
                 </td>
@@ -1228,7 +1302,9 @@ sort($weeks);
 
         const totalWeight = calculateTotalWeight(data);
         const completedWeight = calculateCompletedWeight(data);
-        const totalTons = safeDivide(totalWeight, 2000);
+        const remainingWeight = totalWeight - completedWeight;
+        const remainingTons = Math.round(remainingWeight / 200)/10;
+        const totalTons = Math.round(totalWeight / 200)/10;
         const hoursPerTon = safeDivide(totalJobHours, totalTons);
         const lbsPerHour = safeDivide(totalWeight, totalJobHours);
 
@@ -1246,8 +1322,9 @@ sort($weeks);
 
         // Update weight summary
         $('#weightSummary').html(`
-        Visible Total Weight: ${formatNumberWithCommas(totalWeight)} lbs (${formatNumberWithCommas(totalTons)} tons)<br>
+        Visible Total Weight: ${formatNumberWithCommas(totalWeight)} lbs (${totalTons} tons)<br>
         Visible Green Flag Weight: ${formatNumberWithCommas(completedWeight)} lbs (${percentageCompleteByWeight.toFixed(2)}%)<br>
+        Remaining Green Flag Weight: ${formatNumberWithCommas(remainingWeight)} lbs (${remainingTons} tons)<br>
     `);
     }
 
@@ -1401,64 +1478,70 @@ sort($weeks);
 
     function updateFilterButtons() {
         // First disable all buttons except 'All' buttons
-        $('#bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button, #sequenceFilter button').each(function() {
-            const buttonText = $(this).text();
-            if (!buttonText.startsWith('All')) {
-                $(this).prop('disabled', true);
-            }
-        });
+        $('#bayFilter button:not([data-bay="all"]), #wpFilter button:not([data-wp="all"]), #routeFilter button:not([data-route="all"]), #categoryFilter button:not([data-category="all"]), #sequenceFilter button:not([data-seqlot="all"])').prop('disabled', true);
 
         // Get filtered data based on current filters
         const filteredData = projectData.filter(item => {
-            const matchesRoute = currentRouteFilter === 'all' ||
-                (currentRouteFilter === 'undefined' ? !item.RouteName : item.RouteName === currentRouteFilter);
-            const matchesWP = currentWPFilter === 'all' ||
-                (currentWPFilter === 'undefined' ? !item.WorkPackageNumber : item.WorkPackageNumber === currentWPFilter);
-            const matchesBay = currentBayFilter === 'all' ||
-                (currentBayFilter === 'undefined' ? !item.Bay : item.Bay === currentBayFilter);
-            const matchesCategory = currentCategoryFilter === 'all' ||
-                (currentCategoryFilter === 'undefined' ? !item.Category : item.Category === currentCategoryFilter);
-            const matchesSequenceLot = currentSequenceFilter === 'all' ||
-                (currentSequenceFilter === 'undefined' ?
-                    (!item.SequenceDescription || !item.LotNumber) :
-                    `${item.SequenceDescription}
-                    [${item.LotNumber}]` === currentSequenceFilter);
+            // Find matching buttons for the current item's values
+            const routeMatch = $(`button[data-route='${item.RouteName || "undefined"}']`).length > 0;
+            const wpMatch = $(`button[data-wp='${item.WorkPackageNumber || "undefined"}']`).length > 0;
+            const bayMatch = $(`button[data-bay='${item.Bay || "undefined"}']`).length > 0;
+            const categoryMatch = $(`button[data-category='${item.Category || "undefined"}']`).length > 0;
+            const seqLot = item.SequenceDescription && item.LotNumber ?
+                `${item.SequenceDescription} [${item.LotNumber}]` : 'undefined';
+            const seqLotMatch = $(`button[data-seqlot='${seqLot}']`).length > 0;
+
+            // Check if current item matches all active filters
+            const matchesRoute = currentRouteFilter === 'all' || item.RouteName === currentRouteFilter ||
+                (currentRouteFilter === 'undefined' && !routeMatch);
+            const matchesWP = currentWPFilter === 'all' || item.WorkPackageNumber === currentWPFilter ||
+                (currentWPFilter === 'undefined' && !wpMatch);
+            const matchesBay = currentBayFilter === 'all' || item.Bay === currentBayFilter ||
+                (currentBayFilter === 'undefined' && !bayMatch);
+            const matchesCategory = currentCategoryFilter === 'all' || item.Category === currentCategoryFilter ||
+                (currentCategoryFilter === 'undefined' && !categoryMatch);
+            const matchesSequenceLot = currentSequenceFilter === 'all' || seqLot === currentSequenceFilter ||
+                (currentSequenceFilter === 'undefined' && !seqLotMatch);
 
             return matchesRoute && matchesWP && matchesBay && matchesCategory && matchesSequenceLot;
         });
 
         // Enable buttons based on filtered data
         filteredData.forEach(item => {
+            // Enable matching bay button
             if (item.Bay) {
-                $(`#bayFilter button:contains('${item.Bay}')`).prop('disabled', false);
+                $(`button[data-bay='${item.Bay}']`).prop('disabled', false);
             } else {
-                $(`#bayFilter button:contains('Undefined')`).prop('disabled', false);
+                $(`button[data-bay='undefined']`).prop('disabled', false);
             }
 
+            // Enable matching work package button
             if (item.WorkPackageNumber) {
-                $(`#wpFilter button:contains('${item.WorkPackageNumber}')`).prop('disabled', false);
+                $(`button[data-wp='${item.WorkPackageNumber}']`).prop('disabled', false);
             } else {
-                $(`#wpFilter button:contains('Undefined')`).prop('disabled', false);
+                $(`button[data-wp='undefined']`).prop('disabled', false);
             }
 
+            // Enable matching route button
             if (item.RouteName) {
-                $(`#routeFilter button:contains('${item.RouteName}')`).prop('disabled', false);
+                $(`button[data-route='${item.RouteName}']`).prop('disabled', false);
             } else {
-                $(`#routeFilter button:contains('Undefined')`).prop('disabled', false);
+                $(`button[data-route='undefined']`).prop('disabled', false);
             }
 
+            // Enable matching category button
             if (item.Category) {
-                $(`#categoryFilter button:contains('${item.Category}')`).prop('disabled', false);
+                $(`button[data-category='${item.Category}']`).prop('disabled', false);
             } else {
-                $(`#categoryFilter button:contains('Undefined')`).prop('disabled', false);
+                $(`button[data-category='undefined']`).prop('disabled', false);
             }
 
-            // Update for sequence-lot combination
+            // Enable matching sequence button
             if (item.SequenceDescription && item.LotNumber) {
                 const seqLot = `${item.SequenceDescription} [${item.LotNumber}]`;
-                $(`#sequenceFilter button:contains('${seqLot}')`).prop('disabled', false);
+                $(`button[data-seqlot='${seqLot}']`).prop('disabled', false);
             } else {
-                $(`#sequenceFilter button:contains('Undefined')`).prop('disabled', false);
+                $(`button[data-seqlot='undefined']`).prop('disabled', false);
             }
         });
     }

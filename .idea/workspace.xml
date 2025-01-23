@@ -5,10 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="timely commit">
+      <change afterPath="$PROJECT_DIR$/timeline.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_workweeks2.php" beforeDir="false" afterPath="$PROJECT_DIR$/ajax_get_ssf_workweeks2.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ajax_ssf_detail_piecemarks.php" beforeDir="false" afterPath="$PROJECT_DIR$/ajax_ssf_detail_piecemarks.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/view_ssf_detail_piecemarks.php" beforeDir="false" afterPath="$PROJECT_DIR$/view_ssf_detail_piecemarks.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/workweeks.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -40,19 +38,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Program Files/Ampps/www4&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Program Files/Ampps/www4",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -79,7 +78,8 @@
       <workItem from="1736175646891" duration="2995000" />
       <workItem from="1736258501491" duration="25452000" />
       <workItem from="1736867308284" duration="78352000" />
-      <workItem from="1737379701932" duration="9336000" />
+      <workItem from="1737379701932" duration="15813000" />
+      <workItem from="1737577795580" duration="19267000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -177,7 +177,15 @@
       <option name="project" value="LOCAL" />
       <updated>1737147416694</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="timely commit">
+      <option name="closed" value="true" />
+      <created>1737405169527</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1737405169527</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -204,5 +212,9 @@
     <MESSAGE value="initial commit" />
     <MESSAGE value="timely commit" />
     <option name="LAST_COMMIT_MESSAGE" value="timely commit" />
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
   </component>
 </project>
