@@ -91,6 +91,23 @@
             overflow: visible;
 
         }
+        .gantt-bar-percentage {
+            position: absolute;
+            left: 0;
+            bottom: 2px;
+            color: white;
+            font-size: 0.7em;
+            white-space: nowrap;
+            height: 5px;
+            background-color: black;
+        }
+        .gantt-bar-percentage-text{
+            position: absolute;
+            text-align: right;
+            width: 90%;
+            bottom:-4px;
+            left:0;
+        }
         .gantt-bar-text{
             padding: 7px 8px;
             white-space: nowrap;
@@ -212,225 +229,51 @@
 <div class="filter-container" id="filterButtons"></div>
 <div class="gantt-container" id="ganttChart"></div>
 <script>
-    const ganttData = {
-        dateRange: {
-            start: '2024-12-15',
-            end: '2025-05-30'
-        },
-        sequences: [
-            {
-                id: 1,
-                project: "10-00-123",
-                sequence: "E301P",
-                pm: "Matt",
-                fabrication: {
-                    description: "Fabrication",
-                    start: "2025-01-01",
-                    end: "2025-02-15",
-                    percentage: 40,
-                    hours: 1200
-                },
-                iff: {description: "IFF", start: "2024-12-21", percentage: 100},
-                nsi: {description: "Non-Stock Items", start: "2024-12-15", percentage: 65},
-                categorize: {description: "Categorize", start: "2024-12-18", percentage: 100},
-                hasWorkPackage: false,
-                wp: {start: '2025-01-01', end: '2025-02-15'}
-            },
-            {
-                id: 2,
-                project: "10-00-123",
-                sequence: "E302P",
-                pm: "Matt",
-                fabrication: {
-                    description: "Fabrication",
-                    start: "2025-02-20",
-                    end: "2025-04-05",
-                    percentage: 0,
-                    hours: 2500
-                },
-                iff: {description: "IFF", start: "2025-01-21", percentage: 50},
-                nsi: {description: "Non-Stock Items", start: "2025-01-15", percentage: 0},
-                categorize: {description: "Categorize", start: "2025-01-18", percentage: 0},
-                hasWorkPackage: true,
-                wp: {start: '2025-02-20', end: '2025-04-05'}
-            },
-            {
-                id: 3,
-                project: "10-00-124",
-                sequence: "M101P",
-                pm: "Trevor",
-                fabrication: {
-                    description: "Fabrication",
-                    start: "2025-01-15",
-                    end: "2025-03-01",
-                    percentage: 25,
-                    hours: 1800
-                },
-                iff: {description: "IFF", start: "2024-12-30", percentage: 85},
-                nsi: {description: "Non-Stock Items", start: "2024-12-20", percentage: 45},
-                categorize: {description: "Categorize", start: "2024-12-25", percentage: 100},
-                hasWorkPackage: true,
-                wp: {start: '2025-01-15', end: '2025-03-01'}
-            },
-            {
-                id: 4,
-                project: "10-00-124",
-                sequence: "M102P",
-                pm: "Trevor",
-                fabrication: {
-                    description: "Fabrication",
-                    start: "2025-03-05",
-                    end: "2025-04-20",
-                    percentage: 0,
-                    hours: 3100
-                },
-                iff: {description: "IFF", start: "2025-02-01", percentage: 30},
-                nsi: {description: "Non-Stock Items", start: "2025-01-25", percentage: 10},
-                categorize: {description: "Categorize", start: "2025-01-28", percentage: 45},
-                hasWorkPackage: false,
-                wp: {start: '2025-03-05', end: '2025-04-20'}
-            },
-            {
-                id: 5,
-                project: "10-00-125",
-                sequence: "P201P",
-                pm: "Braie",
-                fabrication: {
-                    description: "Fabrication",
-                    start: "2025-02-01",
-                    end: "2025-03-15",
-                    percentage: 60,
-                    hours: 2200
-                },
-                iff: {description: "IFF", start: "2025-01-10", percentage: 90},
-                nsi: {description: "Non-Stock Items", start: "2025-01-05", percentage: 75},
-                categorize: {description: "Categorize", start: "2025-01-07", percentage: 100},
-                hasWorkPackage: true,
-                wp: {start: '2025-02-01', end: '2025-03-15'}
-            },
-            {
-                id: 6,
-                project: "10-00-125",
-                sequence: "P202P",
-                pm: "Braie",
-                fabrication: {
-                    description: "Fabrication",
-                    start: "2025-03-20",
-                    end: "2025-05-05",
-                    percentage: 0,
-                    hours: 3800
-                },
-                iff: {description: "IFF", start: "2025-02-15", percentage: 40},
-                nsi: {description: "Non-Stock Items", start: "2025-02-10", percentage: 20},
-                categorize: {description: "Categorize", start: "2025-02-12", percentage: 0},
-                hasWorkPackage: false,
-                wp: {start: '2025-03-20', end: '2025-05-05'}
-            },
-            {
-                id: 7,
-                project: "10-00-126",
-                sequence: "C401P",
-                pm: "Braie",
-                fabrication: {
-                    description: "Fabrication",
-                    start: "2025-02-15",
-                    end: "2025-04-01",
-                    percentage: 30,
-                    hours: 3900
-                },
-                iff: {description: "IFF", start: "2025-01-25", percentage: 70},
-                nsi: {description: "Non-Stock Items", start: "2025-01-20", percentage: 55},
-                categorize: {description: "Categorize", start: "2025-01-22", percentage: 100},
-                hasWorkPackage: true,
-                wp: {start: '2025-02-15', end: '2025-04-01'}
-            },
-            {
-                id: 8,
-                project: "10-00-126",
-                sequence: "C402P",
-                pm: "Braie",
-                fabrication: {
-                    description: "Fabrication",
-                    start: "2025-04-05",
-                    end: "2025-05-20",
-                    percentage: 0,
-                    hours: 3400
-                },
-                iff: {description: "IFF", start: "2025-03-01", percentage: 20},
-                nsi: {description: "Non-Stock Items", start: "2025-02-25", percentage: 5},
-                categorize: {description: "Categorize", start: "2025-02-27", percentage: 0},
-                hasWorkPackage: false,
-                wp: {start: '2025-04-05', end: '2025-05-20'}
-            },
-            {
-                id: 9,
-                project: "10-00-127",
-                sequence: "T501P",
-                pm: "Trevor",
-                fabrication: {
-                    description: "Fabrication",
-                    start: "2025-03-01",
-                    end: "2025-04-15",
-                    percentage: 15,
-                    hours: 2600
-                },
-                iff: {description: "IFF", start: "2025-02-10", percentage: 60},
-                nsi: {description: "Non-Stock Items", start: "2025-02-05", percentage: 35},
-                categorize: {description: "Categorize", start: "2025-02-07", percentage: 100},
-                hasWorkPackage: true,
-                wp: {start: '2025-03-01', end: '2025-04-15'}
-            },
-            {
-                id: 10,
-                project: "10-00-127",
-                sequence: "T502P",
-                pm: "Trevor",
-                fabrication: {
-                    description: "Fabrication",
-                    start: "2025-04-20",
-                    end: "2025-05-30",
-                    percentage: 0,
-                    hours: 3900
-                },
-                iff: {description: "IFF", start: "2025-03-15", percentage: 10},
-                nsi: {description: "Non-Stock Items", start: "2025-03-10", percentage: 0},
-                categorize: {description: "Categorize", start: "2025-03-12", percentage: 0},
-                hasWorkPackage: false,
-                wp: {start: '2025-04-20', end: '2025-05-30'}
-            }
-        ]
-    };
 
     class GanttChart {
-        constructor(containerId, data) {
+        constructor(containerId) {
             this.container = document.getElementById(containerId);
+            this.init();
+        }
+
+        init() {
+            this.fetchData()
+                .then(data => {
+                    this.setupData(data);
+                    this.createTimeline();
+                    this.createProjectRows();
+                    this.createFilterButtons();
+                })
+                .catch(error => {
+                    console.error('Error initializing Gantt chart:', error);
+                    this.container.innerHTML = 'Error loading data. Please try again later.';
+                });
+        }
+
+        fetchData() {
+            return fetch('ajax_ssf_get_timelinefabrication.php')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                });
+        }
+
+        setupData(data) {
             data.sequences.sort((a, b) => {
                 const startCompare = new Date(a.fabrication.start) - new Date(b.fabrication.start);
-                if (startCompare === 0) {
-                    return new Date(a.fabrication.end) - new Date(b.fabrication.end);
-                }
-                return startCompare;
+                return startCompare || new Date(a.fabrication.end) - new Date(b.fabrication.end);
             });
 
             this.data = data;
-
-            // Adjust start date to first of month
             const startDate = new Date(data.dateRange.start);
             this.startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
 
-            // Adjust end date to last of month
             const endDate = new Date(data.dateRange.end);
             this.endDate = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
 
             this.totalDays = (this.endDate - this.startDate) / (1000 * 60 * 60 * 24);
-
-            this.init();
-            this.createFilterButtons();
-        }
-
-        init() {
-            this.createTimeline();
-            this.createProjectRows();
         }
 
         formatDate(date) {
@@ -556,9 +399,11 @@
                 ${this.createDateLines()}
                 <div class="hover-line"></div>
                 <div class="hover-date"></div>
-                <div class="gantt-bar ${sequence.hasWorkPackage ? 'velvet' : ''}"
-                     style="left: ${startPosition}%; width: ${width}%">
+                <div class="gantt-bar ${sequence.hasWorkPackage ? 'velvet' : ''}" style="left: ${startPosition}%; width: ${width}%">
                     <div class="gantt-bar-text">${sequence.fabrication.description} - Start: ${sequence.fabrication.start} - End: ${sequence.fabrication.end}</div>
+                    <div class="gantt-bar-percentage" style="width:${sequence.fabrication.percentage}%">
+                        <div class="gantt-bar-percentage-text">${sequence.fabrication.percentage}%</div>
+                    </div>
                 </div>
             </div>
         `;
@@ -617,7 +462,7 @@
 
     // Initialize the chart when the page loads
     document.addEventListener('DOMContentLoaded', () => {
-        const gantt = new GanttChart('ganttChart', ganttData);
+        const gantt = new GanttChart('ganttChart');
     });
 </script>
 </body>
