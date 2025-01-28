@@ -649,148 +649,242 @@ sort($weeks);
     }
 
     function loadProjectData(workweek) {
-        // Disable all filter buttons during load
+        showLoadingOverlay('Loading workweek data...');
+        disableAllFilters();
+
+        let allNestedData = [];
+        let allCutData = [];
+        let allKitData = [];
+        let workweekData = [];
+
+        $.ajax({
+            url: 'ajax_get_ssf_workweeks2.php',
+            method: 'GET',
+            dataType: 'json',
+            data: {workweek: workweek}
+        })
+            .then(function(response) {
+                workweekData = Array.isArray(response.items) ? response.items : [response.items];
+                updateLoadingMessage('Loading nested data...');
+                return loadAllBatches('ajax_get_ssf_workweek_nested.php', workweek);
+            })
+            .then(function(nestedData) {
+                allNestedData = nestedData || [];
+                updateLoadingMessage('Loading cut data...');
+                return loadAllBatches('ajax_get_ssf_workweek_cut.php', workweek);
+            })
+            .then(function(cutData) {
+                allCutData = cutData || [];
+                updateLoadingMessage('Loading kit data...');
+                return loadAllBatches('ajax_get_ssf_workweek_kit.php', workweek);
+            })
+            .then(function(kitData) {
+                allKitData = kitData || [];
+                updateLoadingMessage('Processing data...');
+
+                // Process data in chunks
+                return processDataInChunks(workweekData, allNestedData, allCutData, allKitData);
+            })
+            .then(function(mergedData) {
+                projectData = mergedData;
+                updateUI();
+            })
+            .fail(function(error) {
+                console.error('Error:', error);
+                alert('Error loading data. Please try again.');
+            })
+            .always(function() {
+                hideLoadingOverlay();
+            });
+    }
+
+    function disableAllFilters() {
         $('#bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button, #sequenceFilter button')
             .prop('disabled', true);
+    }
 
-        // Show loading overlay with spinner
-        $('<div id="loading-overlay">')
-            .append('<div class="loading-spinner">Loading workweek data...</div>')
-            .appendTo('body');
+    function enableAllFilters() {
+        $('#bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button, #sequenceFilter button')
+            .prop('disabled', false);
+    }
 
-        $.when(
+    function loadAllBatches(url, workweek, offset = 0, accumulated = []) {
+        const deferred = $.Deferred();
+
+        function loadBatch() {
             $.ajax({
-                url: 'ajax_get_ssf_workweeks2.php',
+                url: url,
                 method: 'GET',
                 dataType: 'json',
-                data: {workweek: workweek}
-            }),
-            $.ajax({
-                url: 'ajax_get_ssf_workweek_piecemarks.php',
-                method: 'GET',
-                dataType: 'json',
-                data: { workweek: workweek }
+                data: { workweek: workweek, offset: offset }
             })
-        ).done(function(workweekResponse, piecemarkResponse) {
-            if (workweekResponse[0].error) {
-                console.error("Error loading data:", workweekResponse[0].error);
-                alert(workweekResponse[0].error);
+                .done(function(response) {
+                    const newData = accumulated.concat(response.items || []);
+                    updateLoadingMessage(`Loaded ${newData.length} records...`);
+
+                    if (response.hasMore) {
+                        offset = response.nextOffset;
+                        accumulated = newData;
+                        loadBatch();
+                    } else {
+                        deferred.resolve(newData);
+                    }
+                })
+                .fail(function(error) {
+                    deferred.reject(error);
+                });
+        }
+
+        loadBatch();
+        return deferred.promise();
+    }
+
+    function processDataInChunks(workweekData, nestedData, cutData, kitData) {
+        console.log('Processing data chunks:', {
+            workweekLength: workweekData.length,
+            nestedLength: nestedData.length,
+            cutLength: cutData.length,
+            kitLength: kitData.length
+        });
+
+        const chunkSize = 1000;
+        const chunks = [];
+
+        // Create chunks of workweek data
+        for (let i = 0; i < workweekData.length; i += chunkSize) {
+            chunks.push(workweekData.slice(i, i + chunkSize));
+        }
+
+        // Create Maps for quick lookups
+        const nestedMap = new Map();
+        const cutMap = new Map();
+        const kitMap = new Map();
+
+        // Build lookup maps
+        nestedData.forEach(item => {
+            const key = item.ProductionControlItemSequenceID;
+            if (!nestedMap.has(key)) nestedMap.set(key, []);
+            nestedMap.get(key).push(item);
+        });
+
+        cutData.forEach(item => {
+            const key = item.ProductionControlItemSequenceID;
+            if (!cutMap.has(key)) cutMap.set(key, []);
+            cutMap.get(key).push(item);
+        });
+
+        kitData.forEach(item => {
+            const key = item.ProductionControlItemSequenceID;
+            if (!kitMap.has(key)) kitMap.set(key, []);
+            kitMap.get(key).push(item);
+        });
+
+        // Process chunks
+        const deferred = $.Deferred();
+        let processedData = [];
+        let currentChunk = 0;
+
+        function processNextChunk() {
+            if (currentChunk >= chunks.length) {
+                deferred.resolve(processedData);
                 return;
             }
 
-            const workweekData = Array.isArray(workweekResponse[0].items) ?
-                workweekResponse[0].items : [workweekResponse[0].items];
-            const piecemarkData = piecemarkResponse[0].items;
+            setTimeout(() => {
+                const chunk = chunks[currentChunk];
+                const mergedChunk = chunk.map(workweekItem => {
+                    const pciseqId = workweekItem.ProductionControlItemSequenceID;
+                    return mergeItemData(
+                        workweekItem,
+                        nestedMap.get(pciseqId) || [],
+                        cutMap.get(pciseqId) || [],
+                        kitMap.get(pciseqId) || []
+                    );
+                });
 
-            // Update global projectData
-            projectData = mergeData(workweekData, piecemarkData);
+                processedData = processedData.concat(mergedChunk);
+                currentChunk++;
+                updateLoadingMessage(`Processing data: ${Math.round((currentChunk / chunks.length) * 100)}%`);
+                processNextChunk();
+            }, 0);
+        }
 
-            // Reset all filters to 'all' before recreating them
-            currentRouteFilter = 'all';
-            currentWPFilter = 'all';
-            currentBayFilter = 'all';
-            currentCategoryFilter = 'all';
-            currentSequenceFilter = 'all';
-
-            createWPFilter();
-            createRouteFilter();
-            createBayFilter();
-            createCategoryFilter();
-            createSequenceFilter();
-            updateFilterButtons();
-
-            createTableHeader();
-            filterData();
-            updateFilterButtons();
-
-            $('#jobTitle').text(`Workweek: ${workweek}`);
-            $('#big-text').text(`${workweek}`);
-        }).fail(function(xhr, status, error) {
-            console.error("Error fetching data:", error);
-            alert("Error loading project data. Please try again.");
-        }).always(function() {
-            // Remove loading overlay
-            $('#loading-overlay').remove();
-        });
+        processNextChunk();
+        return deferred.promise();
     }
 
-    function mergeData(workweekData, piecemarkData) {
-        // Create a map for faster lookups
-        const piecemarkMap = new Map();
+    function mergeItemData(workweekItem, nestedPieces, cutPieces, kitPieces) {
+        let updatedStations = workweekItem.Stations || [];
 
-        // Group piecemark data by ProductionControlItemSequenceID
-        piecemarkData.forEach(piece => {
-            if (!piecemarkMap.has(piece.ProductionControlItemSequenceID)) {
-                piecemarkMap.set(piece.ProductionControlItemSequenceID, []);
-            }
-            piecemarkMap.get(piece.ProductionControlItemSequenceID).push(piece);
-        });
+        // Add or update NESTED station
+        if (nestedPieces.length > 0) {
+            updateStation('NESTED', nestedPieces, updatedStations);
+        }
 
-        return workweekData.map(workweekItem => {
-            const pciseqId = workweekItem.ProductionControlItemSequenceID;
-            const pieces = piecemarkMap.get(pciseqId);
+        // Add or update CUT station
+        if (cutPieces.length > 0) {
+            updateStation('CUT', cutPieces, updatedStations);
+        }
 
-            if (!pieces) {
-                return workweekItem;
-            }
+        // Add or update KIT station
+        if (kitPieces.length > 0) {
+            updateStation('KIT', kitPieces, updatedStations);
+        }
 
-            // Update existing NESTED, CUT, and KIT stations or add new ones
-            let updatedStations = workweekItem.Stations || [];
+        return {
+            ...workweekItem,
+            Stations: updatedStations,
+            Pieces: [...nestedPieces, ...cutPieces, ...kitPieces]
+        };
+    }
 
-            ['NESTED', 'CUT', 'KIT'].forEach(stationType => {
-                const totalAssembliesNeeded = pieces[0].SequenceQuantity;
+    function updateStation(stationType, pieces, stations) {
+        const totalNeeded = pieces[0]?.SequenceQuantity || 0;
+        const completed = Math.min(...pieces.map(p => {
+            const qty = stationType === 'NESTED' ? p.QtyNested :
+                stationType === 'CUT' ? p.QtyCut :
+                    p.QtyKitted;
+            return Math.floor((qty || 0) / (p.AssemblyEachQuantity || 1));
+        }));
 
-                if (stationType === 'NESTED') {
-                    // For NESTED, we need to subtract pieces already cut
-                    const cutCompleted = Math.min(...pieces.map(p => p.QtyCut || 0));
-                    const nestedCompleted = Math.min(...pieces.map(p => p.QtyNested || 0));
+        const stationData = {
+            StationDescription: stationType,
+            StationQuantityCompleted: completed,
+            StationTotalQuantity: totalNeeded,
+            Pieces: pieces
+        };
 
-                    // Total needed is assemblies needed minus what's already been cut
-                    const totalNeeded = Math.max(0, totalAssembliesNeeded - cutCompleted);
+        const index = stations.findIndex(s => s.StationDescription === stationType);
+        if (index === -1) {
+            stations.push(stationData);
+        } else {
+            stations[index] = stationData;
+        }
+    }
 
-                    const stationData = {
-                        StationDescription: 'NESTED',
-                        StationQuantityCompleted: nestedCompleted,
-                        StationTotalQuantity: totalNeeded,
-                        Pieces: pieces
-                    };
+    function updateLoadingMessage(message) {
+        $('.loading-spinner').text(message);
+    }
 
-                    const stationIndex = updatedStations.findIndex(s => s.StationDescription === 'NESTED');
-                    if (stationIndex === -1) {
-                        updatedStations.push(stationData);
-                    } else {
-                        updatedStations[stationIndex] = stationData;
-                    }
-                } else if (stationType === 'CUT' || stationType === 'KIT') {
-                    // CUT and KIT station logic is now the same
-                    const qtyField = stationType === 'CUT' ? 'QtyCut' : 'QtyKitted';
-                    const completed = Math.min(...pieces.map(p => p[qtyField] || 0));
+    function showLoadingOverlay(message) {
+        $('<div id="loading-overlay">')
+            .append(`<div class="loading-spinner">${message}</div>`)
+            .appendTo('body');
+    }
 
-                    const stationData = {
-                        StationDescription: stationType,
-                        StationQuantityCompleted: completed,
-                        StationTotalQuantity: totalAssembliesNeeded,
-                        Pieces: pieces
-                    };
+    function hideLoadingOverlay() {
+        $('#loading-overlay').remove();
+    }
 
-                    const stationIndex = updatedStations.findIndex(s => s.StationDescription === stationType);
-                    if (stationIndex === -1) {
-                        updatedStations.push(stationData);
-                    } else {
-                        updatedStations[stationIndex] = stationData;
-                    }
-                }
-            });
-
-            // Return merged item
-            return {
-                ...workweekItem,
-                Stations: updatedStations,
-                Pieces: pieces,
-                AssemblyEachQuantity: pieces[0]?.AssemblyEachQuantity || 0,
-                TotalPieceMarkQuantityNeeded: pieces[0]?.TotalPieceMarkQuantityNeeded || 0
-            };
-        });
+    function updateUI() {
+        createWPFilter();
+        createRouteFilter();
+        createBayFilter();
+        createCategoryFilter();
+        createSequenceFilter();
+        updateFilterButtons();
+        createTableHeader();
+        filterData();
     }
 
     function createWPFilter() {
@@ -943,17 +1037,44 @@ sort($weeks);
 
     function createTableHeader() {
         let headerHtml = `
-                <tr class="table-columns">
-                    <th>Job<br>Route</th>
-                    <th>SeqLot<br>Main</th>
-                    <th>WP</th>
-                    <th>Asm. Qty</th>
-                    <th>Net # Each / Total</th>
-                    <th>Hrs. Each / Total</th>
-            `;
+        <tr class="table-columns">
+            <th>Job<br>Route</th>
+            <th>SeqLot<br>Main</th>
+            <th>WP</th>
+            <th>Asm. Qty</th>
+            <th>Net # Each / Total</th>
+            <th>Hrs. Each / Total</th>
+    `;
+
         orderedStations.forEach(station => {
-            headerHtml += `<th>${station}</th>`;
+            // Calculate the completion percentage for this station using assembly quantities
+            const stationTotal = projectData.reduce((acc, item) => {
+                const stationData = item.Stations.find(s => s.StationDescription === station);
+                if (!stationData) return acc;
+
+                // For all stations, use assembly quantities
+                const totalQty = parseInt(stationData.StationTotalQuantity) || 0;
+                const completedQty = parseInt(stationData.StationQuantityCompleted) || 0;
+
+                return {
+                    total: acc.total + totalQty,
+                    completed: acc.completed + completedQty
+                };
+            }, { total: 0, completed: 0 });
+
+            const percentage = stationTotal.total ? (stationTotal.completed / stationTotal.total) * 100 : 0;
+            console.log(`${station} Assembly Stats:`, {
+                total: stationTotal.total,
+                completed: stationTotal.completed,
+                percentage: percentage.toFixed(1)
+            });
+
+            headerHtml += `
+                <th>
+                    ${station}
+                </th>`;
         });
+
         headerHtml += `</tr>`;
         $('#projectTable thead').html(headerHtml);
     }
@@ -965,6 +1086,8 @@ sort($weeks);
             stationTotals[station] = {
                 completed: 0,
                 total: 0,
+                pieces_completed: 0,
+                pieces_total: 0,
                 hours: {
                     completed: 0,
                     total: 0
@@ -977,29 +1100,56 @@ sort($weeks);
         });
 
         data.forEach(assembly => {
-            const stationHours = calculateStationHours(assembly.RouteName, assembly.Category, assembly.TotalEstimatedManHours);
+            if (!assembly || !assembly.Stations) return;
+
+            const stationHours = calculateStationHours(
+                assembly.RouteName || 'DEFAULT',
+                assembly.Category || 'DEFAULT',
+                parseFloat(assembly.TotalEstimatedManHours || 0)
+            );
+
             const assemblyWeight = parseFloat(assembly.TotalNetWeight || 0);
 
             assembly.Stations.forEach(station => {
+                if (!station) return;
+
                 const stationName = station.StationDescription;
-                if (orderedStations.includes(stationName)) {
-                    // Sum up quantities
-                    stationTotals[stationName].completed += station.StationQuantityCompleted || 0;
-                    stationTotals[stationName].total += station.StationTotalQuantity || 0;
+                if (!orderedStations.includes(stationName)) return;
 
-                    // Calculate completion ratio for this station
-                    const completionRatio = station.StationQuantityCompleted / station.StationTotalQuantity;
+                let completed = parseFloat(station.StationQuantityCompleted || 0);
+                let total = parseFloat(station.StationTotalQuantity || 0);
 
-                    // Calculate and sum up hours
-                    const stationTotalHours = stationHours[stationName] || 0;
-                    const completedHours = stationTotalHours * completionRatio;
+                // Sum up quantities
+                stationTotals[stationName].completed += completed;
+                stationTotals[stationName].total += total;
 
-                    stationTotals[stationName].hours.completed += completedHours;
-                    stationTotals[stationName].hours.total += stationTotalHours;
+                // Calculate hours and weights
+                const completionRatio = safeDivide(completed, total);
+                const stationTotalHours = stationHours[stationName] || 0;
+                const completedHours = stationTotalHours * completionRatio;
 
-                    // Calculate and sum up weights
-                    stationTotals[stationName].weight.completed += assemblyWeight * completionRatio;
-                    stationTotals[stationName].weight.total += assemblyWeight;
+                stationTotals[stationName].hours.completed += completedHours;
+                stationTotals[stationName].hours.total += stationTotalHours;
+                stationTotals[stationName].weight.completed += assemblyWeight * completionRatio;
+                stationTotals[stationName].weight.total += assemblyWeight;
+
+                // Calculate piece totals for NESTED, CUT, and KIT stations
+                if (['NESTED', 'CUT', 'KIT'].includes(stationName) && station.Pieces) {
+                    station.Pieces.forEach(piece => {
+                        const qtyNeeded = parseInt(piece.TotalPieceMarkQuantityNeeded || 0);
+                        let qtyCompleted = 0;
+
+                        if (stationName === 'NESTED') {
+                            qtyCompleted = parseInt(piece.QtyNested || 0);
+                        } else if (stationName === 'CUT') {
+                            qtyCompleted = parseInt(piece.QtyCut || 0);
+                        } else if (stationName === 'KIT') {
+                            qtyCompleted = parseInt(piece.QtyKitted || 0);
+                        }
+
+                        stationTotals[stationName].pieces_completed += qtyCompleted;
+                        stationTotals[stationName].pieces_total += qtyNeeded;
+                    });
                 }
             });
         });
@@ -1019,11 +1169,11 @@ sort($weeks);
         }, 0);
 
         let bodyHtml = `<tr class="station-summary">
-    <td colspan="6">
-        Station Totals: (completed of total)<br>
-        Line Items: ${completedLineItems} of ${totalLineItems}<br>
-        Assemblies: ${completedAssemblies} of ${totalAsmQuantity}
-    </td>`;
+            <td colspan="6">
+                Station Totals: (completed of total)<br>
+                Line Items: ${completedLineItems} of ${totalLineItems}<br>
+                Assemblies: ${completedAssemblies} of ${totalAsmQuantity}
+            </td>`;
 
         orderedStations.forEach(station => {
             const totals = stationTotals[station];
@@ -1043,13 +1193,34 @@ sort($weeks);
                 ASMWT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))}
             </td>`;
                 } else if (station === 'CUT' || station === 'KIT' ) {
-                    const pcQtyPercentage = safeDivide(totals.pieces_completed * 100, totals.pieces_total);
+                    const assemblyQtyPercentage = safeDivide(totals.completed * 100, totals.total);
+
+                    // Calculate total pieces by summing up all pieces from all assemblies
+                    let totalPiecesCompleted = 0;
+                    let totalPiecesNeeded = 0;
+
+                    data.forEach(assembly => {
+                        const stationData = assembly.Stations.find(s => s.StationDescription === station);
+                        if (stationData && stationData.Pieces) {
+                            stationData.Pieces.forEach(piece => {
+                                totalPiecesNeeded += parseInt(piece.TotalPieceMarkQuantityNeeded || 0);
+                                if (station === 'CUT') {
+                                    totalPiecesCompleted += parseInt(piece.QtyCut || 0);
+                                } else {
+                                    totalPiecesCompleted += parseInt(piece.QtyKitted || 0);
+                                }
+                            });
+                        }
+                    });
+
+                    const pcQtyPercentage = safeDivide(totalPiecesCompleted * 100, totalPiecesNeeded);
+
                     bodyHtml += `
-    <td class="sumcell ${isComplete ? 'col-complete' : ''}">
-        ASMQTY: ${totals.completed} / ${totals.total} (${qtyPercentage.toFixed(1)}%)<br>
-        PCQTY: ${totals.pieces_completed || 0} / ${totals.pieces_total || 0} (${pcQtyPercentage.toFixed(1)}%)<br>
-        ASMWT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))} (${weightPercentage.toFixed(1)}%)
-    </td>`;
+                        <td class="sumcell ${isComplete ? 'col-complete' : ''}">
+                            ASMQTY: ${totals.completed} / ${totals.total} (${assemblyQtyPercentage.toFixed(1)}%)<br>
+                            PCQTY: ${totalPiecesCompleted} / ${totalPiecesNeeded} (${pcQtyPercentage.toFixed(1)}%)<br>
+                            ASMWT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))} (${weightPercentage.toFixed(1)}%)
+                        </td>`;
                 } else {
                     bodyHtml += `
                     <td class="sumcell ${isComplete ? 'col-complete' : ''}">

@@ -223,11 +223,65 @@
             height: 100%;
             background-color: #456ca0;
         }
+        .hours-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+        }
+
+        .hours-modal-content {
+            background: #2b2d30;
+            margin: 20px auto;
+            padding: 20px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border-radius: 8px;
+        }
+
+        .hours-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .hours-table th, .hours-table td {
+            border: 1px solid #456ca0;
+            padding: 8px;
+            color: #c1c1c1;
+        }
+
+        .hours-table th {
+            background: #2b2d30;
+            position: sticky;
+            top: 0;
+        }
     </style>
 </head>
 <body>
 <div class="filter-container" id="filterButtons"></div>
 <div class="gantt-container" id="ganttChart"></div>
+
+<div id="hoursModal" class="hours-modal">
+    <div class="hours-modal-content">
+        <button class="filter-btn" onclick="closeHoursModal()">Close</button>
+        <table class="hours-table">
+            <thead>
+            <tr>
+                <th>Week</th>
+                <th>Total Hours</th>
+                <th>Sequence Hours</th>
+            </tr>
+            </thead>
+            <tbody id="hoursTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
 <script>
 
     class GanttChart {
@@ -362,7 +416,8 @@
         createProjectRows() {
             const fragment = document.createDocumentFragment();
 
-            const maxHours = Math.max(...this.data.sequences.map(s => s.fabrication.hours));
+            const maxHours = Math.max(...this.data.sequences.map(s => Number(s.fabrication.hours) || 0));
+            console.log(this.data.sequences);
 
             this.data.sequences.forEach(sequence => {
                 const row = document.createElement('div');
@@ -371,7 +426,7 @@
                 const startPosition = this.calculatePosition(sequence.fabrication.start);
                 const width = this.calculateWidth(sequence.fabrication.start, sequence.fabrication.end);
 
-                const opacity = (sequence.fabrication.hours / maxHours) * 0.9 + 0.1; // Range from 0.1 to 1.0
+                const opacity = (Number(sequence.fabrication.hours) || 0) / maxHours * 0.9 + 0.1;
 
                 // Calculate WP positions if sequence has work package
                 const wpBrackets = sequence.hasWorkPackage ? `
@@ -383,19 +438,19 @@
                 const categorizeClass = sequence.categorize.percentage === 100 ? 'categorize-success' :
                     (isCategorizeOverdue ? 'categorize-danger' : '');
 
-                const nsiPosition = this.calculatePosition(sequence.nsi.start);
-                const iffPosition = this.calculatePosition(sequence.iff.start);
+                const iffPosition = sequence.iff.percentage == -1 ? 0 : this.calculatePosition(sequence.iff.start);
+                const nsiPosition = sequence.nsi.percentage == -1 ? 0 : this.calculatePosition(sequence.nsi.start);
 
                 row.innerHTML = `
-            <div class="gantt-labels ${categorizeClass}">
+            <div class="gantt-labels ${categorizeClass}" data-rowid="${sequence.project}:${sequence.sequence}" title="ScheduleTaskID: ${sequence.fabrication.id}, RowID: ${sequence.project}:${sequence.sequence}">
                 <div class="gantt-rowtitle">${sequence.project}: ${sequence.sequence}</div>
                 <div class="gantt-pmname">PM: ${sequence.pm}</div>
             </div>
-            <div class="gantt-chart" style="background-color: rgba(25, 50, 100, ${opacity})" title="Hours: ${sequence.fabrication.hours} (${Math.round(opacity*100)}% of largest sequence)">
+            <div class="gantt-chart" style="background-color: rgba(25, 50, 100, ${opacity})" title="Hours: ${Number(sequence.fabrication.hours).toLocaleString()} (${Math.round(opacity*100)}% of largest sequence)">
                 <div class="categorize" title="${sequence.categorize.start} (${sequence.categorize.percentage}%)">Categorize by: ${sequence.categorize.start} (${sequence.categorize.percentage}%)</div>
                 ${wpBrackets}
-                <div class="indicator iff-indicator good" style="left:${iffPosition}%;" title="IFF: ${sequence.iff.start}">${sequence.iff.percentage}%</div>
-                <div class="indicator nsi-indicator bad" style="left:${nsiPosition}%;" title="NSI: ${sequence.nsi.start}">${sequence.nsi.percentage}%</div>
+                <div class="indicator iff-indicator ${sequence.iff.percentage > 98 ? 'good' : 'bad'}" style="left:${iffPosition}%;" title="IFF: ${sequence.iff.start}">${sequence.iff.percentage}%</div>
+                <div class="indicator nsi-indicator ${sequence.nsi.percentage > 98 ? 'good' : 'bad'}" style="left:${nsiPosition}%;" title="NSI: ${sequence.nsi.start}">${sequence.nsi.percentage}%</div>
                 ${this.createDateLines()}
                 <div class="hover-line"></div>
                 <div class="hover-date"></div>
@@ -434,6 +489,17 @@
                 btn.onclick = () => this.filterProjects(project);
                 filterContainer.appendChild(btn);
             });
+
+            const hoursBtn = document.createElement('button');
+            hoursBtn.className = 'filter-btn';
+            hoursBtn.textContent = 'View Weekly Hours';
+            hoursBtn.onclick = () => {
+                const weeklyData = this.calculateWeeklyHours();
+                this.populateHoursTable(weeklyData);
+                document.getElementById('hoursModal').style.display = 'block';
+            };
+            filterContainer.appendChild(hoursBtn);
+
         }
 
         filterProjects(project) {
@@ -458,6 +524,99 @@
                 }
             });
         }
+        async showWeeklyHours() {
+            const weeklyData = this.calculateWeeklyHours(this.data.sequences);
+            this.populateHoursTable(weeklyData);
+            document.getElementById('hoursModal').style.display = 'block';
+        }
+
+
+        populateHoursTable(weeklyData) {
+            const tbody = document.getElementById('hoursTableBody');
+            console.log(weeklyData);
+            tbody.innerHTML = weeklyData.map((week, index) => `
+        <tr>
+            <td>${this.getYearWeek(new Date(week.date))}</td>
+            <td>${Math.round(week.totalHours)}</td>
+            <td>${week.sequenceHours.map(s =>
+                `${s.sequence}(${Math.round(s.hours)})`).join(', ')
+            }</td>
+        </tr>
+    `).join('');
+        }
+
+        getWeekNumber(date) {
+            const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
+            const days = Math.floor((date - firstDayOfYear) / (24 * 60 * 60 * 1000));
+            return Math.ceil((days + firstDayOfYear.getDay() + 1) / 7);
+        }
+
+        getYearWeek(date) {
+            const year = date.getFullYear().toString().slice(-2);
+            const week = this.getWeekNumber(date).toString().padStart(2, '0');
+            const monthName = date.toLocaleString('default', { month: 'long' });
+            return `${year}${week} - ${monthName}`;
+        }
+
+        calculateWeeklyHours() {
+            // Find earliest and latest dates
+            const dates = this.data.sequences.map(seq => ({
+                start: new Date(seq.fabrication.start),
+                end: new Date(seq.fabrication.end)
+            }));
+
+            const startDate = new Date(Math.min(...dates.map(d => d.start.getTime())));
+            const endDate = new Date(Math.max(...dates.map(d => d.end.getTime())));
+
+            // Ensure valid date range
+            if (endDate < startDate) {
+                console.error('Invalid date range');
+                return [];
+            }
+
+            // Calculate total weeks needed with safer date arithmetic
+            const totalWeeks = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+
+            // Create array of weeks
+            const weeklyData = new Array(totalWeeks).fill().map((_, i) => {
+                let weekDate = new Date(startDate);
+                weekDate.setDate(weekDate.getDate() + (i * 7));
+                return {
+                    date: weekDate,
+                    totalHours: 0,
+                    sequenceHours: []
+                };
+            });
+
+            // Process sequences
+            this.data.sequences.forEach(sequence => {
+                const seqStart = new Date(sequence.fabrication.start);
+                const seqEnd = new Date(sequence.fabrication.end);
+                const totalDays = Math.ceil((seqEnd.getTime() - seqStart.getTime()) / (24 * 60 * 60 * 1000));
+                const seqWeeks = Math.ceil(totalDays / 7);
+                const hoursPerWeek = sequence.fabrication.hours / seqWeeks;
+
+                const weekOffset = Math.floor((seqStart.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
+
+                for (let week = 0; week < seqWeeks; week++) {
+                    const weekIndex = week + weekOffset;
+                    if (weekIndex >= 0 && weekIndex < totalWeeks) {
+                        weeklyData[weekIndex].totalHours += hoursPerWeek;
+                        weeklyData[weekIndex].sequenceHours.push({
+                            sequence: `${sequence.project}:${sequence.sequence}`,
+                            hours: hoursPerWeek
+                        });
+                    }
+                }
+            });
+
+            return weeklyData;
+        }
+
+    }
+
+    function closeHoursModal() {
+        document.getElementById('hoursModal').style.display = 'none';
     }
 
     // Initialize the chart when the page loads

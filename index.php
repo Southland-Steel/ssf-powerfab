@@ -38,7 +38,8 @@
             <a href="view_ssf_stations.php" class="btn btn-info">View SSF Stations</a>
         </div>
         <div class="col-md-4">
-
+            <h5 class="text-center">Production <-> PM</h5>
+            <a href="timeline.php" class="btn btn-success">Project Timeline (preview)</a>
         </div>
         <div class="col-md-4">
             <h5 class="text-center">Transition Tools (temp)</h5>

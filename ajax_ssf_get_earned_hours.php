@@ -3,7 +3,7 @@ require_once 'config_ssf_db.php';
 require_once 'inc_station_distributions.php';
 
 // Set default dates
-$defaultBeginDate = date('Y-m-d', strtotime('-30 days'));
+$defaultBeginDate = date('Y-m-d', strtotime('-7 days'));
 $defaultEndDate = date('Y-m-d');
 
 // Get begin and end dates from GET parameters, or use defaults
