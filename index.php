@@ -33,6 +33,7 @@
         <div class="col-md-4">
             <h5 class="text-center">SSF Production Resources</h5>
             <a href="workweeks.php" class="btn btn-primary">View SSF Workweeks</a>
+            <a href="view_ssf_shippinginfo.php" class="btn btn-secondary">Post Fabrication Status</a>
             <a href="view_ssf_earned_hours.php" class="btn btn-warning">Earned Hours</a>
             <a href="view_ssf_hit_stations.php" class="btn btn-success">View SSF Production Monitor</a>
             <a href="view_ssf_stations.php" class="btn btn-info">View SSF Stations</a>
