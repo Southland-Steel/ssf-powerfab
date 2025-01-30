@@ -574,6 +574,14 @@ sort($weeks);
     var currentCategoryFilter = 'all';
     var currentSequenceFilter = 'all';
     var projectData = []; // Global variable to hold the loaded data
+    let filterCache = new Map();
+    let filterIndex = {
+        routes: new Map(),
+        workPackages: new Map(),
+        bays: new Map(),
+        categories: new Map(),
+        sequenceLots: new Map()
+    };
 
     $(document).ready(function() {
         const currentWeek = <?= $workweek ?>;
@@ -613,49 +621,109 @@ sort($weeks);
 
     });
 
-    function filterData() {
-        let filteredData = projectData.filter(item => {
-            // Get values or 'undefined' for each field
+    function buildFilterIndex(data) {
+        // Clear existing indexes
+        Object.keys(filterIndex).forEach(key => filterIndex[key].clear());
+
+        data.forEach((item, idx) => {
+            // Index by Route
             const route = item.RouteName || 'undefined';
+            if (!filterIndex.routes.has(route)) filterIndex.routes.set(route, new Set());
+            filterIndex.routes.get(route).add(idx);
+
+            // Index by Work Package
             const wp = item.WorkPackageNumber || 'undefined';
+            if (!filterIndex.workPackages.has(wp)) filterIndex.workPackages.set(wp, new Set());
+            filterIndex.workPackages.get(wp).add(idx);
+
+            // Index by Bay
             const bay = item.Bay || 'undefined';
+            if (!filterIndex.bays.has(bay)) filterIndex.bays.set(bay, new Set());
+            filterIndex.bays.get(bay).add(idx);
+
+            // Index by Category
             const category = item.Category || 'undefined';
-            const seqLot = item.SequenceDescription && item.LotNumber ?
-                `${item.SequenceDescription} [${item.LotNumber}]` : 'undefined';
+            if (!filterIndex.categories.has(category)) filterIndex.categories.set(category, new Set());
+            filterIndex.categories.get(category).add(idx);
 
-            // Check if buttons exist for these values (to match updateFilterButtons logic)
-            const routeMatch = $(`button[data-route='${route}']`).length > 0;
-            const wpMatch = $(`button[data-wp='${wp}']`).length > 0;
-            const bayMatch = $(`button[data-bay='${bay}']`).length > 0;
-            const categoryMatch = $(`button[data-category='${category}']`).length > 0;
-            const seqLotMatch = $(`button[data-seqlot='${seqLot}']`).length > 0;
-
-            // Match against current filters
-            const matchesRoute = currentRouteFilter === 'all' || route === currentRouteFilter ||
-                (currentRouteFilter === 'undefined' && !routeMatch);
-            const matchesWP = currentWPFilter === 'all' || wp === currentWPFilter ||
-                (currentWPFilter === 'undefined' && !wpMatch);
-            const matchesBay = currentBayFilter === 'all' || bay === currentBayFilter ||
-                (currentBayFilter === 'undefined' && !bayMatch);
-            const matchesCategory = currentCategoryFilter === 'all' || category === currentCategoryFilter ||
-                (currentCategoryFilter === 'undefined' && !categoryMatch);
-            const matchesSequenceLot = currentSequenceFilter === 'all' || seqLot === currentSequenceFilter ||
-                (currentSequenceFilter === 'undefined' && !seqLotMatch);
-
-            return matchesRoute && matchesWP && matchesBay && matchesCategory && matchesSequenceLot;
+            // Index by Sequence Lot
+            const seqLot = item.SequenceDescription && item.LotNumber
+                ? `${item.SequenceDescription} [${item.LotNumber}]`
+                : 'undefined';
+            if (!filterIndex.sequenceLots.has(seqLot)) filterIndex.sequenceLots.set(seqLot, new Set());
+            filterIndex.sequenceLots.get(seqLot).add(idx);
         });
 
+        console.log("Filter indexes built:", filterIndex);
+    }
+
+    function getFilterCacheKey() {
+        return `${currentRouteFilter}|${currentWPFilter}|${currentBayFilter}|${currentCategoryFilter}|${currentSequenceFilter}`;
+    }
+
+    function getFilteredIndexes() {
+        const cacheKey = getFilterCacheKey();
+        if (filterCache.has(cacheKey)) {
+            return filterCache.get(cacheKey);
+        }
+
+        // Start with all indices
+        let resultSet = new Set(Array.from({ length: projectData.length }, (_, i) => i));
+
+        // Apply route filter
+        if (currentRouteFilter !== 'all') {
+            const routeIndices = filterIndex.routes.get(currentRouteFilter);
+            if (routeIndices) {
+                resultSet = new Set([...resultSet].filter(idx => routeIndices.has(idx)));
+            }
+        }
+
+        // Apply work package filter
+        if (currentWPFilter !== 'all') {
+            const wpIndices = filterIndex.workPackages.get(currentWPFilter);
+            if (wpIndices) {
+                resultSet = new Set([...resultSet].filter(idx => wpIndices.has(idx)));
+            }
+        }
+
+        // Apply bay filter
+        if (currentBayFilter !== 'all') {
+            const bayIndices = filterIndex.bays.get(currentBayFilter);
+            if (bayIndices) {
+                resultSet = new Set([...resultSet].filter(idx => bayIndices.has(idx)));
+            }
+        }
+
+        // Apply category filter
+        if (currentCategoryFilter !== 'all') {
+            const categoryIndices = filterIndex.categories.get(currentCategoryFilter);
+            if (categoryIndices) {
+                resultSet = new Set([...resultSet].filter(idx => categoryIndices.has(idx)));
+            }
+        }
+
+        // Apply sequence lot filter
+        if (currentSequenceFilter !== 'all') {
+            const seqLotIndices = filterIndex.sequenceLots.get(currentSequenceFilter);
+            if (seqLotIndices) {
+                resultSet = new Set([...resultSet].filter(idx => seqLotIndices.has(idx)));
+            }
+        }
+
+        // Cache the result
+        filterCache.set(cacheKey, resultSet);
+        return resultSet;
+    }
+
+    function filterData() {
+        const filteredIndexes = getFilteredIndexes();
+        const filteredData = Array.from(filteredIndexes).map(idx => projectData[idx]);
         populateTable(filteredData);
     }
 
     function loadProjectData(workweek) {
         showLoadingOverlay('Loading workweek data...');
         disableAllFilters();
-
-        let allNestedData = [];
-        let allCutData = [];
-        let allKitData = [];
-        let workweekData = [];
 
         $.ajax({
             url: 'ajax_get_ssf_workweeks2.php',
@@ -687,6 +755,10 @@ sort($weeks);
             })
             .then(function(mergedData) {
                 projectData = mergedData;
+                // Clear existing cache when loading new data
+                filterCache.clear();
+                // Build indexes for the new data
+                buildFilterIndex(projectData);
                 updateUI();
             })
             .fail(function(error) {
@@ -882,7 +954,6 @@ sort($weeks);
         createBayFilter();
         createCategoryFilter();
         createSequenceFilter();
-        updateFilterButtons();
         createTableHeader();
         filterData();
     }
@@ -997,42 +1068,42 @@ sort($weeks);
 
     function filterBay(bay, button) {
         currentBayFilter = bay;
+        filterCache.clear(); // Clear cache when filter changes
         filterData();
         $('#bayFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
-        updateFilterButtons();
     }
 
     function filterWP(workPackage, button) {
         currentWPFilter = workPackage;
+        filterCache.clear(); // Clear cache when filter changes
         filterData();
         $('#wpFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
-        updateFilterButtons();
     }
 
     function filterRoute(route, button) {
         currentRouteFilter = route;
+        filterCache.clear(); // Clear cache when filter changes
         filterData();
         $('#routeFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
-        updateFilterButtons();
     }
 
     function filterCategory(category, button) {
         currentCategoryFilter = category;
+        filterCache.clear(); // Clear cache when filter changes
         filterData();
         $('#categoryFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
-        updateFilterButtons();
     }
 
     function filterSequenceLot(seqLot, button) {
         currentSequenceFilter = seqLot;
+        filterCache.clear(); // Clear cache when filter changes
         filterData();
         $('#sequenceFilter button').removeClass('btn-primary').addClass('btn-secondary');
         $(button).removeClass('btn-secondary').addClass('btn-primary');
-        updateFilterButtons();
     }
 
     function createTableHeader() {
@@ -1645,76 +1716,6 @@ sort($weeks);
         });
 
         return stationTotals;
-    }
-
-    function updateFilterButtons() {
-        // First disable all buttons except 'All' buttons
-        $('#bayFilter button:not([data-bay="all"]), #wpFilter button:not([data-wp="all"]), #routeFilter button:not([data-route="all"]), #categoryFilter button:not([data-category="all"]), #sequenceFilter button:not([data-seqlot="all"])').prop('disabled', true);
-
-        // Get filtered data based on current filters
-        const filteredData = projectData.filter(item => {
-            // Find matching buttons for the current item's values
-            const routeMatch = $(`button[data-route='${item.RouteName || "undefined"}']`).length > 0;
-            const wpMatch = $(`button[data-wp='${item.WorkPackageNumber || "undefined"}']`).length > 0;
-            const bayMatch = $(`button[data-bay='${item.Bay || "undefined"}']`).length > 0;
-            const categoryMatch = $(`button[data-category='${item.Category || "undefined"}']`).length > 0;
-            const seqLot = item.SequenceDescription && item.LotNumber ?
-                `${item.SequenceDescription} [${item.LotNumber}]` : 'undefined';
-            const seqLotMatch = $(`button[data-seqlot='${seqLot}']`).length > 0;
-
-            // Check if current item matches all active filters
-            const matchesRoute = currentRouteFilter === 'all' || item.RouteName === currentRouteFilter ||
-                (currentRouteFilter === 'undefined' && !routeMatch);
-            const matchesWP = currentWPFilter === 'all' || item.WorkPackageNumber === currentWPFilter ||
-                (currentWPFilter === 'undefined' && !wpMatch);
-            const matchesBay = currentBayFilter === 'all' || item.Bay === currentBayFilter ||
-                (currentBayFilter === 'undefined' && !bayMatch);
-            const matchesCategory = currentCategoryFilter === 'all' || item.Category === currentCategoryFilter ||
-                (currentCategoryFilter === 'undefined' && !categoryMatch);
-            const matchesSequenceLot = currentSequenceFilter === 'all' || seqLot === currentSequenceFilter ||
-                (currentSequenceFilter === 'undefined' && !seqLotMatch);
-
-            return matchesRoute && matchesWP && matchesBay && matchesCategory && matchesSequenceLot;
-        });
-
-        // Enable buttons based on filtered data
-        filteredData.forEach(item => {
-            // Enable matching bay button
-            if (item.Bay) {
-                $(`button[data-bay='${item.Bay}']`).prop('disabled', false);
-            } else {
-                $(`button[data-bay='undefined']`).prop('disabled', false);
-            }
-
-            // Enable matching work package button
-            if (item.WorkPackageNumber) {
-                $(`button[data-wp='${item.WorkPackageNumber}']`).prop('disabled', false);
-            } else {
-                $(`button[data-wp='undefined']`).prop('disabled', false);
-            }
-
-            // Enable matching route button
-            if (item.RouteName) {
-                $(`button[data-route='${item.RouteName}']`).prop('disabled', false);
-            } else {
-                $(`button[data-route='undefined']`).prop('disabled', false);
-            }
-
-            // Enable matching category button
-            if (item.Category) {
-                $(`button[data-category='${item.Category}']`).prop('disabled', false);
-            } else {
-                $(`button[data-category='undefined']`).prop('disabled', false);
-            }
-
-            // Enable matching sequence button
-            if (item.SequenceDescription && item.LotNumber) {
-                const seqLot = `${item.SequenceDescription} [${item.LotNumber}]`;
-                $(`button[data-seqlot='${seqLot}']`).prop('disabled', false);
-            } else {
-                $(`button[data-seqlot='undefined']`).prop('disabled', false);
-            }
-        });
     }
 
     function calculateStationHours(route, category, totalHours) {
