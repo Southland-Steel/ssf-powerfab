@@ -22,7 +22,7 @@ INNER JOIN productioncontrolassemblies pca ON pciseq.ProductionControlAssemblyID
 INNER JOIN productioncontrolitems pci ON pci.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
 INNER JOIN shapes ON shapes.ShapeID = pci.ShapeID
 INNER JOIN productioncontrolitemlinks pcilink ON pcilink.ProductionControlItemID = pci.ProductionControlItemID
-WHERE wp.Group2 = :workweek
+WHERE wp.Group2 = :workweek and shapes.Shape NOT IN ('WA','NU','HS','MB')
 LIMIT :limit OFFSET :offset";
 
 $stmt = $db->prepare($sql);

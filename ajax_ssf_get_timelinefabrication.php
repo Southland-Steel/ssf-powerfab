@@ -57,6 +57,17 @@ $sql = "select
    st.ActualStartDate,
    st.ActualEndDate,
    ROUND(st.PercentCompleted *100, 2) as PercentCompleted,
+   CASE
+        WHEN EXISTS (
+            SELECT 1
+            FROM productioncontroljobs pcj
+                     INNER JOIN workpackages wp ON wp.ProductionControlID = pcj.ProductionControlID
+            WHERE pcj.ProjectID = p.ProjectID
+              AND wp.Group2 IS NOT NULL
+              AND wp.Group2 != ''
+        ) THEN 1
+        ELSE 0
+        END as HasWP,
    st.PlannedHours as PlannedHours,
    resources.Description as ResourceDescription,
    CASE 

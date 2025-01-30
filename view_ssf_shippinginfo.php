@@ -544,6 +544,8 @@
             row.dataset.workWeek = item.WorkWeek;
             row.dataset.productioncontrolid = item.ProductionControlID;
             row.dataset.sequenceId = item.SequenceID;
+            row.dataset.mainmark = item.Mainmark; // Use correct case from source
+            row.dataset.piecemark = item.PieceMark; // Use correct case from source
 
             // Generate link content with maximum possible quantities
             const failedContent = failed > 0 ?
@@ -779,12 +781,15 @@
     function showShippingModal(productionControlItemId, sequenceId, type) {
         const modal = new bootstrap.Modal(document.getElementById('shippingModal'));
         const row = document.querySelector(`tr[data-production-control-item-id="${productionControlItemId}"]`);
-        const mainMark = row.querySelector('td:nth-child(4)').textContent.trim();
-        const pieceMark = row.querySelector('td:nth-child(4)').textContent.split('-')[1].trim();
+        const mainMark = row.dataset.mainmark;
+        const pieceMark = row.dataset.piecemark;
+
+        const encodedMainMark = encodeURIComponent(mainMark);
+        const encodedPieceMark = encodeURIComponent(pieceMark);
 
         document.getElementById('returnedHeader').style.display = type === 'galv' ? '' : 'none';
 
-        fetch(`ajax_get_truckloads.php?sequenceId=${sequenceId}&mainMark=${mainMark}&pieceMark=${pieceMark}&type=${type}`)
+        fetch(`ajax_get_truckloads.php?sequenceId=${sequenceId}&mainMark=${encodedMainMark}&pieceMark=${encodedPieceMark}&type=${type}`)
             .then(response => response.json())
             .then(data => {
                 if (data.length > 0) {
@@ -1074,12 +1079,36 @@
         filterContainer.addEventListener('click', handleSequenceClick);
     }
 
+    function createWorkWeekButtons(data){
+        // Work Week filters
+        const workWeeks = [...new Set(data.map(item => item.WorkWeek))]
+            .filter(week => week)
+            .sort((a, b) => Number(a) - Number(b));
+        const workWeekContainer = document.getElementById('workWeekFilter');
+        workWeekContainer.innerHTML = '';
+
+        const allWorkWeekButton = document.createElement('button');
+        allWorkWeekButton.className = 'btn btn-outline-secondary btn-sm active';
+        allWorkWeekButton.setAttribute('data-workweek', '');
+        allWorkWeekButton.textContent = 'All Fab Weeks';
+        workWeekContainer.appendChild(allWorkWeekButton);
+
+        workWeeks.forEach(week => {
+            const button = document.createElement('button');
+            button.className = 'btn btn-outline-secondary btn-sm';
+            button.setAttribute('data-workweek', week);
+            button.textContent = `Week ${week}`;
+            workWeekContainer.appendChild(button);
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         fetch('ajax_ssf_get_shippinginfo.php')
             .then(response => response.json())
             .then(data => {
                 globalData = data;
                 createSequenceButtons(data);
+                createWorkWeekButtons(data);
                 populateTable(data);
                 updateButtonStates();
                 loadJobStatus(); // Initial status check

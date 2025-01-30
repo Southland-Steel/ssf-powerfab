@@ -26,6 +26,7 @@ AND pciss.SequenceID = pcseq.SequenceID
 INNER JOIN stations ON pciss.StationID = stations.StationID
 WHERE wp.Group2 = :workweek
 AND stations.Description = 'CUT'
+ and shapes.Shape NOT IN ('WA','NU','HS','MB')
 LIMIT :limit OFFSET :offset";
 
 $stmt = $db->prepare($sql);
