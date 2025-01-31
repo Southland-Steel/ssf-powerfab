@@ -42,6 +42,7 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         'workPackageNumber' => $row['WorkPackageNumber'],
         'startDate' => $row['StartMonday'],
         'endDate' => $row['CompletionFriday'],
+        'completionfriday' => $row['CompletionFriday'],
         'released' => $row['ReleasedToFab'],
         'onHold' => $row['OnHold'],
         'wpAssemblyQty' => $row['WPAssemblyQuantity'],
@@ -52,6 +53,30 @@ while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         'workWeek' => $row['Workweek'],
         'workPackageStatus' => $workPackageStatus
     );
+}
+
+$jobSequences = [];
+
+// Group by job/sequence and track min/max dates
+foreach ($workpackages as $wp) {
+    $key = $wp['jobNumber'] . '_' . $wp['sequence'];
+
+    if (!isset($jobSequences[$key])) {
+        $jobSequences[$key] = [
+            'jobNumber' => $wp['jobNumber'],
+            'sequence' => $wp['sequence'],
+            'startDate' => $wp['startDate'],
+            'endDate' => $wp['endDate']
+        ];
+    } else {
+        // Compare dates
+        if ($wp['startDate'] < $jobSequences[$key]['startDate']) {
+            $jobSequences[$key]['startDate'] = $wp['startDate'];
+        }
+        if ($wp['endDate'] > $jobSequences[$key]['endDate']) {
+            $jobSequences[$key]['endDate'] = $wp['endDate'];
+        }
+    }
 }
 
 header('Content-Type: application/json');

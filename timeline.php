@@ -358,7 +358,7 @@
                                 class="wp-point ${statusClass}"
                                 style="left: ${position}%"
                                 data-wp-id="${wp.workPackageId}"
-                                title="[${wp.workWeek}] WP: ${wp.workPackageNumber} - WPQty: ${wp.wpAssemblyQty} - Weight: ${wp.grossWeight} lbs - Hours: ${wp.hours}"
+                                title="[${wp.workWeek}] WP: ${wp.workPackageNumber} - WPQty: ${wp.wpAssemblyQty} - Weight: ${wp.grossWeight} lbs - Hours: ${wp.hours} - Status: ${wp.workPackageStatus}"
                             ></div>
                         `;
                             }).join('');
@@ -477,7 +477,6 @@
             const fragment = document.createDocumentFragment();
 
             const maxHours = Math.max(...this.data.sequences.map(s => Number(s.fabrication.hours) || 0));
-            console.log(this.data.sequences);
 
             this.data.sequences.forEach(sequence => {
                 const row = document.createElement('div');
@@ -524,8 +523,8 @@
                     <div class="gantt-bar-percentage" style="width:${sequence.fabrication.percentage}%">
                         <div class="gantt-bar-percentage-text">${sequence.fabrication.percentage}%</div>
                     </div>
-                    ${this.createWorkpackagePoints(sequence)}
                 </div>
+                ${this.createWorkpackagePoints(sequence)}
             </div>
         `;
 
@@ -599,13 +598,12 @@
 
         populateHoursTable(weeklyData) {
             const tbody = document.getElementById('hoursTableBody');
-            console.log(weeklyData);
             tbody.innerHTML = weeklyData.map((week, index) => `
         <tr>
             <td>${this.getYearWeek(new Date(week.date))}</td>
             <td>${Math.round(week.totalHours)}</td>
-            <td>${week.sequenceHours.map(s =>
-                `${s.sequence}(${Math.round(s.hours)})`).join(', ')
+            <td>${week.workpackages.map(wp =>
+                `WP${wp.workPackageNumber}(${Math.round(wp.hours)})`).join(', ')
             }</td>
         </tr>
     `).join('');
@@ -625,56 +623,55 @@
         }
 
         calculateWeeklyHours() {
-            // Find earliest and latest dates
-            const dates = this.data.sequences.map(seq => ({
-                start: new Date(seq.fabrication.start),
-                end: new Date(seq.fabrication.end)
-            }));
-
-            const startDate = new Date(Math.min(...dates.map(d => d.start.getTime())));
-            const endDate = new Date(Math.max(...dates.map(d => d.end.getTime())));
-
-            // Ensure valid date range
-            if (endDate < startDate) {
-                console.error('Invalid date range');
+            // Ensure workpackages are available
+            if (!this.workpackages || this.workpackages.length === 0) {
+                console.error('No workpackages data available');
                 return [];
             }
 
-            // Calculate total weeks needed with safer date arithmetic
-            const totalWeeks = Math.max(1, Math.ceil((endDate.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000)));
+            // Convert workWeek to actual date
+            const convertWorkWeekToDate = (workWeek) => {
+                const year = '20' + workWeek.slice(0, 2);
+                const week = parseInt(workWeek.slice(2));
+                const firstDayOfYear = new Date(year, 0, 1);
+                const firstWeekday = firstDayOfYear.getDay();
+                const firstWeekStart = new Date(firstDayOfYear);
+                firstWeekStart.setDate(firstDayOfYear.getDate() + (7 - firstWeekday));
+                const targetWeekStart = new Date(firstWeekStart);
+                targetWeekStart.setDate(firstWeekStart.getDate() + (week - 1) * 7);
+                return targetWeekStart;
+            };
 
-            // Create array of weeks
-            const weeklyData = new Array(totalWeeks).fill().map((_, i) => {
-                let weekDate = new Date(startDate);
-                weekDate.setDate(weekDate.getDate() + (i * 7));
+            // Group workpackages by week
+            const workpackagesByWeek = {};
+            this.workpackages.forEach(wp => {
+                const wpWeek = wp.workWeek;
+                if (!workpackagesByWeek[wpWeek]) {
+                    workpackagesByWeek[wpWeek] = [];
+                }
+                workpackagesByWeek[wpWeek].push(wp);
+            });
+
+            console.log(workpackagesByWeek);
+            // Prepare weekly data
+            const weeklyData = Object.keys(workpackagesByWeek).map(workWeek => {
+                const weekDate = convertWorkWeekToDate(workWeek);
+                const weekWorkpackages = workpackagesByWeek[workWeek];
+
                 return {
                     date: weekDate,
-                    totalHours: 0,
-                    sequenceHours: []
+                    totalHours: weekWorkpackages.reduce((sum, wp) => sum + Number(wp.hours), 0),
+                    workpackages: weekWorkpackages.map(wp => ({
+                        workPackageNumber: wp.workPackageNumber,
+                        hours: Number(wp.hours),
+                        jobNumber: wp.jobNumber,
+                        sequence: wp.sequence
+                    }))
                 };
             });
-
-            // Process sequences
-            this.data.sequences.forEach(sequence => {
-                const seqStart = new Date(sequence.fabrication.start);
-                const seqEnd = new Date(sequence.fabrication.end);
-                const totalDays = Math.ceil((seqEnd.getTime() - seqStart.getTime()) / (24 * 60 * 60 * 1000));
-                const seqWeeks = Math.ceil(totalDays / 7);
-                const hoursPerWeek = sequence.fabrication.hours / seqWeeks;
-
-                const weekOffset = Math.floor((seqStart.getTime() - startDate.getTime()) / (7 * 24 * 60 * 60 * 1000));
-
-                for (let week = 0; week < seqWeeks; week++) {
-                    const weekIndex = week + weekOffset;
-                    if (weekIndex >= 0 && weekIndex < totalWeeks) {
-                        weeklyData[weekIndex].totalHours += hoursPerWeek;
-                        weeklyData[weekIndex].sequenceHours.push({
-                            sequence: `${sequence.project}:${sequence.sequence}`,
-                            hours: hoursPerWeek
-                        });
-                    }
-                }
-            });
+            console.log(weeklyData);
+            // Sort by date
+            weeklyData.sort((a, b) => a.date - b.date);
 
             return weeklyData;
         }
