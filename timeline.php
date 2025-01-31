@@ -137,7 +137,7 @@
             top:0;
             width: 5px;
             height: 10px;
-            border:3px solid #000;
+            border:2px solid #000;
             border-bottom: none;
             z-index: 3;
             font-size: .6rem;
@@ -150,6 +150,21 @@
         .wp-end{
             border-left: none;
             transform: translateX(-6px);
+        }
+        /* Add this new style */
+        .view-hours-btn {
+            position: absolute;
+            right: 20px;
+            background: #940045;
+            border: 2px solid #c1c1c1;
+            padding: 8px 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .view-hours-btn:hover {
+            background: #b30052;
         }
         .indicator{
             position: absolute;
@@ -260,6 +275,38 @@
             position: sticky;
             top: 0;
         }
+        .hours-table th:first-child {
+            white-space: nowrap;
+        }
+
+        .wp-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #456ca0;
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: white;
+            cursor: pointer;
+            font-size: 0.9em;
+            position: relative;
+            margin: 10px 30px 10px 10px;
+        }
+
+        .wp-button::after {
+            content: '';
+            position: absolute;
+            left: calc(100% + 4px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: #dc3545;
+            border-radius: 50%;
+            width: var(--ball-size);
+            height: var(--ball-size);
+        }
+        #hoursTableBody tr td:nth-child(1){
+            text-wrap: nowrap;
+        }
         .wp-point {
             position: absolute;
             width: 12px;
@@ -293,7 +340,7 @@
             <tr>
                 <th>Week</th>
                 <th>Total Hours</th>
-                <th>Sequence Hours</th>
+                <th>Sequence Hours from Workpackage Data</th>
             </tr>
             </thead>
             <tbody id="hoursTableBody"></tbody>
@@ -347,6 +394,7 @@
 
             return sequenceWPs.map(wp => {
                 const wpDate = new Date(wp.completionfriday);
+                wpDate.setDate(wpDate.getDate() - 2); // Shift 2 days left
                 const position = this.calculatePosition(wpDate);
 
                 let statusClass = wp.onHold ? 'on-hold' :
@@ -475,7 +523,6 @@
 
         createProjectRows() {
             const fragment = document.createDocumentFragment();
-
             const maxHours = Math.max(...this.data.sequences.map(s => Number(s.fabrication.hours) || 0));
 
             this.data.sequences.forEach(sequence => {
@@ -484,19 +531,31 @@
 
                 const startPosition = this.calculatePosition(sequence.fabrication.start);
                 const width = this.calculateWidth(sequence.fabrication.start, sequence.fabrication.end);
-
                 const opacity = (Number(sequence.fabrication.hours) || 0) / maxHours * 0.9 + 0.1;
 
-                // Calculate WP positions if sequence has work package
-                const wpBrackets = sequence.hasWorkPackage ? `
-            <div class="wp-bracket wp-start" style="left: ${this.calculatePosition(sequence.wp.start)}%;" title="Start Date: ${sequence.wp.start}"></div>
-            <div class="wp-bracket wp-end" style="left: ${this.calculatePosition(sequence.wp.end)}%;" title="End Date: ${sequence.wp.end}"></div>
-        ` : '';
-
-                const hasWorkPackage = this.workpackages.some(wp =>
+                // Find work packages for this sequence
+                const sequenceWPs = this.workpackages.filter(wp =>
                     wp.jobNumber === sequence.project &&
                     wp.sequence === sequence.sequence
                 );
+
+                // Calculate brackets based on work package dates
+                let workPackageBrackets = '';
+                if (sequenceWPs.length > 0) {
+                    const startDate = new Date(Math.min(...sequenceWPs.map(wp => new Date(wp.startDate))));
+                    const endDate = new Date(Math.max(...sequenceWPs.map(wp => new Date(wp.endDate))));
+
+                    workPackageBrackets = `
+                <div class="wp-bracket wp-start"
+                     style="left: ${this.calculatePosition(startDate)}%;"
+                     title="Start Date: ${startDate.toISOString().split('T')[0]}"></div>
+                <div class="wp-bracket wp-end"
+                     style="left: ${this.calculatePosition(endDate)}%;"
+                     title="End Date: ${endDate.toISOString().split('T')[0]}"></div>
+            `;
+                }
+
+                const hasWorkPackage = sequenceWPs.length > 0;
 
                 const isCategorizeOverdue = new Date(sequence.categorize.start) < new Date() && sequence.categorize.percentage < 100;
                 const categorizeClass = sequence.categorize.percentage === 100 ? 'categorize-success' :
@@ -512,7 +571,7 @@
             </div>
             <div class="gantt-chart" style="background-color: rgba(25, 50, 100, ${opacity})" title="Hours: ${Number(sequence.fabrication.hours).toLocaleString()} (${Math.round(opacity*100)}% of largest sequence)">
                 <div class="categorize" title="${sequence.categorize.start} (${sequence.categorize.percentage}%)">Categorize by: ${sequence.categorize.start} (${sequence.categorize.percentage}%)</div>
-                ${wpBrackets}
+                ${workPackageBrackets}
                 <div class="indicator iff-indicator ${sequence.iff.percentage > 98 ? 'good' : 'bad'}" style="left:${iffPosition}%;" title="IFF: ${sequence.iff.start}">${sequence.iff.percentage}%</div>
                 <div class="indicator nsi-indicator ${sequence.nsi.percentage > 98 ? 'good' : 'bad'}" style="left:${nsiPosition}%;" title="NSI: ${sequence.nsi.start}">${sequence.nsi.percentage}%</div>
                 ${this.createDateLines()}
@@ -556,7 +615,7 @@
             });
 
             const hoursBtn = document.createElement('button');
-            hoursBtn.className = 'filter-btn';
+            hoursBtn.className = 'filter-btn view-hours-btn';
             hoursBtn.textContent = 'View Weekly Hours';
             hoursBtn.onclick = () => {
                 const weeklyData = this.calculateWeeklyHours();
@@ -597,14 +656,30 @@
 
 
         populateHoursTable(weeklyData) {
+            const maxHours = Math.max(...weeklyData.flatMap(week =>
+                week.workpackages.map(wp => wp.hours)
+            ));
+
+            const getBallSize = (hours) => {
+                const maxSize = 24;
+                return Math.max(Math.sqrt(hours / maxHours) * maxSize, 6);
+            };
+
             const tbody = document.getElementById('hoursTableBody');
             tbody.innerHTML = weeklyData.map((week, index) => `
         <tr>
             <td>${this.getYearWeek(new Date(week.date))}</td>
             <td>${Math.round(week.totalHours)}</td>
-            <td>${week.workpackages.map(wp =>
-                `WP${wp.workPackageNumber}(${Math.round(wp.hours)})`).join(', ')
-            }</td>
+            <td>${week.workpackages.map(wp => {
+                const ballSize = getBallSize(wp.hours);
+                return `<div
+                    class="wp-button"
+                    style="--ball-size: ${ballSize}px;"
+                    title="Job: ${wp.jobNumber}
+Sequence: ${wp.sequence}
+Hours: ${Math.round(wp.hours)}"
+                >WP${wp.workPackageNumber}</div>`;
+            }).join('')}</td>
         </tr>
     `).join('');
         }
@@ -623,45 +698,45 @@
         }
 
         calculateWeeklyHours() {
-            // Ensure workpackages are available
             if (!this.workpackages || this.workpackages.length === 0) {
                 console.error('No workpackages data available');
                 return [];
             }
 
-            // Convert workWeek to actual date
             const convertWorkWeekToDate = (workWeek) => {
                 const year = '20' + workWeek.slice(0, 2);
                 const week = parseInt(workWeek.slice(2));
                 const firstDayOfYear = new Date(year, 0, 1);
-                const firstWeekday = firstDayOfYear.getDay();
-                const firstWeekStart = new Date(firstDayOfYear);
-                firstWeekStart.setDate(firstDayOfYear.getDate() + (7 - firstWeekday));
-                const targetWeekStart = new Date(firstWeekStart);
-                targetWeekStart.setDate(firstWeekStart.getDate() + (week - 1) * 7);
-                return targetWeekStart;
+                const dayOffset = (week - 1) * 7;
+                const targetDate = new Date(firstDayOfYear);
+                targetDate.setDate(firstDayOfYear.getDate() + dayOffset);
+                return targetDate;
             };
 
-            // Group workpackages by week
             const workpackagesByWeek = {};
+
+            // First pass: Group workpackages by week and workpackage number
             this.workpackages.forEach(wp => {
                 const wpWeek = wp.workWeek;
                 if (!workpackagesByWeek[wpWeek]) {
-                    workpackagesByWeek[wpWeek] = [];
+                    workpackagesByWeek[wpWeek] = new Map(); // Use Map to store unique WP numbers
                 }
-                workpackagesByWeek[wpWeek].push(wp);
+
+                // If this WP number already exists for this week, skip it
+                if (!workpackagesByWeek[wpWeek].has(wp.workPackageNumber)) {
+                    workpackagesByWeek[wpWeek].set(wp.workPackageNumber, wp);
+                }
             });
 
-            console.log(workpackagesByWeek);
-            // Prepare weekly data
-            const weeklyData = Object.keys(workpackagesByWeek).map(workWeek => {
+            // Convert to weekly data format
+            const weeklyData = Object.entries(workpackagesByWeek).map(([workWeek, weekWPs]) => {
                 const weekDate = convertWorkWeekToDate(workWeek);
-                const weekWorkpackages = workpackagesByWeek[workWeek];
+                const uniqueWorkpackages = Array.from(weekWPs.values());
 
                 return {
                     date: weekDate,
-                    totalHours: weekWorkpackages.reduce((sum, wp) => sum + Number(wp.hours), 0),
-                    workpackages: weekWorkpackages.map(wp => ({
+                    totalHours: uniqueWorkpackages.reduce((sum, wp) => sum + Number(wp.hours), 0),
+                    workpackages: uniqueWorkpackages.map(wp => ({
                         workPackageNumber: wp.workPackageNumber,
                         hours: Number(wp.hours),
                         jobNumber: wp.jobNumber,
@@ -669,11 +744,8 @@
                     }))
                 };
             });
-            console.log(weeklyData);
-            // Sort by date
-            weeklyData.sort((a, b) => a.date - b.date);
 
-            return weeklyData;
+            return weeklyData.sort((a, b) => a.date - b.date);
         }
 
     }
