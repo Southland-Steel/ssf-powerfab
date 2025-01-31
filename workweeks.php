@@ -722,6 +722,7 @@ sort($weeks);
     }
 
     function loadProjectData(workweek) {
+        document.getElementById('big-text').textContent = workweek;
         showLoadingOverlay('Loading workweek data...');
         disableAllFilters();
 

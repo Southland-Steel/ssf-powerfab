@@ -260,6 +260,25 @@
             position: sticky;
             top: 0;
         }
+        .wp-point {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+            z-index: 5;
+        }
+        .wp-point.released {
+            background-color: #00ff00;
+        }
+        .wp-point.not-released {
+            background-color: #ffff00;
+        }
+        .wp-point.on-hold {
+            background-color: #ff0000;
+        }
     </style>
 </head>
 <body>
@@ -291,9 +310,13 @@
         }
 
         init() {
-            this.fetchData()
-                .then(data => {
-                    this.setupData(data);
+            Promise.all([
+                this.fetchData(),
+                this.fetchWorkpackages()
+            ])
+                .then(([timelineData, workpackagesData]) => {
+                    this.setupData(timelineData);
+                    this.workpackages = workpackagesData;
                     this.createTimeline();
                     this.createProjectRows();
                     this.createFilterButtons();
@@ -302,6 +325,43 @@
                     console.error('Error initializing Gantt chart:', error);
                     this.container.innerHTML = 'Error loading data. Please try again later.';
                 });
+        }
+
+        fetchWorkpackages() {
+            return fetch('ajax_get_ssf_timelinefabrication_workpackages.php')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                });
+        }
+
+        createWorkpackagePoints(sequence) {
+            if (!this.workpackages) return '';
+
+            const sequenceWPs = this.workpackages.filter(wp =>
+                wp.jobNumber === sequence.project &&
+                wp.sequence === sequence.sequence
+            );
+
+            return sequenceWPs.map(wp => {
+                const wpDate = new Date(wp.completionfriday);
+                const position = this.calculatePosition(wpDate);
+
+                let statusClass = wp.onHold ? 'on-hold' :
+                                    wp.released ? 'released' :
+                                        'not-released';
+
+                                return `
+                            <div
+                                class="wp-point ${statusClass}"
+                                style="left: ${position}%"
+                                data-wp-id="${wp.workPackageId}"
+                                title="[${wp.workWeek}] WP: ${wp.workPackageNumber} - WPQty: ${wp.wpAssemblyQty} - Weight: ${wp.grossWeight} lbs - Hours: ${wp.hours}"
+                            ></div>
+                        `;
+                            }).join('');
         }
 
         fetchData() {
@@ -434,6 +494,11 @@
             <div class="wp-bracket wp-end" style="left: ${this.calculatePosition(sequence.wp.end)}%;" title="End Date: ${sequence.wp.end}"></div>
         ` : '';
 
+                const hasWorkPackage = this.workpackages.some(wp =>
+                    wp.jobNumber === sequence.project &&
+                    wp.sequence === sequence.sequence
+                );
+
                 const isCategorizeOverdue = new Date(sequence.categorize.start) < new Date() && sequence.categorize.percentage < 100;
                 const categorizeClass = sequence.categorize.percentage === 100 ? 'categorize-success' :
                     (isCategorizeOverdue ? 'categorize-danger' : '');
@@ -454,11 +519,12 @@
                 ${this.createDateLines()}
                 <div class="hover-line"></div>
                 <div class="hover-date"></div>
-                <div class="gantt-bar ${sequence.hasWorkPackage ? 'velvet' : ''}" style="left: ${startPosition}%; width: ${width}%">
+                <div class="gantt-bar ${hasWorkPackage ? 'velvet' : ''}" style="left: ${startPosition}%; width: ${width}%">
                     <div class="gantt-bar-text">${sequence.fabrication.description} - Start: ${sequence.fabrication.start} - End: ${sequence.fabrication.end}</div>
                     <div class="gantt-bar-percentage" style="width:${sequence.fabrication.percentage}%">
                         <div class="gantt-bar-percentage-text">${sequence.fabrication.percentage}%</div>
                     </div>
+                    ${this.createWorkpackagePoints(sequence)}
                 </div>
             </div>
         `;

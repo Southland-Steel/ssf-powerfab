@@ -15,7 +15,7 @@ $query = "
         SUM(pcidestp1.QuantityReturned) as QuantityReturned,
         SUM(pcidestp2.FailedInspectionTestQuantity) as FailedInspectionTestQuantity,
         SUM(pcidestp2.QuantityShipped) as QuantityShipped,
-        ROUND(pca.GrossAssemblyWeightEach,4) as GrossAssemblyWeightEach,
+        ROUND(pca.GrossAssemblyWeightEach*2.20462,4) as GrossAssemblyWeightEach,
         CASE WHEN pcsub.Description = 'TC' THEN 'TC' ELSE '' END as ToeCrack,
         (
             SELECT COALESCE(SUM(itr.Quantity), 0)

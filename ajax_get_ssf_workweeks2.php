@@ -24,7 +24,7 @@ $sql = "SELECT
     pciss.LastDateCompleted,
     ROUND(pci.Length / 25.4,3) as LengthInches,
     pciseq.Quantity as SequenceMainMarkQuantity,
-    ROUND(pca.AssemblyWeightEach,3) as NetAssemblyWeightEach,
+    ROUND(pca.AssemblyWeightEach*2.20462,3) as NetAssemblyWeightEach,
     ROUND(pca.AssemblyManHoursEach,3) as AssemblyManHoursEach,
     pci.MainPieceQuantity,
     wp.Group1 as Bay,
