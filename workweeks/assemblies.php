@@ -89,7 +89,7 @@ $totalHours = $assemblyInfo['AssemblyManHoursEach'] * $assemblyInfo['SequenceAss
 </head>
 <body>
 <header class="header">
-    <div class="header-content">
+    <div class="header-content full-width">
         <img src="../images/ssf-horiz.png" alt="Logo" class="logo">
     </div>
 </header>

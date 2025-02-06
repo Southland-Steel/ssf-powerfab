@@ -24,7 +24,6 @@ WHERE sb.IsCurrent = 1
 AND js.Purpose = 0 
 AND st.PercentCompleted < 0.99
 AND resources.Description = 'Fabrication' 
-AND sd.Description = 'Fabrication'
 AND sbdeval.Description IS NOT NULL
 ORDER BY sbdeval.Description
 ";
@@ -68,7 +67,7 @@ $sql = "select
         ) THEN 1
         ELSE 0
         END as HasWP,
-   st.PlannedHours as PlannedHours,
+   st.OriginalEstimate as PlannedHours,
    resources.Description as ResourceDescription,
    CASE 
        WHEN resources.Description = 'Document Control' AND sd.Description = 'Issued For Fabrication' THEN 'iff'
@@ -94,7 +93,7 @@ where sb.IsCurrent = 1
        or (resources.Description = 'Procurement' and sd.Description = 'Material Purchased')
        or (resources.Description = 'Procurement' and sd.Description = 'Material Received')
        or (resources.Description = 'CNC' and sd.Description = 'Part Categorization')
-       or (resources.Description = 'Fabrication' and sd.Description = 'Fabrication')
+       or (resources.Description = 'Fabrication')
    )
    AND sbdeval.Description IS NOT NULL
    ORDER BY sbdeval.Description";

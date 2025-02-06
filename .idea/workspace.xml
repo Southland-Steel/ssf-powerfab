@@ -5,24 +5,19 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="timely commit">
-      <change afterPath="$PROJECT_DIR$/.htaccess" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ajax_get_ssf_timelinefabrication_catstatus.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/ajax_get_workpackage_cutlists.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/ajax_get_workweek_workpackages.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/assemblies.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/get_assembly_cutlists.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/get_assembly_piecemarks.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/get_assembly_station_progress.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/get_sequence_data.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/piecemark.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/workpackages.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/workweeks.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/workweeks.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inventory/ajax_get_inventory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inventory/inventory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pmresources/ajax_get_resources.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pmresources/ajax_get_tasks.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pmresources/pmresources.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ajax_ssf_get_timelinefabrication.php" beforeDir="false" afterPath="$PROJECT_DIR$/ajax_ssf_get_timelinefabrication.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config_ssf_db.php" beforeDir="false" afterPath="$PROJECT_DIR$/config_ssf_db.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/timeline.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workweeks.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/index.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/ajax_get_workpackage_cutlists.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/ajax_get_workpackage_cutlists.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/assemblies.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/assemblies.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/workpackages.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/workpackages.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/workweeks.css" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/workweeks.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/workweeks.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/workweeks.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -107,6 +102,7 @@
       <workItem from="1738011401654" duration="1547000" />
       <workItem from="1738071017395" duration="65120000" />
       <workItem from="1738675680792" duration="32435000" />
+      <workItem from="1738849383717" duration="16217000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -284,7 +280,15 @@
       <option name="project" value="LOCAL" />
       <updated>1738350155509</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="timely commit">
+      <option name="closed" value="true" />
+      <created>1738849400187</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1738849400187</updated>
+    </task>
+    <option name="localTasksCounter" value="24" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

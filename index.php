@@ -30,7 +30,7 @@
         <h1>SSF Production Management System</h1>
     </div>
     <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <h5 class="text-center">SSF Production Resources</h5>
             <a href="workweeks.php" class="btn btn-primary">View SSF Workweeks</a>
             <a href="view_ssf_shippinginfo.php" class="btn btn-secondary">Post Fabrication Status</a>
@@ -38,11 +38,15 @@
             <a href="view_ssf_hit_stations.php" class="btn btn-success">View SSF Production Monitor</a>
             <a href="view_ssf_stations.php" class="btn btn-info">View SSF Stations</a>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <h5 class="text-center">Production <-> PM</h5>
             <a href="timeline.php" class="btn btn-success">Project Timeline (preview)</a>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
+            <h5 class="text-center">Inventory</h5>
+            <a href="inventory" class="btn btn-info">Inventory</a>
+        </div>
+        <div class="col-md-3">
             <h5 class="text-center">Transition Tools (temp)</h5>
             <a href="view_ssf_route_removal.php" class="btn btn-info">Route Removal Tool</a>
         </div>
