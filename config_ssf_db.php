@@ -1,5 +1,41 @@
 <?php
 // db_config.php
+function inchesToFeetAndInches($inches) {
+    $inches = floatval($inches);
+    $feet = floor($inches / 12);
+    $remainingInches = fmod($inches, 12);
+    $wholeInches = floor($remainingInches);
+    $fractionNumerator = round(($remainingInches - $wholeInches) * 16);
+
+    $fractions = [
+        16 => '',
+        15 => '15/16',
+        14 => '7/8',
+        13 => '13/16',
+        12 => '3/4',
+        11 => '11/16',
+        10 => '5/8',
+        9 => '9/16',
+        8 => '1/2',
+        7 => '7/16',
+        6 => '3/8',
+        5 => '5/16',
+        4 => '1/4',
+        3 => '3/16',
+        2 => '1/8',
+        1 => '1/16'
+    ];
+
+    if ($fractionNumerator == 16) {
+        $wholeInches++;
+        $fractionStr = '';
+    } else {
+        $fractionStr = $fractionNumerator > 0 ? ' ' . $fractions[$fractionNumerator] : '';
+    }
+
+    return ($feet > 0 ? "$feet'-" : '') . $wholeInches . $fractionStr . '"';
+}
+
 
 // Database configuration
 $db_config = [

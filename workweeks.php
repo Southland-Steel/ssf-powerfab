@@ -439,9 +439,9 @@ sort($weeks);
                 </div>
                 <div class="card-body" style="background-color: white;">
                     <div class="row">
-                        <div class="col-md-4">
-                            <h5 class="card-title" id="jobTitle">Job: </h5>
-                            <p class="card-text" id="jobDescription"></p>
+                        <div class="col-md-4 summary-data">
+                            <h6>Line Items</h6>
+                            <p id="lineItemSummary"></p>
                         </div>
                         <div class="col-md-4 summary-data">
                             <h6>Hours</h6>
@@ -1569,6 +1569,15 @@ sort($weeks);
         Visible Green Flag Weight: ${formatNumberWithCommas(completedWeight)} lbs (${percentageCompleteByWeight.toFixed(2)}%)<br>
         Remaining Green Flag Weight: ${formatNumberWithCommas(remainingWeight)} lbs (${remainingTons} tons)<br>
     `);
+
+        const totalLineItems = data.length;
+        const totalAsmQty = data.reduce((sum, item) => sum + (parseInt(item.SequenceMainMarkQuantity) || 0), 0);
+
+// Update assembly info section
+        $('#lineItemSummary').html(`
+    Total Line Items: ${formatNumberWithCommas(totalLineItems)}<br>
+    Total Assembly Qty: ${formatNumberWithCommas(totalAsmQty)}<br>
+`);
     }
 
     function checkCompletion(stations) {

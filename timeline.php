@@ -367,6 +367,7 @@
                     this.createTimeline();
                     this.createProjectRows();
                     this.createFilterButtons();
+                    this.updateGanttLabels();
                 })
                 .catch(error => {
                     console.error('Error initializing Gantt chart:', error);
@@ -558,22 +559,15 @@
                 const hasWorkPackage = sequenceWPs.length > 0;
 
                 const isCategorizeOverdue = new Date(sequence.categorize.start) < new Date() && sequence.categorize.percentage < 100;
-                const categorizeClass = sequence.categorize.percentage === 100 ? 'categorize-success' :
-                    (isCategorizeOverdue ? 'categorize-danger' : '');
-
-                const iffPosition = sequence.iff.percentage == -1 ? 0 : this.calculatePosition(sequence.iff.start);
-                const nsiPosition = sequence.nsi.percentage == -1 ? 0 : this.calculatePosition(sequence.nsi.start);
 
                 row.innerHTML = `
-            <div class="gantt-labels ${categorizeClass}" data-rowid="${sequence.project}:${sequence.sequence}" title="ScheduleTaskID: ${sequence.fabrication.id}, RowID: ${sequence.project}:${sequence.sequence}">
+            <div class="gantt-labels" data-rowid="${sequence.project}:${sequence.sequence}" title="ScheduleTaskID: ${sequence.fabrication.id}, RowID: ${sequence.project}:${sequence.sequence}">
                 <div class="gantt-rowtitle">${sequence.project}: ${sequence.sequence}</div>
                 <div class="gantt-pmname">PM: ${sequence.pm}</div>
             </div>
             <div class="gantt-chart" style="background-color: rgba(25, 50, 100, ${opacity})" title="Hours: ${Number(sequence.fabrication.hours).toLocaleString()} (${Math.round(opacity*100)}% of largest sequence)">
-                <div class="categorize" title="${sequence.categorize.start} (${sequence.categorize.percentage}%)">Categorize by: ${sequence.categorize.start} (${sequence.categorize.percentage}%)</div>
+                <div class="categorize">Categorize by: ${sequence.categorize.start}</div>
                 ${workPackageBrackets}
-                <div class="indicator iff-indicator ${sequence.iff.percentage > 98 ? 'good' : 'bad'}" style="left:${iffPosition}%;" title="IFF: ${sequence.iff.start}">${sequence.iff.percentage}%</div>
-                <div class="indicator nsi-indicator ${sequence.nsi.percentage > 98 ? 'good' : 'bad'}" style="left:${nsiPosition}%;" title="NSI: ${sequence.nsi.start}">${sequence.nsi.percentage}%</div>
                 ${this.createDateLines()}
                 <div class="hover-line"></div>
                 <div class="hover-date"></div>
@@ -748,16 +742,223 @@ Hours: ${Math.round(wp.hours)}"
             return weeklyData.sort((a, b) => a.date - b.date);
         }
 
+        updateGanttLabels() {
+            // Get all labels at once and create a Map for faster lookups
+            const labelElements = new Map();
+            document.querySelectorAll(".gantt-labels[data-rowid]").forEach(el => {
+                const rowId = el.getAttribute("data-rowid");
+                if (rowId) {
+                    const [JobNumber, SequenceName] = rowId.split(":");
+                    labelElements.set(rowId, {
+                        element: el,
+                        JobNumber,
+                        SequenceName,
+                        chartElement: el.nextElementSibling // Get the gantt-chart div
+                    });
+                }
+            });
+
+            if (labelElements.size === 0) return;
+
+            // Create the request payload
+            const jobSequences = Array.from(labelElements.values()).map(({JobNumber, SequenceName}) => ({
+                JobNumber,
+                SequenceName
+            }));
+
+            fetch("ajax_get_ssf_timelinefabrication_catstatus.php", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ jobSequences })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || data.error) {
+                        console.error("Error fetching data:", data.error);
+                        return;
+                    }
+
+                    // Process all entries at once
+                    data.forEach(entry => {
+                        const rowId = `${entry.JobNumber}:${entry.SequenceName}`;
+                        const labelInfo = labelElements.get(rowId);
+                        if (!labelInfo) return;
+
+                        const element = labelInfo.element;
+                        const chartElement = labelInfo.chartElement;
+                        const totalItems = entry.TotalItems || 0;
+
+                        // Calculate percentages once
+                        const iffPercentage = totalItems > 0 ?
+                            ((entry.IFFCount / totalItems) * 100).toFixed(1) : '0.0';
+                        const categorizedPercentage = totalItems > 0 ?
+                            ((entry.CategorizedCount / totalItems) * 100).toFixed(1) : '0.0';
+
+                        // Set title text
+                        element.title = `Total Items: ${totalItems}\n` +
+                            `IFF Status: ${entry.IFFCount} - IFF (${iffPercentage}%)\n` +
+                            `Categorization Status: ${entry.CategorizedCount} - Categorized (${categorizedPercentage}%)`;
+
+                        // Update classes
+                        element.classList.remove("categorize-success", "categorize-danger");
+                        element.style.backgroundImage = "none";
+
+                        element.classList.add(entry.CategorizedCount > 0 ? "categorize-success" : "categorize-danger");
+
+                        if (entry.NotIFFCount > 0) {
+                            element.style.backgroundImage = "repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1) 5px, transparent 5px, transparent 10px)";
+                        }
+
+                        // Remove any existing indicators
+                        chartElement.querySelectorAll('.indicator').forEach(ind => ind.remove());
+
+                        // Calculate positions
+                        const sequence = this.data.sequences.find(s =>
+                            s.project === entry.JobNumber && s.sequence === entry.SequenceName);
+                        if (sequence) {
+                            const iffPosition = sequence.iff.percentage == -1 ? 0 :
+                                this.calculatePosition(sequence.iff.start);
+                            const nsiPosition = sequence.nsi.percentage == -1 ? 0 :
+                                this.calculatePosition(sequence.nsi.start);
+
+                            // Create new indicators
+                            const iffIndicator = document.createElement('div');
+                            iffIndicator.className = `indicator iff-indicator ${Number(iffPercentage) > 98 ? 'good' : 'bad'}`;
+                            iffIndicator.style.left = `${iffPosition}%`;
+                            iffIndicator.title = `IFF: ${sequence.iff.start}`;
+                            iffIndicator.textContent = `${iffPercentage}%`;
+
+                            const nsiIndicator = document.createElement('div');
+                            nsiIndicator.className = `indicator nsi-indicator ${sequence.nsi.percentage > 98 ? 'good' : 'bad'}`;
+                            nsiIndicator.style.left = `${nsiPosition}%`;
+                            nsiIndicator.title = `NSI: ${sequence.nsi.start}`;
+                            nsiIndicator.textContent = `${sequence.nsi.percentage}%`;
+
+                            chartElement.appendChild(iffIndicator);
+                            chartElement.appendChild(nsiIndicator);
+                        }
+                    });
+                })
+                .catch(error => console.error("Error fetching IFF data:", error));
+        }
+
     }
 
     function closeHoursModal() {
         document.getElementById('hoursModal').style.display = 'none';
     }
 
+
+
     // Initialize the chart when the page loads
     document.addEventListener('DOMContentLoaded', () => {
         const gantt = new GanttChart('ganttChart');
     });
+</script>
+<script>
+    // Add the export button to the filter container
+    const filterContainer = document.querySelector('.filter-container');
+    const exportButton = document.createElement('button');
+    exportButton.className = 'filter-btn';
+    exportButton.textContent = 'Export Data';
+    exportButton.onclick = exportGanttData;
+    filterContainer.appendChild(exportButton);
+
+    function exportGanttData() {
+        // Get all gantt rows except the timeline row
+        const rows = Array.from(document.querySelectorAll('.gantt-row')).filter(row =>
+            !row.closest('.timeline-row')
+        );
+
+        // Extract data from each row
+        const data = rows.map(row => {
+            const titleElement = row.querySelector('.gantt-rowtitle');
+            const pmElement = row.querySelector('.gantt-pmname');
+            const barElement = row.querySelector('.gantt-bar-text');
+            const percentageElement = row.querySelector('.gantt-bar-percentage-text');
+            const labelsDiv = row.querySelector('.gantt-labels');
+
+            // Get workpackage brackets data
+            const wpStartBracket = row.querySelector('.wp-bracket.wp-start');
+            const wpEndBracket = row.querySelector('.wp-bracket.wp-end');
+            const wpStartDate = wpStartBracket ? wpStartBracket.title.replace('Start Date: ', '') : '';
+            const wpEndDate = wpEndBracket ? wpEndBracket.title.replace('End Date: ', '') : '';
+
+            // Get project and sequence
+            const [project, sequence] = titleElement ?
+                titleElement.textContent.split(':').map(s => s.trim()) : ['', ''];
+
+            // Get PM name
+            const pm = pmElement ?
+                pmElement.textContent.replace('PM:', '').trim() : '';
+
+            // Get categorize info
+            const categorizeInfo = categorizeElement ?
+                categorizeElement.title : '';
+
+            // Get bar info
+            const barInfo = barElement ?
+                barElement.textContent : '';
+
+            // Get completion percentage
+            const percentage = percentageElement ?
+                percentageElement.textContent : '';
+
+            // Get categorize status
+            const categorizeStatus = labelsDiv?.classList.contains('categorize-success') ? 'Success' :
+                labelsDiv?.classList.contains('categorize-danger') ? 'Danger' : 'Normal';
+
+            return {
+                project,
+                sequence,
+                pm,
+                categorizeInfo,
+                barInfo,
+                percentage,
+                categorizeStatus,
+                wpStartDate,
+                wpEndDate
+            };
+        });
+
+        // Create CSV content
+        const headers = [
+            'Project',
+            'Sequence',
+            'PM',
+            'Categorize Info',
+            'Bar Info',
+            'Percentage',
+            'Categorize Status',
+            'WP Start Date',
+            'WP End Date'
+        ];
+
+        const csvContent = [
+            headers.join(','),
+            ...data.map(row => [
+                row.project,
+                row.sequence,
+                row.pm,
+                `"${row.categorizeInfo.replace(/"/g, '""')}"`,
+                `"${row.barInfo.replace(/"/g, '""')}"`,
+                row.percentage,
+                row.categorizeStatus,
+                row.wpStartDate,
+                row.wpEndDate
+            ].join(','))
+        ].join('\n');
+
+        // Create and trigger download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = 'gantt_data.csv';
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 </script>
 </body>
 </html>

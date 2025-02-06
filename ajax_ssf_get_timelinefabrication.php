@@ -199,4 +199,4 @@ $ganttData['sequences'] = array_values(array_filter($ganttData['sequences'], fun
     return $sequence['sequence'] !== null;
 }));
 
-echo json_encode($ganttData);
+echo json_encode($ganttData, JSON_PRETTY_PRINT);
