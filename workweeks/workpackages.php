@@ -83,7 +83,7 @@ $sequences = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <?php foreach ($sequences as $seq): ?>
                     <button class="sequence-btn"
                             data-sequence-id="<?= htmlspecialchars($seq['SequenceID']) ?>"
-                            onclick="loadSequenceData(this.dataset.sequenceId)">
+                            onclick="loadSequenceData(event, this.dataset.sequenceId)">
                         <?= htmlspecialchars($seq['SequenceKey']) ?>
                     </button>
                 <?php endforeach; ?>
@@ -100,7 +100,7 @@ $sequences = $stmt->fetchAll(PDO::FETCH_ASSOC);
 </main>
 
 <script>
-    function loadSequenceData(sequenceId) {
+    function loadSequenceData(event, sequenceId) {
         const buttons = document.querySelectorAll('.sequence-btn');
         buttons.forEach(btn => btn.classList.remove('active'));
         event.target.classList.add('active');
@@ -111,6 +111,8 @@ $sequences = $stmt->fetchAll(PDO::FETCH_ASSOC);
             .then(cutlistData => {
                 // Save cutlist data globally
                 savedCutlistData = cutlistData;
+
+                updateSidePanelData(cutlistData);
 
                 // Then load sequence data
                 return fetch(`get_sequence_data.php?sequence_id=${sequenceId}`);
@@ -133,10 +135,33 @@ $sequences = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     const totalHours = item.Quantity * item.AssemblyManHoursEach;
                     const totalWeight = item.Quantity * item.GrossAssemblyWeightEach;
 
+                    // Debug logging
+                    console.log('PCIS ID from item:', item.ProductionControlItemSequenceID, typeof item.ProductionControlItemSequenceID);
+                    console.log('All cutlist PCIS IDs:', savedCutlistData.map(c => ({
+                        id: c.ProductionControlItemSequenceID,
+                        type: typeof c.ProductionControlItemSequenceID
+                    })));
+
+                    const matchingCutlists = savedCutlistData.filter(cutlist => {
+                        console.log('Comparing:', {
+                            itemPCIS: item.ProductionControlItemSequenceID,
+                            cutlistPCIS: cutlist.ProductionControlItemSequenceID,
+                            equal: Number(cutlist.ProductionControlItemSequenceID) === Number(item.ProductionControlItemSequenceID)
+                        });
+                        return Number(cutlist.ProductionControlItemSequenceID) === Number(item.ProductionControlItemSequenceID);
+                    });
+
+                    console.log('Matching cutlists:', matchingCutlists);
+
                     // Calculate remaining parts for this PCIS
                     const remainingParts = savedCutlistData
                         .filter(cutlist => Number(cutlist.ProductionControlItemSequenceID) === Number(item.ProductionControlItemSequenceID))
-                        .reduce((sum, cutlist) => sum + Number(cutlist.RemainingItems || 0), 0);
+                        .reduce((sum, cutlist) => {
+                            console.log('Adding to sum:', cutlist.RemainingItems);
+                            return sum + Number(cutlist.RemainingItems || 0);
+                        }, 0);
+
+                    console.log('Total remaining parts:', remainingParts);
 
                     // Create parts to process cell with proper styling and click handler
                     const partsCell = remainingParts > 0
@@ -162,6 +187,7 @@ $sequences = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Add the modal functions
     let savedCutlistData = [];
+
 
     function organizeCutlistData(data) {
         const workshops = {};
@@ -200,57 +226,53 @@ $sequences = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return workshops;
     }
 
-    function updateSidePanelData(sequenceId) {
-        fetch(`ajax_get_workpackage_cutlists.php?sequence_id=${sequenceId}`)
-            .then(response => response.json())
-            .then(data => {
-                const organized = organizeCutlistData(data);
-                let html = '';
+    function updateSidePanelData(data) {
+        const organized = organizeCutlistData(data);
+        let html = '';
 
-                for (const [workshop, machineGroups] of Object.entries(organized)) {
-                    html += `<div class="workshop-group">
-                        <h3 class="section-title">${workshop}</h3>`;
+        for (const [workshop, machineGroups] of Object.entries(organized)) {
+            html += `<div class="workshop-group">
+                <h3 class="section-title">${workshop}</h3>`;
 
-                    for (const [machineGroup, workPackages] of Object.entries(machineGroups)) {
-                        html += `<div class="machine-group">
-                            <h4 class="text-sm font-bold mb-2">${machineGroup}</h4>
-                            <table class="cutlist-table">
-                                <thead>
-                                    <tr>
-                                        <th>Shape</th>
-                                        <th>Size</th>
-                                        <th>Rem.</th>
-                                        <th>Nest</th>
-                                        <th>WPID</th>
-                                    </tr>
-                                </thead>
-                                <tbody>`;
+            for (const [machineGroup, workPackages] of Object.entries(machineGroups)) {
+                html += `<div class="machine-group">
+                    <h4 class="text-sm font-bold mb-2">${machineGroup}</h4>
+                    <table class="cutlist-table">
+                        <thead>
+                            <tr>
+                                <th>Shape</th>
+                                <th>Size</th>
+                                <th>Rem.</th>
+                                <th>Nest</th>
+                                <th>WPID</th>
+                            </tr>
+                        </thead>
+                        <tbody>`;
 
-                        for (const [wpNumber, items] of Object.entries(workPackages)) {
-                            html += `<tr class="wp-header">
-                                <td colspan="5">WP ${wpNumber}</td>
-                            </tr>`;
+                for (const [wpNumber, items] of Object.entries(workPackages)) {
+                    html += `<tr class="wp-header">
+                        <td colspan="5">WP ${wpNumber}</td>
+                    </tr>`;
 
-                            items.forEach(item => {
-                                html += `<tr>
-                                    <td>${item.Shape}</td>
-                                    <td>${item.Size}</td>
-                                    <td>${item.Remaining}</td>
-                                    <td>${item.Nest}</td>
-                                    <td>${item.WPID}</td>
-                                </tr>`;
-                            });
+                    items.forEach(item => {
+                        html += `<tr>
+                            <td>${item.Shape}</td>
+                            <td>${item.Size}</td>
+                            <td>${item.Remaining}</td>
+                            <td>${item.Nest}</td>
+                            <td>${item.WPID}</td>
+                        </tr>`;
+                    });
 
-                            html += `<tr class="wp-border"><td colspan="5"></td></tr>`;
-                        }
-
-                        html += `</tbody></table></div>`;
-                    }
-                    html += `</div>`;
+                    html += `<tr class="wp-border"><td colspan="5"></td></tr>`;
                 }
 
-                document.getElementById('workshop-lists').innerHTML = html;
-            });
+                html += `</tbody></table></div>`;
+            }
+            html += `</div>`;
+        }
+
+        document.getElementById('workshop-lists').innerHTML = html;
     }
 
     function showCutlistModal(event, pcisId, mainMark) {
@@ -388,7 +410,13 @@ $sequences = $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     // Load first sequence and cutlist data by default
-    document.querySelector('.sequence-btn')?.click();
+    document.addEventListener('DOMContentLoaded', function() {
+        const firstButton = document.querySelector('.sequence-btn');
+        if (firstButton) {
+            const sequenceId = firstButton.dataset.sequenceId;
+            loadSequenceData({ target: firstButton }, sequenceId);
+        }
+    });
 </script>
 </body>
 </html>

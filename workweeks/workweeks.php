@@ -138,53 +138,40 @@ sort($weeks);
 
 <script>
     let workpackagesWithCutlists = new Set();
+    let savedCutlistData = [];
 
-    function debugModal(action, workpackageId, workpackageNumber) {
-        console.log(`Modal ${action}:`, {
-            workpackageId,
-            workpackageNumber,
-            savedCutlistData: savedCutlistData.length,
-            modalDisplay: document.getElementById('cutlistModal').style.display,
-            backdropDisplay: document.getElementById('modalBackdrop').style.display
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const workweek = '<?= $workweek ?>';
-        loadProjectData(workweek);
-        updateSidePanelData(workweek);
-
-        document.querySelectorAll('.sequence-btn').forEach(button => {
-            button.addEventListener('click', function() {
-                document.querySelectorAll('.sequence-btn').forEach(btn => {
-                    btn.classList.remove('active');
-                });
-                this.classList.add('active');
-            });
-        });
-        const backdrop = document.getElementById('modalBackdrop');
-        if (backdrop) {
-            backdrop.addEventListener('click', function(event) {
-                if (event.target === this) {
-                    closeModal();
-                }
-            });
+    async function fetchCutlistData(week) {
+        try {
+            const response = await fetch(`ajax_get_workpackage_cutlists.php?workweek=${week}`);
+            savedCutlistData = await response.json();
+            workpackagesWithCutlists = new Set(
+                savedCutlistData.map(item => item.WorkPackageID)
+            );
+            return savedCutlistData;
+        } catch (error) {
+            console.error('Error fetching cutlist data:', error);
+            return [];
         }
-    });
+    }
 
     function loadProjectData(week) {
         const dataBody = document.getElementById('data-body');
+        const workshopLists = document.getElementById('workshop-lists');
 
-        // First, fetch cutlist data to know which workpackages have cutlists
-        fetch(`ajax_get_workpackage_cutlists.php?workweek=${week}`)
-            .then(response => response.json())
-            .then(cutlistData => {
-                savedCutlistData = cutlistData; // Save the cutlist data globally
-                workpackagesWithCutlists = new Set(
-                    cutlistData.map(item => item.WorkPackageID)
-                );
+        // Clear existing data immediately
+        dataBody.innerHTML = '<tr><td colspan="11">Loading...</td></tr>';
+        workshopLists.innerHTML = '<div class="loading">Loading cutlist data...</div>';
 
-                // Then load workpackage data
+        window.history.pushState({}, '', `?workweek=${week}`);
+        savedCutlistData = []; // Reset saved data
+
+        // Always fetch fresh cutlist data for new workweek
+        return fetchCutlistData(week)
+            .then(() => {
+                // Update side panel with new data
+                updateSidePanelData();
+
+                // Load workpackage data
                 return fetch(`ajax_get_workweek_workpackages.php?workweek=${week}`);
             })
             .then(response => response.json())
@@ -201,7 +188,6 @@ sort($weeks);
                     const quantityLeft = Number(wp.FinalQCQtyLeft || 0);
                     const weightLeft = Number(wp.FinalQCWeightLeft || 0);
 
-                    // Create the parts to process cell with proper styling and click handler
                     const partsCell = totalRemaining > 0
                         ? `<td class="has-cutlist" onclick="showCutlistModal(event, ${wp.WorkPackageID}, '${wp.WorkPackageNumber}')">${totalRemaining}</td>`
                         : `<td>0</td>`;
@@ -225,6 +211,7 @@ sort($weeks);
             .catch(error => {
                 console.error('Error loading data:', error);
                 dataBody.innerHTML = '<tr><td colspan="11">Error loading data</td></tr>';
+                workshopLists.innerHTML = '<div class="error">Error loading cutlist data</div>';
             })
             .finally(() => {
                 updateSummaries();
@@ -268,101 +255,184 @@ sort($weeks);
     function organizeCutlistData(data) {
         const workshops = {};
 
-        // Sort data by WorkPackageNumber first
+        // Sort data by Shape and Size first
         data.sort((a, b) => {
-            if (a.WorkPackageNumber < b.WorkPackageNumber) return -1;
-            if (a.WorkPackageNumber > b.WorkPackageNumber) return 1;
+            // First sort by Shape
+            if (a.Shape < b.Shape) return -1;
+            if (a.Shape > b.Shape) return 1;
+
+            // Then by Size
+            if (a.DimensionSizesImperial < b.DimensionSizesImperial) return -1;
+            if (a.DimensionSizesImperial > b.DimensionSizesImperial) return 1;
             return 0;
         });
 
         data.forEach(item => {
             const workshop = item.WorkShop || 'Unassigned';
             const machineGroup = item.MachineGroup || 'Unassigned';
-            const wpNumber = item.WorkPackageNumber;
+            const nestNumber = item.NestNumber || 'Unassigned';
+            const shapeKey = `${item.Shape || 'N/A'}_${item.DimensionSizesImperial || 'N/A'}`;
 
+            // Initialize workshop if it doesn't exist
             if (!workshops[workshop]) {
                 workshops[workshop] = {};
             }
+
+            // Initialize machine group if it doesn't exist
             if (!workshops[workshop][machineGroup]) {
                 workshops[workshop][machineGroup] = {};
             }
-            if (!workshops[workshop][machineGroup][wpNumber]) {
-                workshops[workshop][machineGroup][wpNumber] = [];
+
+            // Initialize nest if it doesn't exist
+            if (!workshops[workshop][machineGroup][nestNumber]) {
+                workshops[workshop][machineGroup][nestNumber] = {
+                    items: {},
+                    workPackages: new Set(),
+                    shapes: new Set()
+                };
             }
 
-            workshops[workshop][machineGroup][wpNumber].push({
-                Shape: item.Shape || 'N/A',
-                Size: item.DimensionSizesImperial || 'N/A',
-                Remaining: item.RemainingItems || 0,
-                Nest: item.NestNumber || 'N/A',
-                WPID: item.WorkPackageID
-            });
+            const nest = workshops[workshop][machineGroup][nestNumber];
+
+            // If this shape/size combination doesn't exist yet, initialize it
+            if (!nest.items[shapeKey]) {
+                nest.items[shapeKey] = {
+                    Shape: item.Shape || 'N/A',
+                    Size: item.DimensionSizesImperial || 'N/A',
+                    Remaining: 0,
+                    WorkPackages: new Set()
+                };
+            }
+
+            try {
+                // Add to the remaining count for this shape/size combination
+                nest.items[shapeKey].Remaining += parseInt(item.RemainingItems) || 0;
+                // Add the workpackage to the set for this shape/size
+                if (item.WorkPackageNumber) {
+                    nest.items[shapeKey].WorkPackages.add(item.WorkPackageNumber);
+                    nest.workPackages.add(item.WorkPackageNumber);
+                }
+                // Add to the nest's unique shapes set
+                if (item.Shape && item.Shape !== 'N/A') {
+                    nest.shapes.add(item.Shape);
+                }
+            } catch (error) {
+                console.error('Error processing item:', item, error);
+            }
         });
 
         return workshops;
     }
 
-    let savedCutlistData = [];
+    function updateSidePanelData() {
+        try {
+            const organized = organizeCutlistData(savedCutlistData);
+            let html = '';
 
-    function updateSidePanelData(week) {
-        fetch(`ajax_get_workpackage_cutlists.php?workweek=${week}`)
-            .then(response => response.json())
-            .then(data => {
-                savedCutlistData = data;
+            for (const [workshop, machineGroups] of Object.entries(organized)) {
+                html += `
+                <div class="workshop-group">
+                    <div class="workshop-title">
+                        Workshop: ${workshop}
+                    </div>`;
 
-                const organized = organizeCutlistData(data);
-                let html = '';
+                for (const [machineGroup, nests] of Object.entries(machineGroups)) {
+                    html += `
+                    <div class="machine-group">
+                        <div class="machine-group-title">
+                            Machine Group: ${machineGroup}
+                        </div>`;
 
-                for (const [workshop, machineGroups] of Object.entries(organized)) {
-                    html += `<div class="workshop-group">
-                    <h3 class="section-title">Workshop: ${workshop}</h3>`;
+                    for (const [nestNumber, nestData] of Object.entries(nests)) {
+                        const nestId = `nest-${workshop}-${machineGroup}-${nestNumber}`.replace(/\s+/g, '-');
+                        const totalRemaining = Object.values(nestData.items)
+                            .reduce((sum, item) => sum + item.Remaining, 0);
+                        const totalWPs = nestData.workPackages.size;
 
-                    for (const [machineGroup, workPackages] of Object.entries(machineGroups)) {
-                        html += `<div class="machine-group">
-                        <h4 class="text-sm font-bold mb-2">Machine Group: ${machineGroup}</h4>
-                        <table class="cutlist-table">
-                            <thead>
-                                <tr>
-                                    <th>Shape</th>
-                                    <th>Size</th>
-                                    <th>Rem.</th>
-                                    <th>Nest</th>
-                                    <th>WPID</th>
-                                </tr>
-                            </thead>
-                            <tbody>`;
+                        // Get the first CutlistDescription from the items in this nest
+                        const nestDescription = savedCutlistData
+                            .find(item => item.NestNumber === nestNumber)?.CutlistDescription || '';
 
-                        for (const [wpNumber, items] of Object.entries(workPackages)) {
-                            html += `<tr class="wp-header">
-                            <td colspan="5">WP ${wpNumber}</td>
-                        </tr>`;
+                        html += `
+                            <div class="nest-group collapsed">
+                                <div class="nest-title collapsible" data-target="${nestId}">
+                                    <div class="nest-info">
+                                        <div class="nest-header">
+                                            <div class="nest-primary">
+                                                <span class="collapse-icon">▼</span>
+                                                Nest ${nestNumber}
+                                                <span class="workpackage-list">(${totalWPs} WP${totalWPs !== 1 ? 's' : ''})</span>
+                                                <span class="workpackage-shapes">${Array.from(nestData.shapes).sort().join(', ')}</span>
+                                            </div>
+                                            <div class="nest-description">${nestDescription}</div>
+                                        </div>
+                                    </div>
+                                    <span class="remaining-count">${totalRemaining} total items</span>
+                                </div>
+                                <div id="${nestId}" class="content-section">
+                                    <table class="cutlist-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Shape</th>
+                                                <th>Size</th>
+                                                <th>Rem.</th>
+                                                <th>WP</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>`;
 
-                            items.forEach(item => {
-                                html += `<tr>
+                        // Convert items object to array and sort
+                        const sortedItems = Object.values(nestData.items).sort((a, b) => {
+                            if (a.Shape < b.Shape) return -1;
+                            if (a.Shape > b.Shape) return 1;
+                            if (a.Size < b.Size) return -1;
+                            if (a.Size > b.Size) return 1;
+                            return 0;
+                        });
+
+                        sortedItems.forEach(item => {
+                            const workPackages = Array.from(item.WorkPackages).join(', ');
+                            html += `
+                            <tr>
                                 <td>${item.Shape}</td>
                                 <td>${item.Size}</td>
                                 <td>${item.Remaining}</td>
-                                <td>${item.Nest}</td>
-                                <td>${item.WPID}</td>
+                                <td>${workPackages}</td>
                             </tr>`;
-                            });
+                        });
 
-                            // Add an empty bordered row after each workpackage
-                            html += `<tr class="wp-border"><td colspan="5"></td></tr>`;
-                        }
-
-                        html += `</tbody></table></div>`;
+                        html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>`;
                     }
+
                     html += `</div>`;
                 }
+                html += `</div>`;
+            }
 
-                document.getElementById('workshop-lists').innerHTML = html;
+            document.getElementById('workshop-lists').innerHTML = html;
+
+            // Add click handlers for collapsible nest sections only
+            document.querySelectorAll('.collapsible').forEach(element => {
+                element.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const parentNest = this.closest('.nest-group');
+                    if (parentNest) {
+                        parentNest.classList.toggle('collapsed');
+                    }
+                });
             });
+        } catch (error) {
+            console.error('Error in updateSidePanelData:', error);
+        }
     }
+
 
     function showCutlistModal(event, workpackageId, workpackageNumber) {
         event.preventDefault();
-        debugModal('opening', workpackageId, workpackageNumber);
 
         const modalTitle = document.querySelector('.modal-title');
         const modalContent = document.getElementById('modalContent');
@@ -476,6 +546,17 @@ sort($weeks);
         openModal();
     }
 
+    function toggleAllNests(action) {
+        const nests = document.querySelectorAll('.nest-group');
+        nests.forEach(nest => {
+            if (action === 'expand') {
+                nest.classList.remove('collapsed');
+            } else if (action === 'collapse') {
+                nest.classList.add('collapsed');
+            }
+        });
+    }
+
     function openModal() {
         const backdrop = document.getElementById('modalBackdrop');
         const modal = document.getElementById('cutlistModal');
@@ -514,6 +595,36 @@ sort($weeks);
             closeModal();
         }
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const workweek = '<?= $workweek ?>';
+        loadProjectData(workweek).catch(error => {
+            console.error('Error loading initial project data:', error);
+        });
+
+        document.querySelectorAll('.sequence-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.sequence-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                this.classList.add('active');
+
+                // Handle the loadProjectData promise
+                loadProjectData(this.textContent).catch(error => {
+                    console.error('Error loading project data:', error);
+                });
+            });
+        });
+
+        const backdrop = document.getElementById('modalBackdrop');
+        if (backdrop) {
+            backdrop.addEventListener('click', function(event) {
+                if (event.target === this) {
+                    closeModal();
+                }
+            });
+        }
+    });
 </script>
 </body>
 </html>

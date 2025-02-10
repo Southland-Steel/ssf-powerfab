@@ -475,3 +475,92 @@ tr.font-bold .piecemark-link {
 .data-table a:hover {
     text-decoration: underline;
 }
+.collapsible {
+    cursor: pointer;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.collapsible:hover {
+    background-color: #f3f4f6;
+}
+.collapse-icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    text-align: center;
+    line-height: 20px;
+    transition: transform 0.2s;
+}
+.collapsed .collapse-icon {
+    transform: rotate(-90deg);
+}
+.content-section {
+    transition: max-height 0.3s ease-out;
+    overflow: hidden;
+}
+.collapsed .content-section {
+    max-height: 0;
+}
+.workshop-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    padding: 0.5rem;
+    margin: 0;
+    background-color: #f8fafc;
+    border-radius: 4px;
+}
+.machine-group-title {
+    font-size: 1em;
+    padding: 0.4rem;
+    margin: 0.5rem 0;
+    background-color: #f1f5f9;
+    border-radius: 4px;
+}
+.nest-title {
+    font-size: 0.9em;
+    padding: 0.3rem;
+    margin: 0.3rem 0;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+}
+.nest-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.remaining-count {
+    background-color: #cbd5e1;
+    padding: 0.2rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.8em;
+}
+.workpackage-list {
+    font-size: 0.8em;
+    color: #64748b;
+}
+.workpackage-shapes {
+    font-size: 0.8em;
+    color: #64748b;
+    margin-left: 0.5rem;
+    padding-left: 0.5rem;
+    border-left: 1px solid #cbd5e1;
+}
+.nest-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.nest-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nest-description {
+    font-size: 0.75em;
+    color: #64748b;
+    padding-left: 1.5rem; /* To align with text above (accounting for collapse icon) */
+}
