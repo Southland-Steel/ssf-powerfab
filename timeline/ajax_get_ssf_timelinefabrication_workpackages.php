@@ -1,5 +1,5 @@
 <?php
-require_once('config_ssf_db.php');
+require_once('../config_ssf_db.php');
 
 $query = "WITH SequenceLevelData AS (
     SELECT DISTINCT

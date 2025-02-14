@@ -1,0 +1,322 @@
+/* Base Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 5px;
+    line-height: 1.6;
+    background-color: #f8f9fa;
+}
+
+/* Layout Components */
+.container-fluid {
+    max-width: 1800px;
+    margin: 0 auto;
+}
+
+/* Work Weeks Section */
+#workweeks {
+    padding: 10px 0;
+    border-bottom: 1px solid #dee2e6;
+    background-color: white;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+#activeWorkWeeks {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+/* Week Button Styles */
+.week-btn {
+    padding: 4px 20px;
+    margin: 2px;
+    background-color: #99332B;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    min-width: 80px;
+    text-align: center;
+}
+
+.week-btn:hover {
+    background-color: #7A2822;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.week-btn.active {
+    background-color: white;
+    border: 2px solid #99332B;
+    color: #99332B;
+    font-weight: bold;
+}
+
+/* Filter Section Styles */
+.filters-container {
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.filter-section {
+    border: 1px solid #dee2e6;
+    padding: 12px;
+    margin: 5px;
+    border-radius: 6px;
+    background-color: #fff;
+    min-width: 200px;
+    max-width: 300px;
+}
+
+.filter-section h5 {
+    margin: 0 0 10px 0;
+    font-size: 0.9rem;
+    color: #495057;
+    font-weight: 600;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.checkbox-container {
+    max-height: 125px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.checkbox-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.checkbox-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.checkbox-container::-webkit-scrollbar-thumb {
+    background: #99332B;
+    border-radius: 3px;
+}
+
+.checkbox-container::-webkit-scrollbar-thumb:hover {
+    background: #7A2822;
+}
+
+/* Form Check Styles */
+.form-check {
+    margin-bottom: 4px;
+    padding-left: 1.75rem;
+}
+
+.form-check-input {
+    margin-left: -1.75rem;
+}
+
+.form-check-label {
+    font-size: 0.85rem;
+    color: #495057;
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: #99332B;
+    border-color: #99332B;
+}
+
+.form-check-input:disabled + .form-check-label {
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+/* Table Styles */
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#dataTable {
+    margin-bottom: 0;
+    background-color: white;
+}
+
+#dataTable thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px 8px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #495057;
+    white-space: nowrap;
+}
+
+#dataTable tbody td {
+    padding: 8px;
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+#dataTable tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+#dataTable tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Expanded Row Styles */
+.expanded-row {
+    background-color: #f8f9fa !important;
+    border-left: 3px solid #99332B !important;
+}
+
+/* Detail Row Styles */
+.detail-row {
+    background-color: #fff;
+    display: none;
+}
+
+.detail-row th, .detail-row td {
+    text-align: center;
+}
+
+.detail-row th:first-child, .detail-row td:first-child {
+    text-align: left;
+}
+
+.detail-row td {
+    padding: 1px 8px 1px !important;
+}
+
+/* Related Items Section */
+.detail-row h6 {
+    color: #dc3545;
+    margin: 0;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Detail Table Styles */
+.detail-row .table {
+    margin: 0;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.detail-row .table thead th {
+    background-color: #f8f9fa;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 8px 12px;
+    border-bottom: 2px solid #dee2e6;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.detail-row .table tbody td {
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    border-bottom: 1px solid #dee2e6;
+    background-color: white;
+    white-space: nowrap;
+}
+
+.detail-row .table tbody tr:hover td {
+    background-color: #f8f9fa;
+}
+
+/* Category Styles */
+.detail-row .table td:last-child {
+    font-weight: 500;
+}
+
+/* Sequence Status */
+.detail-row .table td.undefined {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Loading Overlay */
+#loading-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+
+.loading-spinner {
+    padding: 20px 40px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 18px;
+    font-weight: bold;
+    color: #99332B;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.loading-spinner::after {
+    content: "";
+    width: 20px;
+    height: 20px;
+    border: 3px solid #99332B;
+    border-top: 3px solid transparent;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .filter-section {
+        min-width: 150px;
+    }
+
+    #dataTable {
+        font-size: 0.8rem;
+    }
+
+    .week-btn {
+        padding: 3px 15px;
+        font-size: 12px;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .filters-container,
+    .week-btn:not(.active) {
+        display: none;
+    }
+
+    #dataTable th,
+    #dataTable td {
+        font-size: 10pt;
+    }
+
+    .detail-row {
+        display: table-row !important;
+    }
+}

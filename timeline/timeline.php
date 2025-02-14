@@ -3,332 +3,73 @@
 <head>
     <title>Project Manager Interface</title>
     <style>
-        body{
-            background-color: #6c6c6c;
-            font-family:system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-        }
-        .gantt-container {
-            position: relative;
-            margin: 2px;
-            overflow-x: auto;
-            height: 98vh;
-        }
-        .timeline-row {
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            background: #2b2d30;
-            color: #456ca0;
-        }
-        .gantt-row {
-            height: 40px;
-            margin-bottom: 0;
-            display: flex;
-            align-items: center;
-            border-bottom: 1px solid #2b2d30;
-        }
-        .gantt-labels {
-            width: 200px;
-            padding-right: 15px;
-            left: 0;
-            background: #2b2d30;
-            color: #c1c1c1;
-            border-right: 0;
-            height: 39px;
-        }
-        .categorize-success{
-            background-color: green;
-        }
-        .categorize-danger{
-            background-color: red;
-        }
-        .gantt-rowtitle{
-            font-weight: bold;
-            font-size: medium;
-            padding-left: 5px;
-        }
-        .gantt-pmname{
-            font-size: small;
-            padding-left: 15px;
-        }
-        .gantt-chart {
-            position: relative;
-            width: calc(100% - 200px);
-            min-height: 40px;
-            overflow: visible;
-        }
-        .categorize{
-            position: absolute;
-            left:0;
-            bottom:0;
-            font-size: small;
-            padding-left: 3px;
-            padding-bottom: 3px;
-            color: #c1c1c1;
-        }
-        .gantt-timeline {
-            position: relative;
-            height: 38px;
-            border-bottom: 1px solid #6c6c6c;
-            margin-bottom: 1px;
-            padding: 1px;
-            width: 100%;
-        }
-        .timeline-marker {
-            position: absolute;
-            border-left: 1px solid #6c6c6c;
-            height: 100%;
-            font-size: 12px;
-            color: #666;
-            padding-top: 5px;
-        }
-        .gantt-bar {
-            position: absolute;
-            height: 35px;
-            background: #007bff;
-            border-radius: 4px;
-            top: 2px;
-            overflow: visible;
-
-        }
-        .gantt-bar-percentage {
-            position: absolute;
-            left: 0;
-            bottom: 2px;
-            color: white;
-            font-size: 0.7em;
-            white-space: nowrap;
-            height: 5px;
-            background-color: black;
-        }
-        .gantt-bar-percentage-text{
-            position: absolute;
-            text-align: right;
-            width: 90%;
-            bottom:-4px;
-            left:0;
-        }
-        .gantt-bar-text{
-            padding: 7px 8px;
-            white-space: nowrap;
-            font-size: 0.7em;
-            color: white;
-        }
-        .velvet {
-            background: #940045;
-        }
-        .vline-marker {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 1px;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-        }
-        .today-line {
-            background-color: #0d6efd;
-        }
-        .horizon-line {
-            background-color: #dc3545;
-        }
-        .wp-bracket{
-            position: absolute;
-            top:0;
-            width: 5px;
-            height: 10px;
-            border:2px solid #000;
-            border-bottom: none;
-            z-index: 3;
-            font-size: .6rem;
-            white-space: nowrap;
-        }
-        .wp-start{
-            border-right: none;
-            transform: translateX(-2px);
-        }
-        .wp-end{
-            border-left: none;
-            transform: translateX(-6px);
-        }
-        /* Add this new style */
-        .view-hours-btn {
-            position: absolute;
-            right: 20px;
-            background: #940045;
-            border: 2px solid #c1c1c1;
-            padding: 8px 16px;
-            border-radius: 8px;
-            color: white;
-            font-weight: bold;
-        }
-
-        .view-hours-btn:hover {
-            background: #b30052;
-        }
-        .indicator{
-            position: absolute;
-            z-index: 5;
-            font-size: .7rem;
-            text-align: right;
-            background-color: black;
-        }
-        .iff-indicator{
-            width:18px;
-            height: 18px;
-            top:9px;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-        }
-        .nsi-indicator{
-            width:16px;
-            height: 16px;
-            top:29px;
-            transform: translate(-50%, -50%) rotate(45deg);
-            color:white;
-        }
-        .indicator.good{
-            background-color: #00ff00;
-            color:black;
-        }
-        .indicator.bad{
-            background-color: #dc3545;
-            color:black;
-        }
-        .filter-container {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            background: #2b2d30;
-            padding: 10px;
-            display: flex;
-            gap: 10px;
-            border-bottom: 1px solid #456ca0;
-        }
-        .filter-btn {
-            padding: 5px 10px;
-            background: #456ca0;
+        .help-button {
+            position: fixed;
+            top: 50px;
+            right: 27px;
+            z-index: 1000;
+            padding: 3px 16px;
+            background-color: #456ca0;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .filter-btn.active {
-            background: #0d6efd;
-        }
-        .filter-btn:hover {
-            background: #0d6efd;
-        }
-        .gantt-row.hidden {
-            display: none;
-        }
-        .workload-bar {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            height: 20px;
-            width: 200px;
-            background: #eee;
-            border: 1px solid #456ca0;
-        }
-
-        .workload-bar-fill {
-            height: 100%;
-            background-color: #456ca0;
-        }
-        .hours-modal {
+        .docs-modal {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 1000;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1001;
         }
 
-        .hours-modal-content {
-            background: #2b2d30;
-            margin: 20px auto;
-            padding: 20px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            border-radius: 8px;
+        .docs-modal.active {
+            display: block;
         }
 
-        .hours-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .hours-table th, .hours-table td {
-            border: 1px solid #456ca0;
-            padding: 8px;
-            color: #c1c1c1;
-        }
-
-        .hours-table th {
-            background: #2b2d30;
-            position: sticky;
-            top: 0;
-        }
-        .hours-table th:first-child {
-            white-space: nowrap;
-        }
-
-        .wp-button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            background: #456ca0;
-            border-radius: 4px;
-            padding: 4px 8px;
-            color: white;
-            cursor: pointer;
-            font-size: 0.9em;
+        .docs-modal-content {
             position: relative;
-            margin: 10px 30px 10px 10px;
+            background-color: white;
+            margin: 50px auto;
+            padding: 20px;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .wp-button::after {
-            content: '';
+        .close-btn {
             position: absolute;
-            left: calc(100% + 4px);
-            top: 50%;
-            transform: translateY(-50%);
-            background: #dc3545;
-            border-radius: 50%;
-            width: var(--ball-size);
-            height: var(--ball-size);
-        }
-        #hoursTableBody tr td:nth-child(1){
-            text-wrap: nowrap;
-        }
-        .wp-point {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
+            right: 10px;
+            top: 10px;
+            font-size: 24px;
             cursor: pointer;
-            z-index: 5;
-        }
-        .wp-point.released {
-            background-color: #00ff00;
-        }
-        .wp-point.not-released {
-            background-color: #ffff00;
-        }
-        .wp-point.on-hold {
-            background-color: #ff0000;
+            border: none;
+            background: none;
         }
     </style>
+    <link rel="stylesheet" href="timeline.css?v=<?= filemtime('timeline.css') ?>">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.2/marked.min.js"></script>
 </head>
 <body>
+<button onclick="showDocumentation()" class="help-button">
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </svg>
+    Help
+</button>
 <div class="filter-container" id="filterButtons"></div>
 <div class="gantt-container" id="ganttChart"></div>
 
@@ -345,6 +86,13 @@
             </thead>
             <tbody id="hoursTableBody"></tbody>
         </table>
+    </div>
+</div>
+
+<div id="docs-modal" class="docs-modal">
+    <div class="docs-modal-content">
+        <button class="close-btn" onclick="closeDocModal()">&times;</button>
+        <div id="markdown-content"></div>
     </div>
 </div>
 
@@ -562,7 +310,7 @@
 
                 row.innerHTML = `
             <div class="gantt-labels" data-rowid="${sequence.project}:${sequence.sequence}" title="ScheduleTaskID: ${sequence.fabrication.id}, RowID: ${sequence.project}:${sequence.sequence}">
-                <div class="gantt-rowtitle">${sequence.project}: ${sequence.sequence}</div>
+                <div class="gantt-rowtitle"><a href="sequence_status/sequence_status.php?jobNumber=${sequence.project}&sequenceName=${sequence.sequence}">${sequence.project}: ${sequence.sequence}</a></div>
                 <div class="gantt-pmname">PM: ${sequence.pm}</div>
             </div>
             <div class="gantt-chart" style="background-color: rgba(25, 50, 100, ${opacity})" title="Hours: ${Number(sequence.fabrication.hours).toLocaleString()} (${Math.round(opacity*100)}% of largest sequence)">
@@ -958,6 +706,32 @@ Hours: ${Math.round(wp.hours)}"
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    }
+
+    async function showDocumentation() {
+        try {
+            const response = await fetch('doc_timeline.md');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            const markdown = await response.text();
+            const markdownContent = document.getElementById('markdown-content');
+            if (!markdownContent) {
+                throw new Error('Markdown content container not found');
+            }
+            markdownContent.innerHTML = marked.parse(markdown);
+            const modal = document.getElementById('docs-modal');
+            if (!modal) {
+                throw new Error('Modal container not found');
+            }
+            modal.classList.add('active');
+        } catch (error) {
+            console.error('Error loading documentation:', error);
+            alert('Failed to load documentation: ' + error.message);
+        }
+    }
+    function closeDocModal() {
+        document.getElementById('docs-modal').classList.remove('active');
     }
 </script>
 </body>

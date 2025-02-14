@@ -1,5 +1,5 @@
 <?php
-require_once 'config_ssf_db.php';
+require_once '../config_ssf_db.php';
 
 $sequences = json_decode($_POST['sequences']); // Changed from jobs to sequences
 if (!is_array($sequences)) {

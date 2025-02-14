@@ -1,0 +1,259 @@
+/* Base Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 5px;
+    line-height: 1.6;
+}
+
+/* Layout Components */
+.toplogo {
+    position: absolute;
+    left: 500px;
+    top: -10px;
+}
+
+.filters-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+/* Loading Overlay */
+#loading-overlay {
+    position: fixed;
+    inset: 0;  /* Shorthand for top, right, bottom, left */
+    background-color: rgba(255, 255, 255, 0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-spinner {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    font-size: 18px;
+    font-weight: bold;
+    color: #99332B;
+}
+
+/* Card Styles */
+.card-title {
+    font-size: 14px;
+    padding: 4px 5px;
+}
+
+.card-body {
+    padding: 3px;
+}
+
+.card-body .form-control {
+    margin-bottom: 10px;
+}
+
+.sticky-header thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: #f8f9fa;
+}
+
+/* Data Display Components */
+#dataSummary {
+    margin-bottom: 20px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+/* Table Styles */
+#dataTable table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+#dataTable th,
+#dataTable td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+#dataTable th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Status Classes */
+.status-complete {
+    background-color: #90EE90;
+    color: #155724;
+}
+
+.status-notstarted {
+    background-color: #fff3cd;
+    color: #004085;
+}
+
+.status-na {
+    background-color: transparent;
+    color: #004085;
+}
+
+.status-partial {
+    background-color: #cce5ff;
+    color: #856404;
+}
+
+/* Work Package States */
+.wpnotreleased {
+    color: #ffd700;
+    font-style: italic;
+}
+
+.wponhold {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.wponhold:hover {
+    background-color: #bb2d3b;
+    border-color: #bb2d3b;
+}
+
+/* Filter Styles */
+#aFilter {
+    margin: 5px 0 0;
+    padding: 2px 5px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    align-items: center;
+}
+
+#aFilter button {
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    height: 26px;
+    line-height: 1;
+    white-space: nowrap;
+    margin: 0;
+}
+
+/* Station Summary */
+.station-summary {
+    font-weight: bold;
+    font-size: 12px;
+    background-color: #f8f9fa;
+}
+
+.station-summary td {
+    padding: 2px;
+}
+
+/* Week Button Styles */
+.week-btn {
+    padding: 2px 20px;
+    margin: 5px;
+    background-color: #99332B;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    font-size: 14px;
+}
+
+.week-btn:hover {
+    background-color: #7A2822;
+}
+
+.week-btn.active {
+    background-color: white;
+    border: 1px solid #99332B;
+    color: #99332B;
+    font-weight: bold;
+}
+
+/* Button States */
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Row Styles */
+.hold-row {
+    font-family: "Courier New", Courier, monospace;
+}
+
+.hold-row td:nth-child(1) {
+    border-left: 2px solid #820041;
+    background-color: #fdccd3;
+}
+
+.completed-row {
+    background-color: #90EE90;
+}
+
+.uncompleted-piecemark {
+    background-color: #ffbbbb;
+}
+
+/* Project Table Styles */
+#projectTable thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f2f2f2;
+    z-index: 10;
+}
+
+#projectTable thead th::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Column States */
+.col-complete {
+    background-color: #006400;
+    color: #ffffff;
+}
+
+.col-empty {
+    background-color: #333333;
+    color: #ffffff;
+    text-align: center;
+}
+
+/* Floating Elements */
+#big-text {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 48px;
+    color: rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+/* Export Buttons */
+.export-buttons {
+    margin: 10px 0;
+    display: none;
+    gap: 10px;
+    position: absolute;
+    top: 32px;
+    right: 0;
+}

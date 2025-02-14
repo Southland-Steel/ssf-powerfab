@@ -1,0 +1,104 @@
+body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    margin: 10px;
+    font-size: 13px;
+    background-color: #2b2d30;
+    color: #c1c1c1;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+th, td {
+    padding: 3px 5px;
+    text-align: left;
+    border: 1px solid #456ca0;
+}
+
+th {
+    background-color: #1e1f22;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+tr:nth-child(even) {
+    background-color: #333639;
+}
+
+.status {
+    text-align: center;
+    width: 100px;
+    white-space: nowrap;
+}
+
+.complete {
+    background-color: #2f4f2f;
+}
+
+.partial {
+    background-color: #4f432f;
+}
+
+.incomplete {
+    background-color: #4f2f2f;
+}
+
+.na {
+    background-color: #1e1f22;
+    text-align: center;
+    color: #666;
+}
+
+tr.hidden {
+    display: none;
+}
+
+table.show-hidden tr.hidden {
+    display: table-row;
+}
+
+.toggle-button {
+    margin: 10px 0;
+    padding: 5px 10px;
+    background: #456ca0;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.toggle-button:hover {
+    background: #0d6efd;
+}
+
+.filter-buttons {
+    margin: 10px 0;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-button {
+    padding: 5px 10px;
+    background: #1e1f22;
+    border: 1px solid #456ca0;
+    color: #c1c1c1;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.filter-button:hover {
+    background: #333639;
+}
+
+.filter-button.active {
+    background: #456ca0;
+    color: white;
+    border-color: #0d6efd;
+}

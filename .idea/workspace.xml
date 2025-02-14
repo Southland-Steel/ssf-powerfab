@@ -5,10 +5,43 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="timely commit">
+      <change afterPath="$PROJECT_DIR$/common/ajax_get_workweeks.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cutlists/ajax_get_cutlist_data.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cutlists/ajax_get_cutlist_workweeks.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cutlists/cutlist_style.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cutlists/cutlists.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inventory/received/ajax_get_received.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inventory/received/received-docs.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inventory/received/received.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/production/workweeks.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/ajax_get_resources.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/ajax_get_tasks.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/resources-guide.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/resources/resources.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/ajax_get_weeks.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/example_connection.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/template_ajax_action_template.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/template_style.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/template_view.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline/doc_timeline.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline/sequence_status/get_sequence_status.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline/sequence_status/sequence_status.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline/sequence_status/sequence_status.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline/timeline.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workweeks/workpackages.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/workpackages.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workweeks/workweeks.css" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/workweeks.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workweeks/workweeks.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/workweeks.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_timelinefabrication_catstatus.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline/ajax_get_ssf_timelinefabrication_catstatus.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_timelinefabrication_workpackages.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline/ajax_get_ssf_timelinefabrication_workpackages.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_workweek_cut.php" beforeDir="false" afterPath="$PROJECT_DIR$/production/ajax_get_ssf_workweek_cut.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_workweek_kit.php" beforeDir="false" afterPath="$PROJECT_DIR$/production/ajax_get_ssf_workweek_kit.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_workweek_nested.php" beforeDir="false" afterPath="$PROJECT_DIR$/production/ajax_get_ssf_workweek_nested.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ajax_ssf_get_shippinginfo.php" beforeDir="false" afterPath="$PROJECT_DIR$/postfab/ajax_ssf_get_shippinginfo.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ajax_ssf_get_shippinginfo_buttonstatus.php" beforeDir="false" afterPath="$PROJECT_DIR$/postfab/ajax_ssf_get_shippinginfo_buttonstatus.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ajax_ssf_get_timelinefabrication.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline/ajax_ssf_get_timelinefabrication.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config_ssf_db.php" beforeDir="false" afterPath="$PROJECT_DIR$/config_ssf_db.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/index.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ssf_post_status_guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/postfab/ssf_post_status_guide.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline/timeline.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/view_ssf_shippinginfo.php" beforeDir="false" afterPath="$PROJECT_DIR$/postfab/postfab.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -58,6 +91,9 @@
       <recent name="C:\Program Files\Ampps\www4" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Program Files\Ampps\www4\postfab" />
+      <recent name="C:\Program Files\Ampps\www4\postfabrication" />
+      <recent name="C:\Program Files\Ampps\www4\timeline" />
       <recent name="C:\Program Files\Ampps\www4\workweek_status" />
     </key>
   </component>
@@ -94,7 +130,9 @@
       <workItem from="1738071017395" duration="65120000" />
       <workItem from="1738675680792" duration="32435000" />
       <workItem from="1738849383717" duration="16549000" />
-      <workItem from="1738957840308" duration="6729000" />
+      <workItem from="1738957840308" duration="19904000" />
+      <workItem from="1739282111344" duration="21320000" />
+      <workItem from="1739544538932" duration="612000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -288,7 +326,15 @@
       <option name="project" value="LOCAL" />
       <updated>1738884926407</updated>
     </task>
-    <option name="localTasksCounter" value="25" />
+    <task id="LOCAL-00025" summary="timely commit">
+      <option name="closed" value="true" />
+      <created>1739207191767</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1739207191767</updated>
+    </task>
+    <option name="localTasksCounter" value="26" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
