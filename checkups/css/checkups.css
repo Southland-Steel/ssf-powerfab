@@ -1,0 +1,98 @@
+/**
+ * checkups/css/checkups.css
+ * Custom CSS for the Checkups section
+ */
+
+/* Table Styling */
+#invalidationsTable thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    cursor: pointer;
+}
+
+#invalidationsTable thead th:hover {
+    background-color: #7a2922;
+}
+
+/* Sort indicators */
+#invalidationsTable th[data-sort-dir="asc"]::after {
+    content: " ▲";
+    font-size: 0.8em;
+}
+
+#invalidationsTable th[data-sort-dir="desc"]::after {
+    content: " ▼";
+    font-size: 0.8em;
+}
+
+/* Alternating row colors */
+#invalidationsTable tbody tr:nth-child(odd) {
+    background-color: rgba(153, 51, 43, 0.05);
+}
+
+/* Highlight row on hover */
+#invalidationsTable tbody tr.invalidation-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#invalidationsTable tbody tr.invalidation-row:hover {
+    background-color: rgba(224, 184, 62, 0.1);
+}
+
+/* Make ellipsis for long content */
+#invalidationsTable td {
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Style the search input - Removed as search functionality is not needed */
+/* #invalidationsSearch {
+    width: 100%;
+    transition: box-shadow 0.2s;
+}
+
+#invalidationsSearch:focus {
+    box-shadow: 0 0 0 0.2rem rgba(153, 51, 43, 0.25);
+} */
+
+/* Badger Counter on Index page */
+#invalidation-count {
+    min-width: 30px;
+}
+
+/* Card on index page */
+.list-group-item h5 {
+    color: var(--ssf-primary);
+}
+
+.list-group-item:hover {
+    border-left: 3px solid var(--ssf-accent);
+}
+
+/* Modal styling */
+#itemDetailsModal .modal-header {
+    border-bottom: 3px solid var(--ssf-accent);
+}
+
+#itemDetailsModal .table th {
+    width: 40%;
+    background-color: rgba(153, 51, 43, 0.05);
+}
+
+/* Jump animation for new items */
+@keyframes highlight {
+    0% {
+        background-color: rgba(224, 184, 62, 0.5);
+    }
+    100% {
+        background-color: transparent;
+    }
+}
+
+.new-item {
+    animation: highlight 2s ease-in-out;
+}

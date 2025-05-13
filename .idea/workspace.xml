@@ -4,25 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add detailed filters and data enhancements to cutlists&#10;&#10;This update introduces new filtering options (e.g., work packages) and significantly refines data display and calculations for cutlists. Enhancements include unit conversions for dimensions, interactive location details, and a user guide for improved usability. The changes aim to streamline material tracking and cutting operations.">
-      <change afterPath="$PROJECT_DIR$/assets/css/styles.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/images/ssf-logo.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/js/common.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/js/navigation.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/includes/config/db_config.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/includes/db_connection.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/includes/footer.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/includes/functions/utility_functions.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/includes/header.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/ajax_get_endpoint.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/index.php" afterDir="false" />
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Remove unused template files and add modularized configurations&#10;&#10;Deleted outdated template files including PHP and CSS related to old database connections and frontend styles. Introduced modularized configurations with `db_config.php`, utility functions for better code maintainability, and a cleaner reusable database connection setup.">
+      <change afterPath="$PROJECT_DIR$/checkups/ajax/get_invalidations.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/checkups/css/checkups.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/checkups/cutlist_invalidations.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/checkups/docs/custlist_invalidations.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/checkups/index.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/checkups/js/invalidations-core.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/checkups/js/invalidations-ui.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/inc_station_distributions.php" beforeDir="false" afterPath="$PROJECT_DIR$/inc_station_distributions.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/ajax_get_weeks.php" beforeDir="false" afterPath="$PROJECT_DIR$/templates/ajax_get_weeks.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/example_connection.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/template_ajax_action_template.php" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/template_style.css" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/templates/template_view.php" beforeDir="false" afterPath="$PROJECT_DIR$/templates/template_view.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/js/common.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/common.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/index.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -142,7 +134,7 @@
       <workItem from="1746190191237" duration="3321000" />
       <workItem from="1746469926846" duration="294000" />
       <workItem from="1746470229613" duration="40000" />
-      <workItem from="1747145599622" duration="7445000" />
+      <workItem from="1747145599622" duration="9060000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -376,7 +368,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747150152099</updated>
     </task>
-    <option name="localTasksCounter" value="30" />
+    <task id="LOCAL-00030" summary="Remove unused template files and add modularized configurations&#10;&#10;Deleted outdated template files including PHP and CSS related to old database connections and frontend styles. Introduced modularized configurations with `db_config.php`, utility functions for better code maintainability, and a cleaner reusable database connection setup.">
+      <option name="closed" value="true" />
+      <created>1747162718341</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1747162718341</updated>
+    </task>
+    <option name="localTasksCounter" value="31" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -404,7 +404,8 @@
     <MESSAGE value="timely commit" />
     <MESSAGE value="Add new summarization, filter, and guide features&#10;&#10;This update introduces enhanced features, including detailed stats summaries, improved data filters (e.g., by location), and modal popups for detailed information and a guide. It also improves table presentation, sorting, and interactivity while adding clear organization for machine, sequence, and package breakdowns." />
     <MESSAGE value="Add detailed filters and data enhancements to cutlists&#10;&#10;This update introduces new filtering options (e.g., work packages) and significantly refines data display and calculations for cutlists. Enhancements include unit conversions for dimensions, interactive location details, and a user guide for improved usability. The changes aim to streamline material tracking and cutting operations." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add detailed filters and data enhancements to cutlists&#10;&#10;This update introduces new filtering options (e.g., work packages) and significantly refines data display and calculations for cutlists. Enhancements include unit conversions for dimensions, interactive location details, and a user guide for improved usability. The changes aim to streamline material tracking and cutting operations." />
+    <MESSAGE value="Remove unused template files and add modularized configurations&#10;&#10;Deleted outdated template files including PHP and CSS related to old database connections and frontend styles. Introduced modularized configurations with `db_config.php`, utility functions for better code maintainability, and a cleaner reusable database connection setup." />
+    <option name="LAST_COMMIT_MESSAGE" value="Remove unused template files and add modularized configurations&#10;&#10;Deleted outdated template files including PHP and CSS related to old database connections and frontend styles. Introduced modularized configurations with `db_config.php`, utility functions for better code maintainability, and a cleaner reusable database connection setup." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

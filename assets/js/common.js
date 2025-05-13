@@ -229,3 +229,74 @@ function exportTableToCSV(tableId, filename) {
     link.click();
     document.body.removeChild(link);
 }
+
+/**
+ * Convert inches to feet and inches with fractions
+ * @param {number} inches - The measurement in inches
+ * @param {boolean} includeSymbols - Whether to include ' and " symbols
+ * @return {string} The formatted feet-inches measurement (e.g., "5'-3 1/2\"")
+ */
+function inchesToFeetInches(inches, includeSymbols = true) {
+    if (inches === null || inches === undefined || isNaN(inches)) {
+        return 'N/A';
+    }
+
+    // Convert to float to handle strings
+    const totalInches = parseFloat(inches);
+
+    // Calculate feet, whole inches, and fractional inches
+    const feet = Math.floor(totalInches / 12);
+    const remainingInches = totalInches % 12;
+    const wholeInches = Math.floor(remainingInches);
+
+    // Calculate the fractional part in 16ths
+    let fractionNumerator = Math.round((remainingInches - wholeInches) * 16);
+
+    // Handle rounding issues
+    if (fractionNumerator === 16) {
+        fractionNumerator = 0;
+        wholeInches += 1;
+
+        // If we reach 12 inches, increment feet
+        if (wholeInches === 12) {
+            wholeInches = 0;
+            feet += 1;
+        }
+    }
+
+    // Generate the fractions part
+    let fractionText = '';
+    if (fractionNumerator > 0) {
+        // Simplify the fraction
+        const fractions = {
+            1: '1/16', 2: '1/8', 3: '3/16', 4: '1/4',
+            5: '5/16', 6: '3/8', 7: '7/16', 8: '1/2',
+            9: '9/16', 10: '5/8', 11: '11/16', 12: '3/4',
+            13: '13/16', 14: '7/8', 15: '15/16'
+        };
+        fractionText = ' ' + fractions[fractionNumerator];
+    }
+
+    // Construct the result string
+    let result = '';
+
+    if (feet > 0) {
+        result += feet + (includeSymbols ? '\'' : 'ft');
+
+        // Only add separator if there are inches or fractions to display
+        if (wholeInches > 0 || fractionText) {
+            result += (includeSymbols ? '-' : ' ');
+        }
+    }
+
+    // Only display inches part if there are whole inches or a fraction
+    if (wholeInches > 0 || fractionText) {
+        result += wholeInches + fractionText + (includeSymbols ? '"' : 'in');
+    } else if (feet === 0) {
+        // If we have 0 feet and 0 inches, show "0"
+        result = '0' + (includeSymbols ? '"' : 'in');
+    }
+    // If feet > 0 and inches = 0, just show the feet part without the 0"
+
+    return result;
+}

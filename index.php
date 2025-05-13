@@ -35,6 +35,7 @@
             <a href="workweeks.php" class="btn btn-primary">View SSF Workweeks</a>
             <a href="/postfab" class="btn btn-secondary">Post Fabrication Status</a>
             <a href="/cutlists" class="btn btn-info">Cut Lists</a>
+            <a href="/checkups/index.php" class="btn btn-info">Checkups</a>
         </div>
         <div class="col-md-3">
             <h5 class="text-center">Production <-> PM</h5>
