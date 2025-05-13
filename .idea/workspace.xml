@@ -4,44 +4,21 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="timely commit">
-      <change afterPath="$PROJECT_DIR$/common/ajax_get_workweeks.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cutlists/ajax_get_cutlist_data.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cutlists/ajax_get_cutlist_workweeks.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cutlists/cutlist_style.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cutlists/cutlists.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inventory/received/ajax_get_received.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inventory/received/received-docs.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inventory/received/received.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/production/workweeks.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/ajax_get_resources.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/ajax_get_tasks.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/resources-guide.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/resources/resources.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/ajax_get_weeks.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/example_connection.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/template_ajax_action_template.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/template_style.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/templates/template_view.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/timeline/doc_timeline.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/timeline/sequence_status/get_sequence_status.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/timeline/sequence_status/sequence_status.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/timeline/sequence_status/sequence_status.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/timeline/timeline.css" afterDir="false" />
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add new summarization, filter, and guide features&#10;&#10;This update introduces enhanced features, including detailed stats summaries, improved data filters (e.g., by location), and modal popups for detailed information and a guide. It also improves table presentation, sorting, and interactivity while adding clear organization for machine, sequence, and package breakdowns.">
+      <change afterPath="$PROJECT_DIR$/cutlists/ajax_get_serial_numbers.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cutlists/guide-cutlists.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inventory2/ajax_get_inventory.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inventory2/ajax_get_inventory_item.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inventory2/ajax_get_inventory_list.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/inventory2/inventory2.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_timelinefabrication_catstatus.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline/ajax_get_ssf_timelinefabrication_catstatus.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_timelinefabrication_workpackages.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline/ajax_get_ssf_timelinefabrication_workpackages.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_workweek_cut.php" beforeDir="false" afterPath="$PROJECT_DIR$/production/ajax_get_ssf_workweek_cut.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_workweek_kit.php" beforeDir="false" afterPath="$PROJECT_DIR$/production/ajax_get_ssf_workweek_kit.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ajax_get_ssf_workweek_nested.php" beforeDir="false" afterPath="$PROJECT_DIR$/production/ajax_get_ssf_workweek_nested.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ajax_ssf_get_shippinginfo.php" beforeDir="false" afterPath="$PROJECT_DIR$/postfab/ajax_ssf_get_shippinginfo.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ajax_ssf_get_shippinginfo_buttonstatus.php" beforeDir="false" afterPath="$PROJECT_DIR$/postfab/ajax_ssf_get_shippinginfo_buttonstatus.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ajax_ssf_get_timelinefabrication.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline/ajax_ssf_get_timelinefabrication.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config_ssf_db.php" beforeDir="false" afterPath="$PROJECT_DIR$/config_ssf_db.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cutlists/ajax_get_cutlist_data.php" beforeDir="false" afterPath="$PROJECT_DIR$/cutlists/ajax_get_cutlist_data.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cutlists/cutlist_style.css" beforeDir="false" afterPath="$PROJECT_DIR$/cutlists/cutlist_style.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cutlists/cutlists.php" beforeDir="false" afterPath="$PROJECT_DIR$/cutlists/cutlists.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/inc_station_distributions.php" beforeDir="false" afterPath="$PROJECT_DIR$/inc_station_distributions.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/index.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ssf_post_status_guide.md" beforeDir="false" afterPath="$PROJECT_DIR$/postfab/ssf_post_status_guide.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/timeline.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline/timeline.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/view_ssf_shippinginfo.php" beforeDir="false" afterPath="$PROJECT_DIR$/postfab/postfab.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/resources/ajax_get_resources.php" beforeDir="false" afterPath="$PROJECT_DIR$/resources/ajax_get_resources.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -132,7 +109,22 @@
       <workItem from="1738849383717" duration="16549000" />
       <workItem from="1738957840308" duration="19904000" />
       <workItem from="1739282111344" duration="21320000" />
-      <workItem from="1739544538932" duration="612000" />
+      <workItem from="1739544538932" duration="21149000" />
+      <workItem from="1739892757232" duration="8195000" />
+      <workItem from="1740155907783" duration="758000" />
+      <workItem from="1740166700645" duration="781000" />
+      <workItem from="1740407336609" duration="32000" />
+      <workItem from="1740435311745" duration="508000" />
+      <workItem from="1740493173067" duration="31000" />
+      <workItem from="1740664905933" duration="2416000" />
+      <workItem from="1740690571182" duration="2657000" />
+      <workItem from="1743521311948" duration="3081000" />
+      <workItem from="1743767254730" duration="2063000" />
+      <workItem from="1744122820486" duration="1357000" />
+      <workItem from="1745866177808" duration="6000" />
+      <workItem from="1746190191237" duration="3321000" />
+      <workItem from="1746469926846" duration="294000" />
+      <workItem from="1746470229613" duration="40000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -334,7 +326,23 @@
       <option name="project" value="LOCAL" />
       <updated>1739207191767</updated>
     </task>
-    <option name="localTasksCounter" value="26" />
+    <task id="LOCAL-00026" summary="timely commit">
+      <option name="closed" value="true" />
+      <created>1739549050751</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1739549050751</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Add new summarization, filter, and guide features&#10;&#10;This update introduces enhanced features, including detailed stats summaries, improved data filters (e.g., by location), and modal popups for detailed information and a guide. It also improves table presentation, sorting, and interactivity while adding clear organization for machine, sequence, and package breakdowns.">
+      <option name="closed" value="true" />
+      <created>1746190408085</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1746190408085</updated>
+    </task>
+    <option name="localTasksCounter" value="28" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -360,7 +368,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="initial commit" />
     <MESSAGE value="timely commit" />
-    <option name="LAST_COMMIT_MESSAGE" value="timely commit" />
+    <MESSAGE value="Add new summarization, filter, and guide features&#10;&#10;This update introduces enhanced features, including detailed stats summaries, improved data filters (e.g., by location), and modal popups for detailed information and a guide. It also improves table presentation, sorting, and interactivity while adding clear organization for machine, sequence, and package breakdowns." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add new summarization, filter, and guide features&#10;&#10;This update introduces enhanced features, including detailed stats summaries, improved data filters (e.g., by location), and modal popups for detailed information and a guide. It also improves table presentation, sorting, and interactivity while adding clear organization for machine, sequence, and package breakdowns." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

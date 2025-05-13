@@ -43,7 +43,7 @@
         </div>
         <div class="col-md-3">
             <h5 class="text-center">Inventory</h5>
-            <a href="inventory" class="btn btn-info">Inventory</a>
+            <a href="/inventory2" class="btn btn-info">Inventory</a>
         </div>
         <div class="col-md-3">
             <h5 class="text-center">Transition</h5>

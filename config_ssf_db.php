@@ -46,14 +46,6 @@ $db_config = [
     'charset'  => 'utf8mb4'
 ];
 
-//$db_config = [ // Grid Connection
-//    'host'     => '192.168.0.10',
-//    'dbname'   => 'fabrication',
-//    'username' => 'grid.reporter',
-//    'password' => 'l!9bI?q&4ogh|[7!',
-//    'charset'  => 'utf8mb4'
-//];
-
 try {
     // Create PDO connection string
     $dsn = "mysql:host={$db_config['host']};dbname={$db_config['dbname']};charset={$db_config['charset']}";

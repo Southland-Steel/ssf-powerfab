@@ -9,7 +9,7 @@ $resources = $db->query("
     FROM projects p
     JOIN scheduletasks sts ON p.ProjectID = sts.ProjectID
     JOIN resources r ON sts.ResourceID = r.ResourceID
-WHERE p.JobStatusID IN (1) and sts.ResourceID <> 45
+WHERE p.JobStatusID IN (1,6) and sts.ResourceID <> 45
     ORDER BY
         p.ProjectID, r.ResourceID
 ")->fetchAll(PDO::FETCH_ASSOC);

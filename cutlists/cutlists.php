@@ -26,6 +26,7 @@
     <div class="row mb-1">
         <div class="col">
             <div class="d-flex flex-wrap">
+
                 <div class="filter-section">
                     <h5>Group</h5>
                     <div id="machineGroupFilter" class="checkbox-container">
@@ -41,6 +42,12 @@
                 <div class="filter-section">
                     <h5>Shape</h5>
                     <div id="shapeFilter" class="checkbox-container">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="filter-section">
+                    <h5>Work Package</h5>
+                    <div id="workPackageFilter" class="checkbox-container">
                         <!-- Populated by JavaScript -->
                     </div>
                 </div>
@@ -209,7 +216,8 @@
         shapes: new Set(),
         grades: new Set(),
         dimensions: new Set(),
-        locations: new Set()
+        locations: new Set(),
+        workPackages: new Set()
     };
 
     // Load available weeks on page load
@@ -268,7 +276,8 @@
             shapes: new Set(),
             grades: new Set(),
             dimensions: new Set(),
-            locations: new Set()
+            locations: new Set(),
+            workPackages: new Set()
         };
 
         // Fetch data for selected week
@@ -285,6 +294,7 @@
                     uniqueFilters.grades.add(item.Grade);
                     uniqueFilters.dimensions.add(item.DimensionString);
                     uniqueFilters.locations.add(item.Location || '-');
+                    uniqueFilters.workPackages.add(item.WorkPackageNumber || '-');
                 });
 
                 // Populate filter checkboxes
@@ -319,6 +329,12 @@
         document.getElementById('shapeFilter').innerHTML = Array.from(uniqueFilters.shapes)
             .sort()
             .map(shape => createCheckboxHTML('shape', shape))
+            .join('');
+
+        // Populate work package filter
+        document.getElementById('workPackageFilter').innerHTML = Array.from(uniqueFilters.workPackages)
+            .sort()
+            .map(wp => createCheckboxHTML('workPackage', wp))
             .join('');
 
         // Populate Grade filter
@@ -370,6 +386,7 @@
         const selectedGrades = getSelectedFilters('grade');
         const selectedDimensions = getSelectedFilters('dimension');
         const selectedLocations = getSelectedFilters('location');
+        const selectedWorkPackages = getSelectedFilters('workPackage');
 
         const filteredData = allData.filter(item => {
             return (selectedMachineGroups.length === 0 || selectedMachineGroups.includes(item.MachineGroup)) &&
@@ -377,7 +394,8 @@
                 (selectedShapes.length === 0 || selectedShapes.includes(item.Shape)) &&
                 (selectedGrades.length === 0 || selectedGrades.includes(item.Grade)) &&
                 (selectedDimensions.length === 0 || selectedDimensions.includes(item.DimensionString)) &&
-                (selectedLocations.length === 0 || selectedLocations.includes(item.Location || '-'));
+                (selectedLocations.length === 0 || selectedLocations.includes(item.Location || '-')) &&
+                (selectedWorkPackages.length === 0 || selectedWorkPackages.includes(item.WorkPackageNumber || '-'));
         });
 
         // Get available values for each filter based on current filtered data
@@ -387,12 +405,14 @@
             shape: new Set(filteredData.map(item => item.Shape)),
             grade: new Set(filteredData.map(item => item.Grade)),
             dimension: new Set(filteredData.map(item => item.DimensionString)),
-            location: new Set(filteredData.map(item => item.Location || '-'))
+            location: new Set(filteredData.map(item => item.Location || '-')),
+            workPackage: new Set(filteredData.map(item => item.WorkPackageNumber || '-'))
         };
 
         // Add this code to update the counts based on visible items
         const visibleDimensions = new Set(filteredData.map(item => item.DimensionString));
         const visibleLocations = new Set(filteredData.map(item => item.Location || '-'));
+        const visibleWorkPackages = new Set(filteredData.map(item => item.WorkPackageNumber || '-'));
 
         // Update the headers with current counts
         document.querySelectorAll('.filter-section h5').forEach(header => {
@@ -401,6 +421,9 @@
             }
             if (header.textContent.includes('LOC')) {
                 header.innerHTML = `LOC [${visibleLocations.size}]`;
+            }
+            if (header.textContent.includes('Work Package')) {
+                header.innerHTML = `Work Package [${visibleWorkPackages.size}]`;
             }
         });
 
