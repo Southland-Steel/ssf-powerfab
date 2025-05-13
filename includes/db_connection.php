@@ -1,12 +1,11 @@
 <?php
-// Database configuration
-$db_config = [
-    'host'     => '192.168.80.12',
-    'dbname'   => 'fabrication',
-    'username' => 'ssf.reporter',
-    'password' => 'password',
-    'charset'  => 'utf8mb4'
-];
+// includes/db_connection.php
+
+// Include utility functions first, as they may be needed for database operations
+require_once __DIR__ . '/functions/utility_functions.php';
+
+// Include database configuration file
+require_once __DIR__ . '/config/db_config.php';
 
 try {
     // Create PDO connection string
@@ -27,5 +26,5 @@ try {
     die("Could not connect to the database. Please contact your administrator.");
 }
 
-// Optional: Set timezone if needed
+// Set timezone
 date_default_timezone_set('America/Chicago');

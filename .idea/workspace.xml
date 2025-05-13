@@ -4,21 +4,25 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add new summarization, filter, and guide features&#10;&#10;This update introduces enhanced features, including detailed stats summaries, improved data filters (e.g., by location), and modal popups for detailed information and a guide. It also improves table presentation, sorting, and interactivity while adding clear organization for machine, sequence, and package breakdowns.">
-      <change afterPath="$PROJECT_DIR$/cutlists/ajax_get_serial_numbers.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/cutlists/guide-cutlists.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inventory2/ajax_get_inventory.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inventory2/ajax_get_inventory_item.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inventory2/ajax_get_inventory_list.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/inventory2/inventory2.php" afterDir="false" />
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add detailed filters and data enhancements to cutlists&#10;&#10;This update introduces new filtering options (e.g., work packages) and significantly refines data display and calculations for cutlists. Enhancements include unit conversions for dimensions, interactive location details, and a user guide for improved usability. The changes aim to streamline material tracking and cutting operations.">
+      <change afterPath="$PROJECT_DIR$/assets/css/styles.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/images/ssf-logo.png" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/js/common.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/assets/js/navigation.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/includes/config/db_config.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/includes/db_connection.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/includes/footer.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/includes/functions/utility_functions.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/includes/header.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/ajax_get_endpoint.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/templates/index.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/config_ssf_db.php" beforeDir="false" afterPath="$PROJECT_DIR$/config_ssf_db.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cutlists/ajax_get_cutlist_data.php" beforeDir="false" afterPath="$PROJECT_DIR$/cutlists/ajax_get_cutlist_data.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cutlists/cutlist_style.css" beforeDir="false" afterPath="$PROJECT_DIR$/cutlists/cutlist_style.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cutlists/cutlists.php" beforeDir="false" afterPath="$PROJECT_DIR$/cutlists/cutlists.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/inc_station_distributions.php" beforeDir="false" afterPath="$PROJECT_DIR$/inc_station_distributions.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/index.php" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/resources/ajax_get_resources.php" beforeDir="false" afterPath="$PROJECT_DIR$/resources/ajax_get_resources.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/ajax_get_weeks.php" beforeDir="false" afterPath="$PROJECT_DIR$/templates/ajax_get_weeks.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/example_connection.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/template_ajax_action_template.php" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/template_style.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/templates/template_view.php" beforeDir="false" afterPath="$PROJECT_DIR$/templates/template_view.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,6 +36,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "polyhedron"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/polyhedron/ssf-powerfab.git",
+    "accountId": "49395c15-845d-49c1-8834-b4381c049efd"
+  }
+}]]></component>
   <component name="PhpWorkspaceProjectConfiguration" interpreter_name="C:\Program Files\Ampps\php\php.exe">
     <include_path>
       <path value="$PROJECT_DIR$/vendor/composer" />
@@ -49,22 +65,23 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Program Files/Ampps/www4&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.LLMConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Program Files/Ampps/www4/assets/images",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Program Files\Ampps\www4\assets\images" />
       <recent name="C:\Program Files\Ampps\www4" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
@@ -125,6 +142,7 @@
       <workItem from="1746190191237" duration="3321000" />
       <workItem from="1746469926846" duration="294000" />
       <workItem from="1746470229613" duration="40000" />
+      <workItem from="1747145599622" duration="7445000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -342,7 +360,23 @@
       <option name="project" value="LOCAL" />
       <updated>1746190408085</updated>
     </task>
-    <option name="localTasksCounter" value="28" />
+    <task id="LOCAL-00028" summary="Add detailed filters and data enhancements to cutlists&#10;&#10;This update introduces new filtering options (e.g., work packages) and significantly refines data display and calculations for cutlists. Enhancements include unit conversions for dimensions, interactive location details, and a user guide for improved usability. The changes aim to streamline material tracking and cutting operations.">
+      <option name="closed" value="true" />
+      <created>1747146123144</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1747146123144</updated>
+    </task>
+    <task id="LOCAL-00029" summary="Add detailed filters and data enhancements to cutlists&#10;&#10;This update introduces new filtering options (e.g., work packages) and significantly refines data display and calculations for cutlists. Enhancements include unit conversions for dimensions, interactive location details, and a user guide for improved usability. The changes aim to streamline material tracking and cutting operations.">
+      <option name="closed" value="true" />
+      <created>1747150152099</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1747150152099</updated>
+    </task>
+    <option name="localTasksCounter" value="30" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -369,7 +403,8 @@
     <MESSAGE value="initial commit" />
     <MESSAGE value="timely commit" />
     <MESSAGE value="Add new summarization, filter, and guide features&#10;&#10;This update introduces enhanced features, including detailed stats summaries, improved data filters (e.g., by location), and modal popups for detailed information and a guide. It also improves table presentation, sorting, and interactivity while adding clear organization for machine, sequence, and package breakdowns." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add new summarization, filter, and guide features&#10;&#10;This update introduces enhanced features, including detailed stats summaries, improved data filters (e.g., by location), and modal popups for detailed information and a guide. It also improves table presentation, sorting, and interactivity while adding clear organization for machine, sequence, and package breakdowns." />
+    <MESSAGE value="Add detailed filters and data enhancements to cutlists&#10;&#10;This update introduces new filtering options (e.g., work packages) and significantly refines data display and calculations for cutlists. Enhancements include unit conversions for dimensions, interactive location details, and a user guide for improved usability. The changes aim to streamline material tracking and cutting operations." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add detailed filters and data enhancements to cutlists&#10;&#10;This update introduces new filtering options (e.g., work packages) and significantly refines data display and calculations for cutlists. Enhancements include unit conversions for dimensions, interactive location details, and a user guide for improved usability. The changes aim to streamline material tracking and cutting operations." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

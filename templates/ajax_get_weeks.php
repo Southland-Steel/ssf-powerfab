@@ -1,12 +1,15 @@
 <?php
-// ajax_get_weeks.php
-require_once 'config_ssf_db.php';
+// templates/ajax_get_weeks.php
+
+// Include database connection - use __DIR__ for more reliable path resolution
+require_once __DIR__ . '/../includes/db_connection.php';
+
+// Make sure utility functions are included
+require_once __DIR__ . '/../includes/functions/utility_functions.php';
 
 try {
-    // Get current week in the format YYWW
-    $year = substr(date('o'), -2);  // Get last 2 digits of year
-    $week = date('W');              // Get week number (01-53)
-    $currentWorkweek = $year . str_pad($week, 2, '0', STR_PAD_LEFT);
+    // Get current week using utility function
+    $currentWorkweek = getCurrentWorkWeek();
 
     // Query the database to fetch distinct WorkPackageNumber
     $result = $db->query("
@@ -42,5 +45,12 @@ try {
 
     // Return error response
     http_response_code(500);
-    echo json_encode(['error' => 'Could not fetch work weeks']);
+    echo json_encode(['error' => 'Could not fetch work weeks: ' . $e->getMessage()]);
+} catch(Exception $e) {
+    // Log general errors
+    error_log("Error in ajax_get_weeks.php: " . $e->getMessage());
+
+    // Return error response
+    http_response_code(500);
+    echo json_encode(['error' => 'An error occurred: ' . $e->getMessage()]);
 }
