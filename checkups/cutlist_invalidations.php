@@ -21,7 +21,7 @@ include_once '../includes/header.php';
         <div class="col-md-12">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="<?php echo getUrl('checkups'); ?>">Checkups</a></li>
+                    <li class="breadcrumb-item"><a href="<?php echo getUrl('checkups/index.php'); ?>">Checkups</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Cutlist Invalidations</li>
                 </ol>
             </nav>
