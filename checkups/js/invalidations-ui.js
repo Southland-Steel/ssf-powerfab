@@ -7,7 +7,8 @@ const InvalidationsUI = (() => {
     // Private variables
     let config = {
         tableId: 'invalidationsTable',
-        modalId: 'itemDetailsModal'
+        modalId: 'itemDetailsModal',
+        patternApiUrl: 'ajax/get_pattern_info.php' // Default path - will be updated in init
     };
 
     // Initialize the module
@@ -70,7 +71,7 @@ const InvalidationsUI = (() => {
             modalTitle.textContent = `Cutlist Item Details - ID: ${itemId}`;
         }
 
-        // Generate the content
+        // Generate the main content
         const content = `
             <div class="row">
                 <div class="col-md-6">
@@ -85,6 +86,10 @@ const InvalidationsUI = (() => {
                                 <tr>
                                     <th>Item ID:</th>
                                     <td>${item.ProductionControlCutListItemID}</td>
+                                </tr>
+                                <tr>
+                                    <th>Barcode ID:</th>
+                                    <td>${item.ProductionControlCutListBarcodeID}</td>
                                 </tr>
                                 <tr>
                                     <th>Description:</th>
@@ -174,15 +179,135 @@ const InvalidationsUI = (() => {
                         <i class="bi bi-exclamation-triangle-fill me-2"></i>
                         This item has been invalidated and requires attention from the nesting department.
                     </div>
+                    
+                    <div id="patternInfoSection">
+                        <div class="mb-3">
+                            <h6 class="fw-bold">Pattern Information</h6>
+                            <div class="text-center my-3" id="patternLoadingIndicator">
+                                <div class="spinner-border text-ssf-primary" role="status">
+                                    <span class="visually-hidden">Loading pattern information...</span>
+                                </div>
+                                <p class="mt-2">Loading pattern information...</p>
+                            </div>
+                            <div id="patternInfoContent" style="display: none;"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
 
         modalContent.innerHTML = content;
 
+        // Load pattern information for this item
+        const barcodeId = item.ProductionControlCutListBarcodeID;
+        if (barcodeId) {
+            loadPatternInfo(barcodeId);
+        } else {
+            // Hide loading indicator and show "no pattern info" message
+            document.getElementById('patternLoadingIndicator').style.display = 'none';
+            document.getElementById('patternInfoContent').style.display = 'block';
+            document.getElementById('patternInfoContent').innerHTML = `
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    No pattern information available for this cutlist item.
+                </div>
+            `;
+        }
+
         // Initialize and show the modal using Bootstrap
         const bsModal = new bootstrap.Modal(modal);
         bsModal.show();
+    };
+
+    // Load pattern information for a given barcode ID
+    const loadPatternInfo = (barcodeId) => {
+        // Fetch pattern information from the server
+        fetch(`${config.patternApiUrl}?barcodeId=${barcodeId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Hide loading indicator
+                document.getElementById('patternLoadingIndicator').style.display = 'none';
+
+                // Show pattern content section
+                const patternContent = document.getElementById('patternInfoContent');
+                patternContent.style.display = 'block';
+
+                if (data.success && data.data && data.data.length > 0) {
+                    // Generate the pattern information table
+                    let tableContent = `
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered table-hover">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Job #</th>
+                                        <th>Sequence</th>
+                                        <th>Lot #</th>
+                                        <th>Work Package</th>
+                                        <th>Work Week</th>
+                                        <th>Main Mark</th>
+                                        <th>Piece Mark</th>
+                                        <th>Quantity</th>
+                                        <th>Length</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                    `;
+
+                    // Add rows for each pattern item
+                    data.data.forEach(pattern => {
+                        tableContent += `
+                            <tr>
+                                <td>${pattern.JobNumber || 'N/A'}</td>
+                                <td>${pattern.SequenceName || 'N/A'}</td>
+                                <td>${pattern.LotNumber || 'N/A'}</td>
+                                <td>${pattern.WorkPackageNumber || 'N/A'}</td>
+                                <td>${pattern.WorkWeekFormatted || 'N/A'}</td>
+                                <td>${pattern.MainMark || 'N/A'}</td>
+                                <td>${pattern.PieceMark || 'N/A'}</td>
+                                <td>${pattern.PieceMarkQuantity || 'N/A'}</td>
+                                <td title="${pattern.LengthInches || 'N/A'} inches">${pattern.LengthFormatted || 'N/A'}</td>
+                            </tr>
+                        `;
+                    });
+
+                    tableContent += `
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+
+                    patternContent.innerHTML = tableContent;
+                } else {
+                    // Show no data message
+                    patternContent.innerHTML = `
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill me-2"></i>
+                            No pattern information available for this cutlist item.
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error('Error loading pattern information:', error);
+
+                // Hide loading indicator
+                document.getElementById('patternLoadingIndicator').style.display = 'none';
+
+                // Show error message
+                const patternContent = document.getElementById('patternInfoContent');
+                patternContent.style.display = 'block';
+                patternContent.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        Error loading pattern information: ${error.message}
+                    </div>
+                `;
+            });
     };
 
     // Setup sortable table

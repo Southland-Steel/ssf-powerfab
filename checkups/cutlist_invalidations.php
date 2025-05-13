@@ -40,6 +40,9 @@ include_once '../includes/header.php';
                         <button class="btn btn-sm btn-outline-light ms-2" id="refreshBtn">
                             <i class="bi bi-arrow-clockwise"></i> Refresh
                         </button>
+                        <a href="<?php echo getUrl('checkups/view_documentation.php?doc=cutlist_invalidations'); ?>" class="btn btn-sm btn-outline-light ms-2">
+                            <i class="bi bi-question-circle"></i> Help
+                        </a>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -92,7 +95,7 @@ include_once '../includes/header.php';
 
     <!-- Details Modal -->
     <div class="modal fade" id="itemDetailsModal" tabindex="-1" aria-labelledby="itemDetailsModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
+        <div class="modal-dialog modal-xl">
             <div class="modal-content">
                 <div class="modal-header bg-ssf-primary text-white">
                     <h5 class="modal-title" id="itemDetailsModalLabel">Cutlist Item Details</h5>
@@ -128,7 +131,8 @@ $extra_js = '
         
         InvalidationsUI.init({
             tableId: "invalidationsTable",
-            modalId: "itemDetailsModal"
+            modalId: "itemDetailsModal",
+            patternApiUrl: "' . getUrl('checkups/ajax/get_pattern_info.php') . '"
         });
         
         // Load initial data

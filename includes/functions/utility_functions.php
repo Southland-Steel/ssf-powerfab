@@ -95,9 +95,9 @@ function inchesToFeetAndInches($inches) {
  */
 function formatWorkWeek($workweek) {
     if (strlen($workweek) == 4) {
-        $year = '20' . substr($workweek, 0, 2);
+        $year = substr($workweek, 0, 2);
         $week = substr($workweek, 2);
-        return "WW {$week} - {$year}";
+        return "{$year}{$week}";
     }
     return $workweek;
 }

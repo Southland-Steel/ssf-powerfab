@@ -83,6 +83,106 @@
     background-color: rgba(153, 51, 43, 0.05);
 }
 
+/* Documentation styling */
+#documentationModal .modal-header {
+    border-bottom: 3px solid var(--ssf-accent);
+}
+
+.documentation-container {
+    font-size: 0.95rem;
+    line-height: 1.6;
+}
+
+.documentation-container h1 {
+    font-size: 1.6rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #ddd;
+    color: var(--ssf-primary);
+}
+
+.documentation-container h2 {
+    font-size: 1.4rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--ssf-primary);
+}
+
+.documentation-container h3 {
+    font-size: 1.2rem;
+    margin-top: 1.2rem;
+    margin-bottom: 0.5rem;
+    color: var(--ssf-primary);
+}
+
+.documentation-container ul,
+.documentation-container ol {
+    margin-bottom: 1rem;
+    padding-left: 2rem;
+}
+
+.documentation-container code {
+    background-color: #f8f9fa;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    color: #d63384;
+}
+
+.documentation-container pre.code-block {
+    background-color: #f8f9fa;
+    padding: 1rem;
+    border-radius: 5px;
+    border: 1px solid #dee2e6;
+    margin-bottom: 1rem;
+    overflow-x: auto;
+}
+
+.documentation-container pre.code-block code {
+    background-color: transparent;
+    padding: 0;
+    color: #212529;
+    display: block;
+    font-size: 0.85rem;
+}
+
+/* Pattern info table styling */
+#patternInfoContent .table {
+    font-size: 0.9rem;
+}
+
+#patternInfoContent .table thead th {
+    background-color: var(--ssf-primary);
+    color: white;
+    font-size: 0.85rem;
+    padding: 0.5rem;
+}
+
+#patternInfoContent .table tbody tr:hover {
+    background-color: rgba(224, 184, 62, 0.1);
+}
+
+#patternInfoContent .table tbody td {
+    padding: 0.5rem;
+}
+
+/* Pattern info loading animation */
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
+}
+
+#patternLoadingIndicator {
+    animation: pulse 1.5s infinite;
+}
+
 /* Jump animation for new items */
 @keyframes highlight {
     0% {

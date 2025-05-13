@@ -26,12 +26,19 @@ The Cutlist Invalidations tool makes it easy to identify these problematic items
     - Nest Numbers
     - Material details (Shape, Grade, Dimensions)
     - Status
+- **Pattern information**: View associated pattern details for each invalidated item, including:
+    - Job number
+    - Sequence and lot information
+    - Work package and work week
+    - Main mark and piece mark
+    - Quantity and length
 - **Interactive interface**: Click on any row to view detailed information about the invalidated item.
-- **Search functionality**: Filter the list to find specific items quickly.
 - **Sorting**: Sort by any column by clicking on the column header.
 - **Export**: Export the data to CSV for further analysis or reporting.
 
 ## Understanding the Data
+
+### Main Table
 
 The main table displays the following information for each invalidated item:
 
@@ -50,6 +57,20 @@ The main table displays the following information for each invalidated item:
 - **Length**: The length of the item in inches.
 - **Status**: The current status of the item (always "Invalidated" in this view).
 
+### Pattern Information
+
+When you click on an item, the details modal will show additional pattern information:
+
+- **Job Number**: The job number associated with the piece mark.
+- **Sequence**: The sequence name for the item.
+- **Lot Number**: The lot number for the item.
+- **Work Package**: The work package number.
+- **Work Week**: The scheduled work week for the item (e.g., "WW 22 - 2024").
+- **Main Mark**: The main mark identifier.
+- **Piece Mark**: The piece mark identifier.
+- **Quantity**: The quantity of pieces for this piece mark.
+- **Length**: The length of the piece in feet and inches.
+
 ## Common Issues and Resolutions
 
 ### Missing or Incorrect Nest Information
@@ -67,10 +88,15 @@ The main table displays the following information for each invalidated item:
 **Issue**: The item is assigned to a machine that cannot process it.
 **Resolution**: Reassign the item to an appropriate machine or modify the item to be compatible with the assigned machine.
 
+### Piece Mark Pattern Mismatch
+
+**Issue**: The pattern information doesn't match the expected piece mark details.
+**Resolution**: Verify the pattern information against the shop drawings and update the production system accordingly.
+
 ## Workflow
 
 1. **Identify**: Use the Cutlist Invalidations tool to identify items that need attention.
-2. **Investigate**: Click on an item to view detailed information and determine the cause of invalidation.
+2. **Investigate**: Click on an item to view detailed information, including pattern details, and determine the cause of invalidation.
 3. **Resolve**: Address the issue based on the specific problem identified.
 4. **Verify**: Once the issue is resolved, the item should no longer appear in the invalidations list.
 
