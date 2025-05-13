@@ -4,16 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Remove unused template files and add modularized configurations&#10;&#10;Deleted outdated template files including PHP and CSS related to old database connections and frontend styles. Introduced modularized configurations with `db_config.php`, utility functions for better code maintainability, and a cleaner reusable database connection setup.">
-      <change afterPath="$PROJECT_DIR$/checkups/ajax/get_invalidations.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/checkups/css/checkups.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/checkups/cutlist_invalidations.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/checkups/docs/custlist_invalidations.md" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/checkups/index.php" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/checkups/js/invalidations-core.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/checkups/js/invalidations-ui.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/js/common.js" beforeDir="false" afterPath="$PROJECT_DIR$/assets/js/common.js" afterDir="false" />
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add Production Checkups section and Cutlist Invalidations tool&#10;&#10;Introduced a new &quot;Production Checkups&quot; module with dedicated pages and scripts to assist in identifying and resolving production issues. Added a Cutlist Invalidations tool to track and manage invalidated cutlist items, including UI enhancements and dynamic data handling via AJAX. This update improves workflow efficiency and data visibility.">
       <change beforePath="$PROJECT_DIR$/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/index.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -134,7 +125,7 @@
       <workItem from="1746190191237" duration="3321000" />
       <workItem from="1746469926846" duration="294000" />
       <workItem from="1746470229613" duration="40000" />
-      <workItem from="1747145599622" duration="9060000" />
+      <workItem from="1747145599622" duration="9195000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -376,7 +367,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747162718341</updated>
     </task>
-    <option name="localTasksCounter" value="31" />
+    <task id="LOCAL-00031" summary="Add Production Checkups section and Cutlist Invalidations tool&#10;&#10;Introduced a new &quot;Production Checkups&quot; module with dedicated pages and scripts to assist in identifying and resolving production issues. Added a Cutlist Invalidations tool to track and manage invalidated cutlist items, including UI enhancements and dynamic data handling via AJAX. This update improves workflow efficiency and data visibility.">
+      <option name="closed" value="true" />
+      <created>1747164492491</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1747164492491</updated>
+    </task>
+    <option name="localTasksCounter" value="32" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -405,7 +404,8 @@
     <MESSAGE value="Add new summarization, filter, and guide features&#10;&#10;This update introduces enhanced features, including detailed stats summaries, improved data filters (e.g., by location), and modal popups for detailed information and a guide. It also improves table presentation, sorting, and interactivity while adding clear organization for machine, sequence, and package breakdowns." />
     <MESSAGE value="Add detailed filters and data enhancements to cutlists&#10;&#10;This update introduces new filtering options (e.g., work packages) and significantly refines data display and calculations for cutlists. Enhancements include unit conversions for dimensions, interactive location details, and a user guide for improved usability. The changes aim to streamline material tracking and cutting operations." />
     <MESSAGE value="Remove unused template files and add modularized configurations&#10;&#10;Deleted outdated template files including PHP and CSS related to old database connections and frontend styles. Introduced modularized configurations with `db_config.php`, utility functions for better code maintainability, and a cleaner reusable database connection setup." />
-    <option name="LAST_COMMIT_MESSAGE" value="Remove unused template files and add modularized configurations&#10;&#10;Deleted outdated template files including PHP and CSS related to old database connections and frontend styles. Introduced modularized configurations with `db_config.php`, utility functions for better code maintainability, and a cleaner reusable database connection setup." />
+    <MESSAGE value="Add Production Checkups section and Cutlist Invalidations tool&#10;&#10;Introduced a new &quot;Production Checkups&quot; module with dedicated pages and scripts to assist in identifying and resolving production issues. Added a Cutlist Invalidations tool to track and manage invalidated cutlist items, including UI enhancements and dynamic data handling via AJAX. This update improves workflow efficiency and data visibility." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add Production Checkups section and Cutlist Invalidations tool&#10;&#10;Introduced a new &quot;Production Checkups&quot; module with dedicated pages and scripts to assist in identifying and resolving production issues. Added a Cutlist Invalidations tool to track and manage invalidated cutlist items, including UI enhancements and dynamic data handling via AJAX. This update improves workflow efficiency and data visibility." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
