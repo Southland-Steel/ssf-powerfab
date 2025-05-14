@@ -1,0 +1,266 @@
+/* workweeks/css/workweeks.css */
+
+/* Big text indicator */
+#big-text {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 48px;
+    color: rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+/* Work weeks bar */
+.week-btn {
+    padding: 2px 20px;
+    margin: 5px;
+    background-color: #99332B;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    font-size: 14px;
+}
+
+.week-btn:hover {
+    background-color: #7A2822;
+}
+
+.week-btn:active {
+    background-color: #5C1E1A;
+    transform: scale(0.95);
+}
+
+.week-btn.active {
+    background-color: white;
+    border: 1px solid #99332B;
+    color: #99332B;
+    font-weight: bold;
+}
+
+/* Filter buttons */
+.filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    padding: 2px 5px;
+    margin: 1px 0;
+    align-items: center;
+}
+
+.filter-group button {
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    margin: 0;
+    height: 26px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+#sequenceFilter button {
+    font-size: 0.65rem;
+}
+
+/* Station status styles */
+.status-complete {
+    background-color: #90EE90 !important;
+    color: #155724;
+}
+
+.status-notstarted {
+    background-color: #fff3cd !important;
+    color: #004085;
+}
+
+.status-na {
+    background-color: transparent !important;
+    color: #004085;
+}
+
+.status-partial {
+    background-color: #cce5ff !important;
+    color: #856404;
+}
+
+/* Work package states */
+.wpnotreleased {
+    color: #ffd700 !important;
+    font-style: italic !important;
+}
+
+.wponhold {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+}
+
+.wponhold:hover {
+    background-color: #bb2d3b !important;
+    border-color: #bb2d3b !important;
+}
+
+/* Station summary */
+.station-summary {
+    font-weight: bold;
+    font-size: 12px;
+    background-color: #f8f9fa;
+}
+
+.station-summary td {
+    padding: 2px;
+}
+
+/* Summary data sections */
+.summary-data p {
+    margin: 1px;
+    font-size: 12px;
+}
+
+.summary-data h6 {
+    margin: 1px;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+/* Table styles */
+.table-columns th {
+    font-size: 12px;
+    padding: 2px;
+}
+
+.table-datarow td {
+    padding: 1px 5px;
+}
+
+/* Row statuses */
+.completed-row {
+    background-color: #90EE90;
+}
+
+.hold-row {
+    font-family: "Courier New", Courier, monospace;
+}
+
+.hold-row td:nth-child(1) {
+    border-left: 2px solid #820041;
+    background-color: #fdccd3;
+}
+
+.uncompleted-piecemark {
+    background-color: #ffbbbb;
+}
+
+/* Column statuses */
+.col-complete {
+    background-color: #006400 !important;
+    color: #ffffff !important;
+}
+
+.col-empty {
+    background-color: #333333 !important;
+    color: #ffffff !important;
+    text-align: center;
+}
+
+/* Week schedule table */
+#weekschedule {
+    margin-bottom: 1px;
+}
+
+#weekschedule td {
+    padding: 2px 5px;
+}
+
+#weekschedule th {
+    padding: 3px 5px;
+}
+
+#weekschedule td:nth-child(2) {
+    text-align: center;
+}
+
+/* Filter containers */
+.filters-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+/* JSON modal styling */
+#jsonContent {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+#jsonContent .json-key {
+    color: #881391;
+    font-weight: 500;
+}
+
+#jsonContent .json-string {
+    color: #22863a;
+}
+
+#jsonContent .json-number {
+    color: #005cc5;
+}
+
+#jsonContent .json-boolean {
+    color: #b31d28;
+}
+
+#jsonContent .json-null {
+    color: #6a737d;
+}
+
+.collapsible {
+    cursor: pointer;
+    user-select: none;
+}
+
+.collapse-icon {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    line-height: 12px;
+    text-align: center;
+    background-color: #e9ecef;
+    border-radius: 3px;
+    margin-right: 4px;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.collapsed > .collapsible-content {
+    display: none;
+}
+
+.json-indent {
+    margin-left: 20px;
+}
+
+.expandable-container {
+    position: relative;
+}
+
+.array-length {
+    color: #6c757d;
+    font-size: 11px;
+    margin-left: 4px;
+}
+
+/* Logo placement */
+.toplogo {
+    position: absolute;
+    left: 500px;
+    top: -10px;
+}

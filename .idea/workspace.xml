@@ -4,8 +4,32 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add pattern info and improve cutlist invalidations UI&#10;&#10;Enhanced the Cutlist Invalidations tool with pattern information display, including job, sequence, lot, and work package details. Implemented AJAX-based dynamic data fetching, updated modal design for larger layouts, and added help documentation integration. Improved utility functions and CSS for better usability and readability.">
-      <change beforePath="$PROJECT_DIR$/checkups/cutlist_invalidations.php" beforeDir="false" afterPath="$PROJECT_DIR$/checkups/cutlist_invalidations.php" afterDir="false" />
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Update breadcrumb link and adjust cutlist invalidations UI&#10;&#10;Fixed breadcrumb navigation to point to the correct file path. Enhanced Cutlist Invalidations UI with improved pattern information display, updated AJAX-based data handling, and better usability through refined modal designs and utility functions.">
+      <change afterPath="$PROJECT_DIR$/services/DatabaseService.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/ajax/get_workweek_cut.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/ajax/get_workweek_data.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/ajax/get_workweek_kit.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/ajax/get_workweek_nested.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/ajax/get_workweeks.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/css/workweeks.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/docs/workweeks.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/index.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/js/workweeks-core.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/js/workweeks-display.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/js/workweeks-filters.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/js/workweeks-stations.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/ajax_get_workpackage_cutlists.php" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/ajax_get_workpackage_cutlists.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/ajax_get_workweek_workpackages.php" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/ajax_get_workweek_workpackages.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/assemblies.php" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/assemblies.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/get_assembly_cutlists.php" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/get_assembly_cutlists.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/get_assembly_piecemarks.php" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/get_assembly_piecemarks.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/get_assembly_station_progress.php" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/get_assembly_station_progress.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/get_sequence_data.php" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/get_sequence_data.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/piecemark.php" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/piecemark.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/workpackages.php" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/workpackages.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/workweeks.css" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/workweeks.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/workweeks.php" beforeDir="false" afterPath="$PROJECT_DIR$/old_workweeks/workweeks.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -19,18 +43,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "polyhedron"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;polyhedron&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/polyhedron/ssf-powerfab.git",
-    "accountId": "49395c15-845d-49c1-8834-b4381c049efd"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/polyhedron/ssf-powerfab.git&quot;,
+    &quot;accountId&quot;: &quot;49395c15-845d-49c1-8834-b4381c049efd&quot;
   }
-}]]></component>
+}</component>
   <component name="PhpWorkspaceProjectConfiguration" interpreter_name="C:\Program Files\Ampps\php\php.exe">
     <include_path>
       <path value="$PROJECT_DIR$/vendor/composer" />
@@ -48,20 +72,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
-    "last_opened_file_path": "C:/Program Files/Ampps/www4/assets/images",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Program Files/Ampps/www4/assets/images&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.LLMConfigurable&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Program Files\Ampps\www4\assets\images" />
@@ -125,7 +149,8 @@
       <workItem from="1746190191237" duration="3321000" />
       <workItem from="1746469926846" duration="294000" />
       <workItem from="1746470229613" duration="40000" />
-      <workItem from="1747145599622" duration="11805000" />
+      <workItem from="1747145599622" duration="14300000" />
+      <workItem from="1747246956051" duration="4366000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -391,7 +416,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747167080550</updated>
     </task>
-    <option name="localTasksCounter" value="34" />
+    <task id="LOCAL-00034" summary="Update breadcrumb link and adjust cutlist invalidations UI&#10;&#10;Fixed breadcrumb navigation to point to the correct file path. Enhanced Cutlist Invalidations UI with improved pattern information display, updated AJAX-based data handling, and better usability through refined modal designs and utility functions.">
+      <option name="closed" value="true" />
+      <created>1747167260323</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1747167260323</updated>
+    </task>
+    <option name="localTasksCounter" value="35" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -423,7 +456,8 @@
     <MESSAGE value="Add Production Checkups section and Cutlist Invalidations tool&#10;&#10;Introduced a new &quot;Production Checkups&quot; module with dedicated pages and scripts to assist in identifying and resolving production issues. Added a Cutlist Invalidations tool to track and manage invalidated cutlist items, including UI enhancements and dynamic data handling via AJAX. This update improves workflow efficiency and data visibility." />
     <MESSAGE value="Add Production Checkups and Cutlist Invalidations tools&#10;&#10;Introduced a &quot;Production Checkups&quot; module and a Cutlist Invalidations tool to enhance production issue tracking and material management. Updates include new UI features, AJAX-powered dynamic data handling, and improved workflows for better efficiency and visibility." />
     <MESSAGE value="Add pattern info and improve cutlist invalidations UI&#10;&#10;Enhanced the Cutlist Invalidations tool with pattern information display, including job, sequence, lot, and work package details. Implemented AJAX-based dynamic data fetching, updated modal design for larger layouts, and added help documentation integration. Improved utility functions and CSS for better usability and readability." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add pattern info and improve cutlist invalidations UI&#10;&#10;Enhanced the Cutlist Invalidations tool with pattern information display, including job, sequence, lot, and work package details. Implemented AJAX-based dynamic data fetching, updated modal design for larger layouts, and added help documentation integration. Improved utility functions and CSS for better usability and readability." />
+    <MESSAGE value="Update breadcrumb link and adjust cutlist invalidations UI&#10;&#10;Fixed breadcrumb navigation to point to the correct file path. Enhanced Cutlist Invalidations UI with improved pattern information display, updated AJAX-based data handling, and better usability through refined modal designs and utility functions." />
+    <option name="LAST_COMMIT_MESSAGE" value="Update breadcrumb link and adjust cutlist invalidations UI&#10;&#10;Fixed breadcrumb navigation to point to the correct file path. Enhanced Cutlist Invalidations UI with improved pattern information display, updated AJAX-based data handling, and better usability through refined modal designs and utility functions." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
