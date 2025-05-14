@@ -2,14 +2,17 @@
 // workweeks/index.php
 
 // Set page title and other variables for header
+$page_title = "Work Weeks";
 $show_workweeks = false; // We're handling workweeks ourselves in this page
-$extra_css = '<link rel="stylesheet" href="css/workweeks.css">';
+$extra_css = '<link rel="stylesheet" href="css/workweeks.css">
+<link rel="stylesheet" href="css/workweeks-style-fixes.css">';
 $extra_js = '
+<script src="js/workweeks-utils.js"></script>
 <script src="js/workweeks-core.js"></script>
 <script src="js/workweeks-stations.js"></script>
 <script src="js/workweeks-display.js"></script>
 <script src="js/workweeks-filters.js"></script>
-
+<script src="js/workweeks-help.js"></script>
 ';
 
 // Calculate current workweek
@@ -25,21 +28,23 @@ include_once __DIR__ . '/../includes/header.php';
     <div id="big-text"><?php echo $workweek; ?></div>
 
     <!-- Container for work weeks selector -->
-    <div id="activeFabWorkpackages" class="container-fluid">
+    <div id="activeFabWorkpackages" class="container-fluid mb-3">
         <!-- Active fabrication jobs will be inserted here via JavaScript -->
     </div>
 
-    <div id="projectData" class="container-fluid mt-3">
-        <h2 class="mb-4" style="margin-bottom:0 !important; font-size: 1.5rem;">Workweek Details</h2>
-        <img src="../assets/images/ssf-logo.png" alt="Southland Steel" class="toplogo" height="40px">
+    <div id="projectData" class="container-fluid">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="mb-0" style="font-size: 1.5rem;">Workweek Details</h2>
+            <img src="../assets/images/ssf-logo.png" alt="Southland Steel" height="40px">
+        </div>
 
-        <div class="row mb-4" style="margin-bottom:5px !important;">
+        <div class="row">
             <div class="col-lg-9">
-                <div id="projectSummary" class="card bg-ssf-primary">
-                    <div class="card-header text-white">
+                <div id="projectSummary" class="card">
+                    <div class="card-header bg-ssf-primary text-white">
                         Project Summary (for what's visible)
                     </div>
-                    <div class="card-body" style="background-color: white;">
+                    <div class="card-body">
                         <div class="row">
                             <div class="col-md-4 summary-data">
                                 <h6>Line Items</h6>
@@ -58,11 +63,11 @@ include_once __DIR__ . '/../includes/header.php';
                 </div>
             </div>
             <div class="col-lg-3">
-                <table id="weekschedule">
+                <table id="weekschedule" class="table-bordered">
                     <thead>
                     <tr>
-                        <th>Workweek for:</th>
-                        <th>&nbsp;</th>
+                        <th>Workweek for</th>
+                        <th>Week #</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -114,7 +119,7 @@ include_once __DIR__ . '/../includes/header.php';
             </div>
         </div>
 
-        <div class="table-container">
+        <div class="table-responsive">
             <table id="projectTable" class="table table-bordered table-striped">
                 <thead>
                 <!-- Table header will be dynamically populated -->
@@ -171,13 +176,81 @@ include_once __DIR__ . '/../includes/header.php';
         </div>
     </div>
 
+    <!-- Help Modal -->
+    <div class="modal fade" id="helpModal" tabindex="-1" aria-labelledby="helpModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="helpModalLabel">Workweeks Module Help</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="helpContent">
+                    <!-- Help content will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Initialize the application when the DOM is ready
         document.addEventListener('DOMContentLoaded', function() {
             // Set initial workweek to what's in the URL or the current one
             const workweek = '<?php echo $workweek; ?>';
             initializeWorkweeks(workweek);
+
+            // Add click handlers for export buttons if needed
+            const exportBtn = document.createElement('button');
+            exportBtn.className = 'btn btn-sm btn-outline-success position-fixed';
+            exportBtn.style.right = '100px';
+            exportBtn.style.bottom = '10px';
+            exportBtn.style.zIndex = '1000';
+            exportBtn.innerHTML = '<i class="bi bi-file-excel"></i> Export to CSV';
+            exportBtn.onclick = function() {
+                exportTableToCSV('projectTable', `workweek_${workweek}_data.csv`);
+            };
+            document.body.appendChild(exportBtn);
         });
+
+        // Function to export table to CSV
+        function exportTableToCSV(tableId, filename) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            let csv = [];
+            const rows = table.querySelectorAll('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = [];
+                const cols = rows[i].querySelectorAll('td, th');
+
+                for (let j = 0; j < cols.length; j++) {
+                    // Get text content (strip HTML)
+                    let data = cols[j].textContent.replace(/(\r\n|\n|\r)/gm, ' ').trim();
+
+                    // Escape double quotes
+                    data = data.replace(/"/g, '""');
+
+                    // Add quotes if the content contains commas or quotes
+                    if (data.includes(',') || data.includes('"')) {
+                        data = `"${data}"`;
+                    }
+
+                    row.push(data);
+                }
+
+                csv.push(row.join(','));
+            }
+
+            // Create a CSV file and download it
+            const csvContent = 'data:text/csv;charset=utf-8,' + csv.join('\n');
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
     </script>
 
 <?php

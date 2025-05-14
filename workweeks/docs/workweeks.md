@@ -1,132 +1,150 @@
 # Workweeks Module Documentation
 
-This module allows you to view and filter production data by workweek, providing a comprehensive view of the manufacturing process from nesting to final QC.
+This module allows you to view and filter production data by workweek, providing a comprehensive overview of the manufacturing process from nesting to final quality control.
 
-## Data Structure
+## Data Sources
 
-### Database Tables Used
+### Database Tables
 
-The workweeks module aggregates data from the following tables:
+The workweeks module aggregates data from the following database tables:
 
-- `workpackages`: Contains the main workweek groupings and package information
-- `productioncontroljobs`: Contains job information
-- `workshops`: Contains workshop descriptions
-- `productioncontrolsequences`: Contains sequence information
-- `productioncontrolitemsequences`: Maps sequences to assemblies
-- `productioncontrolassemblies`: Contains assembly information
-- `productioncontrolitems`: Contains individual piece information
-- `shapes`: Contains shape types
-- `routes`: Contains routing information
-- `productioncontrolcategories`: Contains category information
-- `productioncontrolitemstationsummary`: Contains station completion information
-- `stations`: Contains station descriptions
-- `productioncontrolitemlinks`: Contains nesting information
+* **workpackages**: Contains the main workweek groupings (`Group2` field) and package information
+* **productioncontroljobs**: Contains job information (job numbers)
+* **workshops**: Contains workshop descriptions
+* **productioncontrolsequences**: Contains sequence information
+* **productioncontrolitemsequences**: Maps sequences to assemblies
+* **productioncontrolassemblies**: Contains assembly information
+* **productioncontrolitems**: Contains individual piece information
+* **shapes**: Contains shape types
+* **routes**: Contains routing information
+* **productioncontrolcategories**: Contains category information
+* **productioncontrolitemstationsummary**: Contains station completion information
+* **stations**: Contains station descriptions
+* **productioncontrolitemlinks**: Contains nesting information
 
-### Key SQL Filters
+### Main SQL Query
 
-The main SQL filters used to retrieve data are:
+The core data is retrieved with this SQL query (simplified):
 
-- `wp.Group2 = :workweek`: Filters data by the selected workweek
-- `wp.completed = 0`: Shows only incomplete workpackages
-- `pcseq.AssemblyQuantity > 0`: Excludes empty assemblies
-- `pci.MainPiece = 1`: Shows only main pieces for assemblies
-- `shapes.Shape NOT IN ('HS','NU','WA')`: Excludes certain shape types
+```sql
+SELECT 
+    pcj.JobNumber,
+    pcseq.Description as SequenceDescription,
+    pcseq.LotNumber,
+    wp.WorkPackageNumber,
+    wp.Group2 as WorkWeek,
+    wp.Group1 as Bay,
+    pci.MainMark,
+    pci.PieceMark,
+    shapes.Shape,
+    pci.DimensionString,
+    rt.Route as RouteName,
+    stations.Description as StationDescription,
+    pciss.QuantityCompleted,
+    pciss.TotalQuantity,
+    pciss.LastDateCompleted,
+    pci.Length,
+    pciseq.Quantity as SequenceMainMarkQuantity,
+    pca.AssemblyWeightEach,
+    pca.AssemblyManHoursEach,
+    wp.ReleasedToFab,
+    wp.OnHold,
+    pccat.Description as Category
+FROM workpackages as wp 
+    INNER JOIN productioncontroljobs as pcj ON pcj.ProductionControlID = wp.ProductionControlID
+    INNER JOIN workshops as ws ON ws.WorkshopID = wp.WorkShopID
+    INNER JOIN productioncontrolsequences as pcseq ON pcseq.WorkPackageID = wp.WorkPackageID AND pcseq.AssemblyQuantity > 0
+    INNER JOIN productioncontrolitemsequences as pciseq ON pciseq.SequenceID = pcseq.SequenceID AND pciseq.Quantity > 0
+    INNER JOIN productioncontrolassemblies as pca ON pca.ProductionControlAssemblyID = pciseq.ProductionControlAssemblyID
+    INNER JOIN productioncontrolitems as pci ON pci.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
+    INNER JOIN shapes ON shapes.ShapeID = pci.ShapeID AND shapes.Shape NOT IN ('HS','NU','WA')
+    LEFT JOIN routes as rt on rt.RouteID = pci.RouteID
+    LEFT JOIN productioncontrolcategories as pccat on pccat.CategoryID = pci.CategoryID
+    INNER JOIN productioncontrolitemstationsummary as pciss ON pciss.ProductionControlItemID = pci.ProductionControlItemID 
+        AND pciss.SequenceID = pcseq.SequenceID 
+        AND pciss.ProductionControlID = pcseq.ProductionControlID
+    INNER JOIN stations ON stations.StationID = pciss.StationID AND stations.Description not in ('IFA','IFF','CUT','NESTED')
+WHERE 
+    wp.completed = 0 
+    AND wp.Group2 = :workweek 
+    AND pcseq.AssemblyQuantity > 0 
+    AND pci.MainPiece = 1
+```
+
+Key filters:
+* `wp.completed = 0`: Shows only incomplete workpackages
+* `wp.Group2 = :workweek`: Filters by the selected workweek
+* `pcseq.AssemblyQuantity > 0`: Excludes empty assemblies
+* `pci.MainPiece = 1`: Shows only main pieces for assemblies
+* `shapes.Shape NOT IN ('HS','NU','WA')`: Excludes certain shape types
 
 ## Production Process Flow
 
 The production process follows this sequence:
 
-1. **NESTED**: Pieces are placed on a cutlist
+1. **NESTED**: Pieces are placed on a cutlist (nesting program)
 2. **CUT**: Pieces are cut from raw material
 3. **KIT**: Cut pieces are gathered for an assembly
-4. **FIT**: Pieces are fitted together
-5. **WELD**: Fitted pieces are welded
-6. **FINAL QC**: Final quality check before shipping
+4. **PROFIT**: CNC machine processing
+5. **ZEMAN**: Robotic welding
+6. **FIT**: Manual fitting of pieces
+7. **WELD**: Manual welding
+8. **FINAL QC**: Final quality check before shipping
 
-## Special Nesting Logic
-
-The nesting stage has special logic to account for pieces that have already been cut:
-
-- Total Pieces Needed: The total number of pieces required
-- Already Cut: The number of pieces already cut
-- Still Needs Nesting: Total Needed - Already Cut
-
-This prevents double-counting pieces that are already processed.
-
-## Filtering System
+## Using the Filters
 
 The module supports filtering by:
 
-- Work Package
-- Route
-- Bay
-- Category
-- Sequence/Lot
+* **Work Package**: Groups of assemblies assigned to the same work package
+* **Route**: Manufacturing route assigned to the assembly
+* **Bay**: Physical location in the shop
+* **Category**: Type of assembly (e.g., BEAMS, COLUMNS)
+* **Sequence/Lot**: Sequence and lot numbers for the assembly
 
-Filters use an indexed approach for better performance when handling large datasets.
+Click any filter button to display only the matching items. The summary statistics at the top will update to show totals for the filtered data.
 
-## Data Processing Flow
+## Understanding the Data
 
-1. Basic workweek data is loaded first
-2. Nested, cut, and kit data are loaded in batches to handle large datasets
-3. Data is processed in chunks to avoid UI blocking
-4. Station summaries are calculated and displayed
+### Station Status Colors
+
+* **Yellow**: Not started (0% complete)
+* **Blue**: Partially complete
+* **Green**: Complete (100%)
+
+### Project Summary
+
+The Project Summary section shows:
+* Total line items and assemblies
+* Total hours (estimated, completed, and remaining)
+* Total weight (in pounds and tons)
+* Productivity metrics (hours per ton and pounds per hour)
+
+### Workweek Schedule
+
+The Workweek Schedule table shows when each station should start working based on the selected workweek:
+* NESTED starts 6 weeks before the main workweek
+* CUT starts 4 weeks before
+* KIT starts 3 weeks before
+* FIT starts 1 week before
+* WELD and FINAL QC happen during the main workweek
 
 ## Technical Implementation
 
-The module is implemented using:
+The module uses:
+* PHP for backend data retrieval
+* Vanilla JavaScript for client-side functionality
+* Bootstrap for styling
+* Object-oriented approach for station calculations
+* Memory-efficient data loading with pagination
 
-- PHP for server-side data retrieval
-- Vanilla JavaScript for client-side functionality
-- Bootstrap for styling
-- Object-oriented approach for stations using class inheritance
-- Memory-efficient data loading with pagination
+Data processing occurs in chunks to prevent UI freezing when handling large datasets. Filter results are cached to improve performance.
 
-## Property Calculations
+## Troubleshooting
 
-For each item, the following properties are calculated:
+If the data doesn't appear correctly:
+1. Try refreshing the page
+2. Check that you have the correct workweek selected
+3. Clear any active filters by clicking "All" buttons
+4. Look for any console errors in your browser's developer tools
 
-- `TotalNetWeight`: `NetAssemblyWeightEach * MainPieceQuantity`
-- `TotalEstimatedManHours`: `AssemblyManHoursEach * MainPieceQuantity`
-
-For station calculations:
-- Each station has a percentage of hours allocated based on the route and category
-- Total hours per station = TotalEstimatedManHours * stationPercentage
-- Completed hours = stationHours * completionRatio
-
-## Performance Considerations
-
-- Large datasets are loaded in batches (5000 records at a time)
-- Data processing is done in chunks asynchronously
-- Filter results are cached to avoid reprocessing
-- Indexes are built for faster filtering
-
-## Troubleshooting Guide
-
-Common issues and their solutions:
-
-1. **Missing or NaN TotalEstimatedManHours**:
-    - Check that `AssemblyManHoursEach` and `MainPieceQuantity` are available
-    - Solution: Calculate from available data or use fallback values
-
-2. **Workweek changing issues**:
-    - Problem: Data not properly refreshed when changing workweeks
-    - Solution: Clear all data and filters before loading new workweek
-
-3. **Slow loading**:
-    - Problem: Large datasets causing poor performance
-    - Solution: Use batched loading and process data in smaller chunks
-
-4. **Missing stations**:
-    - Problem: Station data not appearing in the table
-    - Solution: Check that station is included in the `orderedStations` array
-
-## Maintenance Guidelines
-
-When modifying this module:
-
-1. Add new station types to the `orderedStations` array in workweeks-core.js
-2. Update station distribution percentages in `calculateStationHours` function in workweeks-stations.js
-3. For new piecemark stations, extend the `PiecemarkStation` class
-4. For new assembly stations, extend the base `Station` class
-5. Always verify property calculations (especially TotalEstimatedManHours) when making changes
+For detailed information about a specific assembly, click on the MainMark value to view the complete JSON data.

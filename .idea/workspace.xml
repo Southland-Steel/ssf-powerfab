@@ -4,12 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add Workweeks module with AJAX endpoints and documentation&#10;&#10;Implemented new Workweeks module with endpoints for nested, cut, and kit data retrieval using AJAX. Added detailed module documentation, UI components for filters, summaries, and tables, and optimized data handling with batch processing and pagination. Updated project configuration and utility classes for seamless integration.">
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Refactor and enhance workweeks module for data reliability&#10;&#10;Introduced validations, fallback mechanisms, and enhanced logging to address missing or invalid data in workweek properties like `TotalEstimatedManHours` and `Stations`. Improved performance with efficient batching while ensuring accurate calculations for station hours, weights, and completions. Updated documentation, UI, and debugging tools to streamline development and troubleshooting.">
+      <change afterPath="$PROJECT_DIR$/workweeks/css/workweeks-style-fixes.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/js/workweeks-help.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/js/workweeks-utils.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/workweeks/view_data.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workweeks/css/workweeks.css" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/css/workweeks.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/assets/css/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/assets/css/styles.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/workweeks/docs/workweeks.md" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/docs/workweeks.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workweeks/js/workweeks-core.js" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/js/workweeks-core.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workweeks/js/workweeks-display.js" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/js/workweeks-display.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/index.php" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -130,7 +133,7 @@
       <workItem from="1746469926846" duration="294000" />
       <workItem from="1746470229613" duration="40000" />
       <workItem from="1747145599622" duration="14300000" />
-      <workItem from="1747246956051" duration="5112000" />
+      <workItem from="1747246956051" duration="6228000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -412,7 +415,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747252601686</updated>
     </task>
-    <option name="localTasksCounter" value="36" />
+    <task id="LOCAL-00036" summary="Refactor and enhance workweeks module for data reliability&#10;&#10;Introduced validations, fallback mechanisms, and enhanced logging to address missing or invalid data in workweek properties like `TotalEstimatedManHours` and `Stations`. Improved performance with efficient batching while ensuring accurate calculations for station hours, weights, and completions. Updated documentation, UI, and debugging tools to streamline development and troubleshooting.">
+      <option name="closed" value="true" />
+      <created>1747253352137</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1747253352137</updated>
+    </task>
+    <option name="localTasksCounter" value="37" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -447,7 +458,8 @@
     <MESSAGE value="Update breadcrumb link and adjust cutlist invalidations UI&#10;&#10;Fixed breadcrumb navigation to point to the correct file path. Enhanced Cutlist Invalidations UI with improved pattern information display, updated AJAX-based data handling, and better usability through refined modal designs and utility functions." />
     <MESSAGE value="Add Workweeks module with AJAX endpoints and documentation&#10;&#10;Implemented the Workweeks module to handle production data filtering by workweek. Added new AJAX endpoints for nested, cut, and kit data retrieval. Created comprehensive documentation, database service, and interactive UI support for efficient data handling and display." />
     <MESSAGE value="Add Workweeks module with AJAX endpoints and documentation&#10;&#10;Implemented new Workweeks module with endpoints for nested, cut, and kit data retrieval using AJAX. Added detailed module documentation, UI components for filters, summaries, and tables, and optimized data handling with batch processing and pagination. Updated project configuration and utility classes for seamless integration." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add Workweeks module with AJAX endpoints and documentation&#10;&#10;Implemented new Workweeks module with endpoints for nested, cut, and kit data retrieval using AJAX. Added detailed module documentation, UI components for filters, summaries, and tables, and optimized data handling with batch processing and pagination. Updated project configuration and utility classes for seamless integration." />
+    <MESSAGE value="Refactor and enhance workweeks module for data reliability&#10;&#10;Introduced validations, fallback mechanisms, and enhanced logging to address missing or invalid data in workweek properties like `TotalEstimatedManHours` and `Stations`. Improved performance with efficient batching while ensuring accurate calculations for station hours, weights, and completions. Updated documentation, UI, and debugging tools to streamline development and troubleshooting." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor and enhance workweeks module for data reliability&#10;&#10;Introduced validations, fallback mechanisms, and enhanced logging to address missing or invalid data in workweek properties like `TotalEstimatedManHours` and `Stations`. Improved performance with efficient batching while ensuring accurate calculations for station hours, weights, and completions. Updated documentation, UI, and debugging tools to streamline development and troubleshooting." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

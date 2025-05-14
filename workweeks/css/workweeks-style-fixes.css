@@ -1,0 +1,89 @@
+/* workweeks/css/workweeks-style-fixes.css */
+
+/* Fix left alignment for filters */
+.filters-wrapper {
+    align-items: flex-start;
+    margin-bottom: 15px;
+}
+
+.filter-group {
+    width: 100%;
+    margin-bottom: 5px;
+}
+
+/* Fix project summary text color */
+.card-body {
+    background-color: white;
+    color: #212529; /* Dark text color */
+}
+
+#projectSummary .card-body p,
+#projectSummary .card-body h6 {
+    color: #212529;
+}
+
+/* Improve workweek schedule table styling */
+#weekschedule {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 15px;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+#weekschedule th,
+#weekschedule td {
+    padding: 6px 10px;
+    border: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+#weekschedule th {
+    background-color: var(--ssf-primary);
+    color: white;
+    font-weight: 600;
+}
+
+#weekschedule td:first-child {
+    font-weight: 500;
+}
+
+#weekschedule td:last-child {
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Adjust summary card appearance */
+#projectSummary {
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+#projectSummary .card-header {
+    padding: 8px 15px;
+    font-weight: 600;
+    border-bottom: 3px solid var(--ssf-accent);
+}
+
+/* Improve filter button appearance */
+.filter-group button {
+    margin-right: 5px;
+    margin-bottom: 5px;
+    font-size: 0.85rem;
+    padding: 4px 10px;
+    height: auto;
+    line-height: 1.2;
+}
+
+.filter-group button.active {
+    border-bottom: 3px solid var(--ssf-accent);
+}
+
+/* Mobile responsiveness improvements */
+@media (max-width: 768px) {
+    .summary-data {
+        margin-bottom: 10px;
+    }
+
+    #projectSummary .card-body .row {
+        flex-direction: column;
+    }
+}

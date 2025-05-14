@@ -395,21 +395,6 @@ body {
 }
 
 /* Project Table Styles */
-#projectTable thead th {
-    position: sticky;
-    top: 0;
-    background-color: #f2f2f2;
-    z-index: 10;
-}
-
-#projectTable thead th::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    border-bottom: 1px solid #ddd;
-}
 
 /* Column States */
 .col-complete {
