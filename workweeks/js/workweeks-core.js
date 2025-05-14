@@ -69,6 +69,11 @@ function loadProjectData(workweek) {
     currentWorkweek = workweek;
     document.getElementById('big-text').textContent = workweek;
 
+    // Update URL without reloading page
+    const url = new URL(window.location);
+    url.searchParams.set('workweek', workweek);
+    window.history.pushState({}, '', url);
+
     // Reset filters
     disableAllFilters();
 
@@ -133,6 +138,9 @@ function fetchWorkweekData(workweek) {
             return response.json();
         })
         .then(response => {
+            if (!response.items || response.items.length === 0) {
+                console.warn('No workweek data items returned from server');
+            }
             return Array.isArray(response.items) ? response.items : [response.items];
         });
 }
@@ -196,6 +204,33 @@ function processDataInChunks(workweekData, nestedData, cutData, kitData) {
 
         function processNextChunk() {
             if (currentChunk >= chunks.length) {
+                // Check for potential issues with totalEstimatedManHours
+                const missingTotalHours = processedData.filter(item =>
+                    !item.TotalEstimatedManHours ||
+                    isNaN(parseFloat(item.TotalEstimatedManHours))
+                );
+
+                if (missingTotalHours.length > 0) {
+                    console.warn(`Found ${missingTotalHours.length} items with missing or invalid TotalEstimatedManHours`);
+                    // Fix any missing totalEstimatedManHours
+                    processedData = processedData.map(item => {
+                        // If TotalEstimatedManHours is missing or invalid, calculate it from available data
+                        if (!item.TotalEstimatedManHours || isNaN(parseFloat(item.TotalEstimatedManHours))) {
+                            // Calculate based on AssemblyManHoursEach * MainPieceQuantity or SequenceMainMarkQuantity
+                            if (item.AssemblyManHoursEach && item.MainPieceQuantity) {
+                                item.TotalEstimatedManHours = parseFloat(item.AssemblyManHoursEach) * parseFloat(item.MainPieceQuantity);
+                            } else if (item.AssemblyManHoursEach && item.SequenceMainMarkQuantity) {
+                                item.TotalEstimatedManHours = parseFloat(item.AssemblyManHoursEach) * parseFloat(item.SequenceMainMarkQuantity);
+                            } else {
+                                // Set a default if we can't calculate
+                                item.TotalEstimatedManHours = 0;
+                            }
+                            console.log(`Fixed TotalEstimatedManHours for item with MainMark: ${item.MainMark}`);
+                        }
+                        return item;
+                    });
+                }
+
                 resolve(processedData);
                 return;
             }
@@ -228,6 +263,11 @@ function createLookupMap(items) {
     const map = new Map();
 
     items.forEach(item => {
+        if (!item || !item.ProductionControlItemSequenceID) {
+            console.warn('Found invalid item in createLookupMap:', item);
+            return;
+        }
+
         const key = item.ProductionControlItemSequenceID;
         if (!map.has(key)) map.set(key, []);
         map.get(key).push(item);
@@ -237,15 +277,29 @@ function createLookupMap(items) {
 }
 
 // Merge workweek item data with nested, cut, and kit data
-// Merge workweek item data with nested, cut, and kit data
 function mergeItemData(workweekItem, nestedPieces, cutPieces, kitPieces) {
     // If workweekItem is undefined or doesn't have necessary properties, return a default object
     if (!workweekItem) {
         console.warn("Received undefined workweekItem in mergeItemData");
         return {
             Stations: [],
-            Pieces: [...nestedPieces, ...cutPieces, ...kitPieces]
+            Pieces: [...nestedPieces, ...cutPieces, ...kitPieces],
+            TotalEstimatedManHours: 0
         };
+    }
+
+    // Ensure TotalEstimatedManHours is properly set
+    if (!workweekItem.TotalEstimatedManHours || isNaN(parseFloat(workweekItem.TotalEstimatedManHours))) {
+        console.warn(`TotalEstimatedManHours missing or invalid for workweek item with MainMark: ${workweekItem.MainMark}`);
+
+        // Try to calculate it from the component properties
+        if (workweekItem.AssemblyManHoursEach && workweekItem.MainPieceQuantity) {
+            workweekItem.TotalEstimatedManHours = parseFloat(workweekItem.AssemblyManHoursEach) * parseFloat(workweekItem.MainPieceQuantity);
+        } else if (workweekItem.AssemblyManHoursEach && workweekItem.SequenceMainMarkQuantity) {
+            workweekItem.TotalEstimatedManHours = parseFloat(workweekItem.AssemblyManHoursEach) * parseFloat(workweekItem.SequenceMainMarkQuantity);
+        } else {
+            workweekItem.TotalEstimatedManHours = 0;
+        }
     }
 
     let updatedStations = workweekItem.Stations || [];
@@ -297,6 +351,12 @@ function mergeItemData(workweekItem, nestedPieces, cutPieces, kitPieces) {
 
 // Update a station with the latest data
 function updateStation(stationType, pieces, stations) {
+    // Handle the case where pieces may be empty or invalid
+    if (!pieces || !Array.isArray(pieces) || pieces.length === 0) {
+        console.warn(`Empty or invalid pieces array for station ${stationType}`);
+        return;
+    }
+
     const totalNeeded = pieces[0]?.SequenceQuantity || 0;
 
     // For nesting station, use a special calculation that accounts for what's already cut
@@ -304,6 +364,8 @@ function updateStation(stationType, pieces, stations) {
     if (stationType === 'NESTED') {
         // Calculate completed based on the adjusted StillNeedsNesting values
         completed = Math.min(...pieces.map(p => {
+            if (!p || !p.TotalPieceMarkQuantityNeeded) return 0;
+
             const originalTotal = parseInt(p.TotalPieceMarkQuantityNeeded) || 0;
             const stillNeedsNesting = parseInt(p.StillNeedsNesting) || 0;
             const alreadyNested = originalTotal - stillNeedsNesting;
@@ -312,9 +374,16 @@ function updateStation(stationType, pieces, stations) {
     } else {
         // For CUT and KIT stations, use the standard calculation
         completed = Math.min(...pieces.map(p => {
+            if (!p) return 0;
+
             const qty = stationType === 'CUT' ? p.QtyCut : p.QtyKitted;
             return Math.floor((qty || 0) / (p.AssemblyEachQuantity || 1));
         }));
+    }
+
+    // Check if completed is still Infinity (which can happen if there are no valid pieces)
+    if (!isFinite(completed)) {
+        completed = 0;
     }
 
     const stationData = {

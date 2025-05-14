@@ -15,7 +15,9 @@ function createTableHeader() {
     orderedStations.forEach(station => {
         // Calculate the completion percentage for this station using assembly quantities
         const stationTotal = projectData.reduce((acc, item) => {
-            const stationData = item.Stations.find(s => s.StationDescription === station);
+            if (!item || !item.Stations) return acc;
+
+            const stationData = item.Stations.find(s => s && s.StationDescription === station);
             if (!stationData) return acc;
 
             // For all stations, use assembly quantities
@@ -73,32 +75,44 @@ function displayTable(data) {
 
     // Add individual assembly rows
     data.forEach(assembly => {
+        if (!assembly) return;
+
         const isCompleted = checkCompletion(assembly.Stations);
         const isOnHold = (assembly.ReleasedToFab != 1);
-        console.log(assembly);
-        const stationHours = calculateStationHours(assembly.RouteName, assembly.Category, assembly.TotalEstimatedManHours);
+
+        // Ensure assembly properties are valid before using them
+        const stationHours = calculateStationHours(
+            assembly.RouteName || 'DEFAULT',
+            assembly.Category || 'DEFAULT',
+            parseFloat(assembly.TotalEstimatedManHours || 0)
+        );
+
+        const totalNetWeight = assembly.TotalNetWeight || 0;
+        const netAssemblyWeightEach = assembly.NetAssemblyWeightEach || 0;
+        const assemblyManHoursEach = assembly.AssemblyManHoursEach || 0;
+        const totalEstimatedManHours = assembly.TotalEstimatedManHours || 0;
 
         bodyHtml += `
         <tr class="table-datarow ${isCompleted ? 'completed-row' : ''} ${isOnHold ? 'hold-row' : ''}">
-            <td title="ProductionControlID: ${assembly.ProductionControlID}">
-                ${assembly.JobNumber}<br>${assembly.RouteName}
+            <td title="ProductionControlID: ${assembly.ProductionControlID || 'N/A'}">
+                ${assembly.JobNumber || 'N/A'}<br>${assembly.RouteName || 'N/A'}
             </td>
-            <td title="SequenceID: ${assembly.SequenceID}, ProductionControlItemID: ${assembly.ProductionControlItemID}">
-                ${assembly.SequenceDescription} [${assembly.LotNumber}]<br>
-                <a href="#" onclick="showJsonModal('${assembly.ProductionControlItemSequenceID}'); return false;" class="text-decoration-none">${assembly.MainMark}</a>
-                <br>${assembly.Category}
+            <td title="SequenceID: ${assembly.SequenceID || 'N/A'}, ProductionControlItemID: ${assembly.ProductionControlItemID || 'N/A'}">
+                ${assembly.SequenceDescription || 'N/A'} [${assembly.LotNumber || 'N/A'}]<br>
+                <a href="#" onclick="showJsonModal('${assembly.ProductionControlItemSequenceID}'); return false;" class="text-decoration-none">${assembly.MainMark || 'N/A'}</a>
+                <br>${assembly.Category || 'N/A'}
             </td>
-            <td title="ProductionControlItemSequenceID: ${assembly.ProductionControlItemSequenceID}">
-                ${assembly.WorkPackageNumber}
+            <td title="ProductionControlItemSequenceID: ${assembly.ProductionControlItemSequenceID || 'N/A'}">
+                ${assembly.WorkPackageNumber || 'N/A'}
             </td>
-            <td title="ProductionControlAssemblyID: ${assembly.ProductionControlAssemblyID}">${assembly.SequenceMainMarkQuantity}</td>
-            <td>${formatNumberWithCommas(assembly.NetAssemblyWeightEach)}# / ${formatNumberWithCommas(assembly.TotalNetWeight)}#</td>
-            <td>${formatNumber(assembly.AssemblyManHoursEach)} / ${formatNumber(assembly.TotalEstimatedManHours)}</td>
+            <td title="ProductionControlAssemblyID: ${assembly.ProductionControlAssemblyID || 'N/A'}">${assembly.SequenceMainMarkQuantity || 0}</td>
+            <td>${formatNumberWithCommas(netAssemblyWeightEach)}# / ${formatNumberWithCommas(totalNetWeight)}#</td>
+            <td>${formatNumber(assemblyManHoursEach)} / ${formatNumber(totalEstimatedManHours)}</td>
         `;
 
         // Add cells for each station
         orderedStations.forEach(stationName => {
-            const station = assembly.Stations.find(s => s.StationDescription === stationName);
+            const station = assembly.Stations ? assembly.Stations.find(s => s && s.StationDescription === stationName) : null;
             const stationObj = getStation(stationName);
             bodyHtml += stationObj.renderCell(station, assembly);
         });
@@ -125,9 +139,14 @@ function displayTable(data) {
 // Add a summary row for station totals
 function addStationSummaryRow(stationTotals, data) {
     const totalLineItems = data.length;
-    const totalAsmQuantity = data.reduce((sum, item) => sum + (parseInt(item.SequenceMainMarkQuantity) || 0), 0);
-    const completedLineItems = data.filter(item => checkCompletion(item.Stations)).length;
+    const totalAsmQuantity = data.reduce((sum, item) => {
+        if (!item) return sum;
+        return sum + (parseInt(item.SequenceMainMarkQuantity) || 0);
+    }, 0);
+
+    const completedLineItems = data.filter(item => item && checkCompletion(item.Stations)).length;
     const completedAssemblies = data.reduce((sum, item) => {
+        if (!item) return sum;
         if (checkCompletion(item.Stations)) {
             return sum + (parseInt(item.SequenceMainMarkQuantity) || 0);
         }
@@ -185,7 +204,9 @@ function addStationSummaryRow(stationTotals, data) {
 // Update the data summary sections
 function updateDataSummary(data, totalJobHours, totalUsedHours, remainingHours) {
     if (!data || data.length === 0) {
-        document.getElementById('dataSummary').innerHTML = '<strong>No data available</strong>';
+        document.getElementById('lineItemSummary').innerHTML = '<strong>No data available</strong>';
+        document.getElementById('hoursSummary').innerHTML = '<strong>No data available</strong>';
+        document.getElementById('weightSummary').innerHTML = '<strong>No data available</strong>';
         return;
     }
 
@@ -194,6 +215,8 @@ function updateDataSummary(data, totalJobHours, totalUsedHours, remainingHours) 
     const remainingWeight = totalWeight - completedWeight;
     const remainingTons = Math.round(remainingWeight / 200) / 10;
     const totalTons = Math.round(totalWeight / 200) / 10;
+
+    // Use safeDivide to avoid division by zero errors
     const hoursPerTon = safeDivide(totalJobHours, totalTons);
     const lbsPerHour = safeDivide(totalWeight, totalJobHours);
 
@@ -217,7 +240,10 @@ function updateDataSummary(data, totalJobHours, totalUsedHours, remainingHours) 
     `;
 
     const totalLineItems = data.length;
-    const totalAsmQty = data.reduce((sum, item) => sum + (parseInt(item.SequenceMainMarkQuantity) || 0), 0);
+    const totalAsmQty = data.reduce((sum, item) => {
+        if (!item) return sum;
+        return sum + (parseInt(item.SequenceMainMarkQuantity) || 0);
+    }, 0);
 
     // Update assembly info section
     document.getElementById('lineItemSummary').innerHTML = `
@@ -226,7 +252,6 @@ function updateDataSummary(data, totalJobHours, totalUsedHours, remainingHours) 
     `;
 }
 
-// Calculate station totals for summary row
 // Calculate station totals for summary row
 function calculateStationTotals(data) {
     let stationTotals = {};
@@ -250,66 +275,71 @@ function calculateStationTotals(data) {
 
     data.forEach(assembly => {
         // Skip if assembly is undefined or doesn't have the necessary properties
-        if (!assembly || !assembly.Stations || !assembly.TotalEstimatedManHours) return;
+        if (!assembly || !assembly.Stations) return;
+
+        // Use parseFloat and provide defaults to ensure we have valid numbers
+        const totalHours = parseFloat(assembly.TotalEstimatedManHours || 0);
 
         const stationHours = calculateStationHours(
             assembly.RouteName || 'DEFAULT',
             assembly.Category || 'DEFAULT',
-            parseFloat(assembly.TotalEstimatedManHours || 0)
+            totalHours
         );
 
         const assemblyWeight = parseFloat(assembly.TotalNetWeight || 0);
 
-        assembly.Stations.forEach(station => {
-            if (!station) return;
+        if (assembly.Stations) {
+            assembly.Stations.forEach(station => {
+                if (!station) return;
 
-            const stationName = station.StationDescription;
-            if (!orderedStations.includes(stationName)) return;
+                const stationName = station.StationDescription;
+                if (!orderedStations.includes(stationName)) return;
 
-            let completed = parseFloat(station.StationQuantityCompleted || 0);
-            let total = parseFloat(station.StationTotalQuantity || 0);
+                let completed = parseFloat(station.StationQuantityCompleted || 0);
+                let total = parseFloat(station.StationTotalQuantity || 0);
 
-            // Sum up quantities
-            stationTotals[stationName].completed += completed;
-            stationTotals[stationName].total += total;
+                // Sum up quantities
+                stationTotals[stationName].completed += completed;
+                stationTotals[stationName].total += total;
 
-            // Calculate hours and weights
-            const completionRatio = safeDivide(completed, total);
-            const stationTotalHours = stationHours[stationName] || 0;
-            const completedHours = stationTotalHours * completionRatio;
+                // Calculate hours and weights
+                const completionRatio = safeDivide(completed, total);
+                const stationTotalHours = stationHours[stationName] || 0;
+                const completedHours = stationTotalHours * completionRatio;
 
-            stationTotals[stationName].hours.completed += completedHours;
-            stationTotals[stationName].hours.total += stationTotalHours;
-            stationTotals[stationName].weight.completed += assemblyWeight * completionRatio;
-            stationTotals[stationName].weight.total += assemblyWeight;
+                stationTotals[stationName].hours.completed += completedHours;
+                stationTotals[stationName].hours.total += stationTotalHours;
+                stationTotals[stationName].weight.completed += assemblyWeight * completionRatio;
+                stationTotals[stationName].weight.total += assemblyWeight;
 
-            // Special handling for piecemark stations (NESTED, CUT, KIT)
-            if (['NESTED', 'CUT', 'KIT'].includes(stationName) && station.Pieces) {
-                station.Pieces.forEach(piece => {
-                    // Skip if piece is undefined
-                    if (!piece) return;
+                // Special handling for piecemark stations (NESTED, CUT, KIT)
+                if (['NESTED', 'CUT', 'KIT'].includes(stationName) && station.Pieces) {
+                    station.Pieces.forEach(piece => {
+                        // Skip if piece is undefined
+                        if (!piece) return;
 
-                    if (stationName === 'NESTED') {
-                        // For nesting, account for what's already been cut
-                        const totalNeeded = parseInt(piece.TotalPieceMarkQuantityNeeded || 0);
-                        const stillNeedsNesting = parseInt(piece.StillNeedsNesting || 0);
-                        const alreadyNested = totalNeeded - stillNeedsNesting;
+                        if (stationName === 'NESTED') {
+                            // For nesting, account for what's already been cut
+                            const totalNeeded = parseInt(piece.TotalPieceMarkQuantityNeeded || 0);
+                            const stillNeedsNesting = parseInt(piece.StillNeedsNesting || 0);
+                            const alreadyNested = totalNeeded - stillNeedsNesting;
 
-                        stationTotals[stationName].pieces_completed += alreadyNested;
-                        stationTotals[stationName].pieces_total += totalNeeded;
-                    } else {
-                        const totalNeeded = parseInt(piece.TotalPieceMarkQuantityNeeded || 0);
-                        stationTotals[stationName].pieces_total += totalNeeded;
+                            stationTotals[stationName].pieces_completed += alreadyNested;
+                            stationTotals[stationName].pieces_total += totalNeeded;
+                        } else {
+                            const totalNeeded = parseInt(piece.TotalPieceMarkQuantityNeeded || 0);
+                            stationTotals[stationName].pieces_total += totalNeeded;
 
-                        if (stationName === 'CUT') {
-                            stationTotals[stationName].pieces_completed += parseInt(piece.QtyCut || 0);
-                        } else { // KIT
-                            stationTotals[stationName].pieces_completed += parseInt(piece.QtyKitted || 0);
+                            if (stationName === 'CUT') {
+                                stationTotals[stationName].pieces_completed += parseInt(piece.QtyCut || 0);
+                            } else { // KIT
+                                stationTotals[stationName].pieces_completed += parseInt(piece.QtyKitted || 0);
+                            }
                         }
-                    }
-                });
-            }
-        });
+                    });
+                }
+            });
+        }
     });
 
     return stationTotals;
@@ -321,9 +351,16 @@ function calculateTotalUsedHours(data) {
 
     data.forEach(assembly => {
         // Skip if assembly is undefined or doesn't have the necessary properties
-        if (!assembly || !assembly.Stations || !assembly.TotalEstimatedManHours) return;
+        if (!assembly || !assembly.Stations) return;
 
+        // Ensure we have a valid number for totalHours
         const totalHours = parseFloat(assembly.TotalEstimatedManHours || 0);
+
+        if (isNaN(totalHours)) {
+            console.warn(`Invalid TotalEstimatedManHours value for assembly with MainMark: ${assembly.MainMark || 'unknown'}`);
+            return;
+        }
+
         const stationHours = calculateStationHours(
             assembly.RouteName || 'DEFAULT',
             assembly.Category || 'DEFAULT',
@@ -331,38 +368,51 @@ function calculateTotalUsedHours(data) {
         );
 
         // For each station, calculate the hours used based on completion percentage
-        assembly.Stations.forEach(station => {
-            if (!station || !orderedStations.includes(station.StationDescription)) return;
+        if (assembly.Stations) {
+            assembly.Stations.forEach(station => {
+                if (!station || !orderedStations.includes(station.StationDescription)) return;
 
-            const stationTotal = parseFloat(station.StationTotalQuantity || 0);
-            const stationCompleted = parseFloat(station.StationQuantityCompleted || 0);
-            const completionRatio = safeDivide(stationCompleted, stationTotal);
-            const stationAllocatedHours = stationHours[station.StationDescription] || 0;
+                const stationTotal = parseFloat(station.StationTotalQuantity || 0);
+                const stationCompleted = parseFloat(station.StationQuantityCompleted || 0);
+                const completionRatio = safeDivide(stationCompleted, stationTotal);
+                const stationAllocatedHours = stationHours[station.StationDescription] || 0;
 
-            totalUsed += stationAllocatedHours * completionRatio;
-        });
+                totalUsed += stationAllocatedHours * completionRatio;
+            });
+        }
     });
 
     return totalUsed;
 }
 
-
 // Calculate total weight of all assemblies
 function calculateTotalWeight(data) {
-    return data.reduce((sum, assembly) => sum + parseFloat(assembly.TotalNetWeight || 0), 0);
+    return data.reduce((sum, assembly) => {
+        if (!assembly) return sum;
+        const weight = parseFloat(assembly.TotalNetWeight || 0);
+        return sum + (isNaN(weight) ? 0 : weight);
+    }, 0);
 }
 
 // Calculate total estimated hours of all assemblies
 function calculateTotalHours(data) {
-    return data.reduce((sum, assembly) => sum + parseFloat(assembly.TotalEstimatedManHours || 0), 0);
+    return data.reduce((sum, assembly) => {
+        if (!assembly) return sum;
+        const hours = parseFloat(assembly.TotalEstimatedManHours || 0);
+        return sum + (isNaN(hours) ? 0 : hours);
+    }, 0);
 }
 
 // Calculate completed weight (assemblies where the final station is complete)
 function calculateCompletedWeight(data) {
     return data.reduce((sum, assembly) => {
+        if (!assembly || !assembly.Stations) return sum;
+
         const assemblyWeight = parseFloat(assembly.TotalNetWeight || 0);
+        if (isNaN(assemblyWeight)) return sum;
+
         const lastStation = assembly.Stations
-            .filter(station => orderedStations.includes(station.StationDescription))
+            .filter(station => station && orderedStations.includes(station.StationDescription))
             .sort((a, b) => orderedStations.indexOf(b.StationDescription) - orderedStations.indexOf(a.StationDescription))[0];
 
         if (lastStation && lastStation.StationQuantityCompleted === lastStation.StationTotalQuantity) {
@@ -387,7 +437,8 @@ function checkCompletion(stations) {
 
 // Format a number with 2 decimal places
 function formatNumber(value) {
-    return parseFloat(value).toFixed(2);
+    value = parseFloat(value);
+    return isNaN(value) ? "0.00" : value.toFixed(2);
 }
 
 // Format a number with commas for thousands
@@ -399,6 +450,7 @@ function formatNumberWithCommas(number) {
 // Show detailed JSON data in a modal
 function showJsonModal(pciseqId) {
     const rowData = projectData.find(item =>
+        item && item.ProductionControlItemSequenceID &&
         item.ProductionControlItemSequenceID.toString() === pciseqId.toString()
     );
 
@@ -406,6 +458,8 @@ function showJsonModal(pciseqId) {
         document.getElementById('jsonContent').innerHTML = formatCollapsibleJson(rowData);
         const jsonModal = new bootstrap.Modal(document.getElementById('jsonModal'));
         jsonModal.show();
+    } else {
+        console.warn(`No data found for ProductionControlItemSequenceID: ${pciseqId}`);
     }
 }
 

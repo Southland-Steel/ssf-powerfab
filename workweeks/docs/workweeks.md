@@ -30,7 +30,7 @@ The main SQL filters used to retrieve data are:
 - `wp.completed = 0`: Shows only incomplete workpackages
 - `pcseq.AssemblyQuantity > 0`: Excludes empty assemblies
 - `pci.MainPiece = 1`: Shows only main pieces for assemblies
-- `shapes.Shape NOT IN ('HS','NU','WA','MB')`: Excludes certain shape types
+- `shapes.Shape NOT IN ('HS','NU','WA')`: Excludes certain shape types
 
 ## Production Process Flow
 
@@ -82,6 +82,18 @@ The module is implemented using:
 - Object-oriented approach for stations using class inheritance
 - Memory-efficient data loading with pagination
 
+## Property Calculations
+
+For each item, the following properties are calculated:
+
+- `TotalNetWeight`: `NetAssemblyWeightEach * MainPieceQuantity`
+- `TotalEstimatedManHours`: `AssemblyManHoursEach * MainPieceQuantity`
+
+For station calculations:
+- Each station has a percentage of hours allocated based on the route and category
+- Total hours per station = TotalEstimatedManHours * stationPercentage
+- Completed hours = stationHours * completionRatio
+
 ## Performance Considerations
 
 - Large datasets are loaded in batches (5000 records at a time)
@@ -89,11 +101,32 @@ The module is implemented using:
 - Filter results are cached to avoid reprocessing
 - Indexes are built for faster filtering
 
+## Troubleshooting Guide
+
+Common issues and their solutions:
+
+1. **Missing or NaN TotalEstimatedManHours**:
+    - Check that `AssemblyManHoursEach` and `MainPieceQuantity` are available
+    - Solution: Calculate from available data or use fallback values
+
+2. **Workweek changing issues**:
+    - Problem: Data not properly refreshed when changing workweeks
+    - Solution: Clear all data and filters before loading new workweek
+
+3. **Slow loading**:
+    - Problem: Large datasets causing poor performance
+    - Solution: Use batched loading and process data in smaller chunks
+
+4. **Missing stations**:
+    - Problem: Station data not appearing in the table
+    - Solution: Check that station is included in the `orderedStations` array
+
 ## Maintenance Guidelines
 
 When modifying this module:
 
-1. Add new station types to the `orderedStations` array
-2. Update station distribution percentages in `calculateStationHours` function
+1. Add new station types to the `orderedStations` array in workweeks-core.js
+2. Update station distribution percentages in `calculateStationHours` function in workweeks-stations.js
 3. For new piecemark stations, extend the `PiecemarkStation` class
 4. For new assembly stations, extend the base `Station` class
+5. Always verify property calculations (especially TotalEstimatedManHours) when making changes
