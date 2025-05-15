@@ -270,6 +270,29 @@ GanttChart.Custom = (function() {
 
         console.log('Filtered sequences count:', filteredSequences.length);
 
+        filteredSequences.sort(function(a, b) {
+            // Get start dates
+            const aStartDate = GanttChart.Core.parseDate(a.fabrication.start);
+            const bStartDate = GanttChart.Core.parseDate(b.fabrication.start);
+
+            // Get end dates
+            const aEndDate = GanttChart.Core.parseDate(a.fabrication.end);
+            const bEndDate = GanttChart.Core.parseDate(b.fabrication.end);
+
+            // If start dates are the same, compare end dates
+            if (aStartDate.getTime() === bStartDate.getTime()) {
+                return aEndDate.getTime() - bEndDate.getTime();
+            }
+
+            // Otherwise, compare start dates
+            return aStartDate.getTime() - bStartDate.getTime();
+        });
+
+        return {
+            dateRange: data.dateRange,
+            sequences: filteredSequences
+        };
+
         // Return processed data
         return {
             dateRange: data.dateRange,
@@ -490,26 +513,30 @@ GanttChart.Custom = (function() {
 
         // Add bar content
         const barContent = `
-            <span class="item-title-display">${sequence.project}: ${sequence.sequence}</span>
-            <span class="item-details">
-                ${sequence.fabrication.description}
-                Start: ${GanttChart.Core.formatDate(startDate)}
-                End: ${GanttChart.Core.formatDate(endDate)}
-                Hours: ${sequence.fabrication.hours}
-            </span>
-        `;
+        <span class="item-title-display">${sequence.project}: ${sequence.sequence}</span>
+        <span class="item-details">
+            ${sequence.fabrication.description || ''}
+            Start: ${GanttChart.Core.formatDate(startDate)}
+            End: ${GanttChart.Core.formatDate(endDate)}
+            ${sequence.fabrication.hours ? 'Hours: ' + sequence.fabrication.hours : ''}
+        </span>
+    `;
 
         $bar.html(barContent);
 
         // Add progress indicator if percentage is valid
         if (sequence.fabrication.percentage >= 0) {
+            const percentage = sequence.fabrication.percentage;
             const $progressBar = $('<div class="item-bar-percentage"></div>')
-                .css('width', sequence.fabrication.percentage + '%');
+                .css('width', percentage + '%');
 
-            const $progressText = $('<div class="item-bar-percentage-text"></div>')
-                .text(sequence.fabrication.percentage + '%');
+            // Only add text if percentage is > 0
+            if (percentage > 0) {
+                const $progressText = $('<div class="item-bar-percentage-text"></div>')
+                    .text(percentage + '%');
+                $progressBar.append($progressText);
+            }
 
-            $progressBar.append($progressText);
             $bar.append($progressBar);
         }
 
@@ -529,9 +556,9 @@ GanttChart.Custom = (function() {
      * @param {jQuery} $timeline - Timeline element
      */
     function addWorkPackageMarkers(sequence, sequenceWPs, $timeline) {
-        // Add each workpackage as a milestone marker
+        // Add individual workpackage markers for each workpackage
         sequenceWPs.forEach(wp => {
-            const wpDate = GanttChart.Core.parseDate(wp.completionfriday);
+            const wpDate = GanttChart.Core.parseDate(wp.completionwednesday);
             const position = GanttChart.TimeUtils.dateToPosition(wpDate);
 
             // Determine status class
@@ -544,13 +571,13 @@ GanttChart.Custom = (function() {
                 .addClass(`date-marker workpackage-marker ${statusClass}`)
                 .css('left', position + '%')
                 .attr('title', `
-                    WP: ${wp.workPackageNumber}
-                    Week: ${wp.workWeek}
-                    Status: ${wp.workPackageStatus}
-                    Qty: ${wp.wpAssemblyQty}
-                    Weight: ${wp.grossWeight} lbs
-                    Hours: ${wp.hours}
-                `);
+                WP: ${wp.workPackageNumber}
+                Week: ${wp.workWeek}
+                Status: ${wp.workPackageStatus}
+                Qty: ${wp.wpAssemblyQty}
+                Weight: ${wp.grossWeight} lbs
+                Hours: ${wp.hours}
+            `);
 
             $timeline.append($marker);
         });
@@ -568,21 +595,27 @@ GanttChart.Custom = (function() {
                 return (!max || date > max) ? date : max;
             }, null);
 
-            // Add start bracket
+            // Add start bracket (with proper positioning)
             if (startDate) {
                 const startPos = GanttChart.TimeUtils.dateToPosition(startDate);
                 const $startBracket = $('<div class="wp-bracket wp-start"></div>')
-                    .css('left', startPos + '%')
+                    .css({
+                        'left': startPos + '%',
+                        'margin-left': '-1px' // Adjust alignment so vertical line appears at the exact position
+                    })
                     .attr('title', 'WP Start Date: ' + GanttChart.Core.formatDate(startDate));
 
                 $timeline.append($startBracket);
             }
 
-            // Add end bracket
+            // Add end bracket (with proper positioning)
             if (endDate) {
                 const endPos = GanttChart.TimeUtils.dateToPosition(endDate);
                 const $endBracket = $('<div class="wp-bracket wp-end"></div>')
-                    .css('left', endPos + '%')
+                    .css({
+                        'left': endPos + '%',
+                        'margin-left': '-1px' // Adjust alignment so vertical line appears at the exact position
+                    })
                     .attr('title', 'WP End Date: ' + GanttChart.Core.formatDate(endDate));
 
                 $timeline.append($endBracket);

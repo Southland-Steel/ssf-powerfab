@@ -298,3 +298,181 @@ body {
         width: 120px;
     }
 }
+
+/**
+ * CSS changes for the new progress bar style
+ * Add this to your gantt.css or gantt-custom.css file
+ */
+
+/* Update the item bar percentage to be at bottom */
+.item-bar-percentage {
+    position: absolute;
+    left: 0;
+    bottom: 0;  /* Move to bottom instead of top */
+    height: 4px; /* Make it thin */
+    background-color: rgba(0, 0, 0, 0.9); /* Black
+    border-radius: 0; /* Remove border radius from top */
+    border-bottom-left-radius: 4px; /* Only keep bottom left radius */
+    overflow: hidden;
+    z-index: 2; /* Ensure it's above the item bar but below text */
+}
+
+/* Progress text styling */
+.item-bar-percentage-text {
+    position: absolute;
+    right: 5px;
+    bottom: 5px; /* Position at bottom */
+    font-size: 10px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9); /* Light color for visibility */
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5); /* Add shadow for better visibility */
+}
+
+/* Adjust the main item bar to accommodate the progress bar at bottom */
+.item-bar {
+    padding-bottom: 8px; /* Add padding at bottom for progress text */
+}
+
+/* Status-specific progress bar colors */
+.item-bar.status-not-started .item-bar-percentage {
+    background-color: #0d6efd; /* Blue */
+}
+
+.item-bar.status-in-progress .item-bar-percentage {
+    background-color: black;
+}
+
+.item-bar.status-completed .item-bar-percentage {
+    background-color: #198754; /* Green */
+}
+
+.item-bar.status-late .item-bar-percentage {
+    background-color: #dc3545; /* Red */
+}
+/**
+ * Improved CSS for Square Brackets that more closely matches your screenshot
+ * Replace the previous CSS with this
+ */
+
+/**
+ * Complete implementation of progress bar, brackets and sorting
+ * This includes all three features for your Gantt chart
+ */
+
+/* 1. CSS FOR PROGRESS BAR - Add to gantt-custom.css */
+
+/* Update the item bar percentage to be at bottom */
+.item-bar-percentage {
+    position: absolute;
+    left: 0;
+    bottom: 0;  /* Move to bottom instead of top */
+    height: 4px; /* Make it thin */
+    background-color: rgba(13, 110, 253, 0.9); /* Bright blue color */
+    border-radius: 0; /* Remove border radius from top */
+    border-bottom-left-radius: 4px; /* Only keep bottom left radius */
+    overflow: hidden;
+    z-index: 2; /* Ensure it's above the item bar but below text */
+}
+
+/* Progress text styling */
+.item-bar-percentage-text {
+    position: absolute;
+    right: 5px;
+    bottom: 5px; /* Position at bottom */
+    font-size: 10px;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.9); /* Light color for visibility */
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5); /* Add shadow for better visibility */
+}
+
+/* Adjust the main item bar to accommodate the progress bar at bottom */
+.item-bar {
+    padding-bottom: 8px; /* Add padding at bottom for progress text */
+}
+
+/* Status-specific progress bar colors */
+.item-bar.status-not-started .item-bar-percentage {
+    background-color: #0d6efd; /* Blue */
+}
+
+.item-bar.status-in-progress .item-bar-percentage {
+    background-color: black;
+}
+
+.item-bar.status-completed .item-bar-percentage {
+    background-color: #198754; /* Green */
+}
+
+.item-bar.status-late .item-bar-percentage {
+    background-color: #dc3545; /* Red */
+}
+
+/* 2. CSS FOR DIRECTIONAL BRACKETS - Add to gantt-custom.css */
+
+/* Base styles for brackets */
+.wp-bracket {
+    position: absolute;
+    width: 2px;       /* Width of vertical line */
+    height: 100%;     /* Full height */
+    background-color: #000000; /* Black color */
+    z-index: 3;
+}
+
+/* Clear any existing dashed border styles */
+.wp-bracket.wp-start,
+.wp-bracket.wp-end {
+    border-left: none;
+}
+
+/* Start bracket (left side) - tails point right */
+.wp-bracket.wp-start:before,
+.wp-bracket.wp-start:after {
+    content: '';
+    position: absolute;
+    width: 6px;      /* Width of the horizontal line */
+    height: 2px;     /* Thickness of the horizontal line */
+    background-color: #000000;
+    left: 0;         /* Align with left edge */
+}
+
+/* Top horizontal line for start bracket - extends to the right */
+.wp-bracket.wp-start:before {
+    top: 0;
+}
+
+/* Bottom horizontal line for start bracket - extends to the right */
+.wp-bracket.wp-start:after {
+    bottom: 0;
+}
+
+/* End bracket (right side) - tails point left */
+.wp-bracket.wp-end:before,
+.wp-bracket.wp-end:after {
+    content: '';
+    position: absolute;
+    width: 6px;      /* Width of the horizontal line */
+    height: 2px;     /* Thickness of the horizontal line */
+    background-color: #000000;
+    right: 0;        /* Align with right edge */
+    left: auto;      /* Override default left alignment */
+}
+
+/* Top horizontal line for end bracket - extends to the left */
+.wp-bracket.wp-end:before {
+    top: 0;
+}
+
+/* Bottom horizontal line for end bracket - extends to the left */
+.wp-bracket.wp-end:after {
+    bottom: 0;
+}
+
+/* Dark theme adjustments */
+[data-theme="dark"] .wp-bracket {
+    background-color: #ffffff; /* White brackets for dark theme */
+}
+
+[data-theme="dark"] .wp-bracket:before,
+[data-theme="dark"] .wp-bracket:after {
+    background-color: #ffffff; /* White brackets for dark theme */
+}

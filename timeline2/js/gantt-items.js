@@ -214,10 +214,13 @@ GanttChart.Items = (function() {
         const $progressBar = $('<div class="item-bar-percentage"></div>')
             .css('width', percentage + '%');
 
-        const $progressText = $('<div class="item-bar-percentage-text"></div>')
-            .text(percentage + '%');
+        // Only add text if percentage is > 0
+        if (percentage > 0) {
+            const $progressText = $('<div class="item-bar-percentage-text"></div>')
+                .text(percentage + '%');
+            $progressBar.append($progressText);
+        }
 
-        $progressBar.append($progressText);
         $bar.append($progressBar);
     }
 
