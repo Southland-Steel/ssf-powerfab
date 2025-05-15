@@ -1,6 +1,6 @@
 <?php
 /**
- * File: index.php (Updated with Theme Support)
+ * File: index.php (Cleaned up - removing inline scripts)
  * Modified Gantt chart page with theme switching
  */
 $pageTitle = 'Project Schedule Gantt Chart';
@@ -245,127 +245,6 @@ $headerScripts = '
             console.error('Error during initialization:', error);
             alert('An error occurred during initialization. See console for details.');
         }
-    });
-</script>
-<script>
-    // Track filters separately
-    var currentFilters = {
-        project: 'all',    // Project filter (all or specific project ID)
-        category: 'all'    // Category filter (all, in-progress, has-workpackage, etc.)
-    };
-
-    $(document).ready(function() {
-        // Project filter dropdown handler (using event delegation)
-        $(document).on('click', '.dropdown-item[data-filter]', function(e) {
-            e.preventDefault();
-            const projectFilter = $(this).data('filter');
-            console.log('Project filter selected:', projectFilter);
-
-            // Update project filter but keep category filter
-            currentFilters.project = projectFilter;
-
-            // Update dropdown button text
-            $('#filterDropdownBtn').text($(this).text());
-
-            // Apply combined filters
-            applyFilters();
-        });
-
-        // Category filter buttons handler
-        $('.gantt-filter-btn').on('click', function() {
-            const categoryFilter = $(this).data('filter');
-            console.log('Category filter clicked:', categoryFilter);
-
-            // Update category filter but keep project filter
-            currentFilters.category = categoryFilter;
-
-            // Update active state for category buttons
-            $('.gantt-filter-btn').removeClass('active');
-            $(this).addClass('active');
-
-            // Apply combined filters
-            applyFilters();
-        });
-
-        // Function to apply both filters
-        function applyFilters() {
-            console.log('Applying filters:', currentFilters);
-
-            // Create combined filter string
-            let combinedFilter = '';
-
-            if (currentFilters.project !== 'all' && currentFilters.category !== 'all') {
-                // Both filters active
-                combinedFilter = `${currentFilters.project}:${currentFilters.category}`;
-            } else if (currentFilters.project !== 'all') {
-                // Only project filter active
-                combinedFilter = currentFilters.project;
-            } else if (currentFilters.category !== 'all') {
-                // Only category filter active
-                combinedFilter = currentFilters.category;
-            } else {
-                // No filters active
-                combinedFilter = 'all';
-            }
-
-            // Update config
-            GanttChart.Core.setConfig({ currentFilter: combinedFilter });
-
-            // Load data with combined filter
-            GanttChart.Ajax.loadData(combinedFilter);
-        }
-    });
-</script>
-/**
-* JavaScript enhancements to ensure Gantt chart takes full width
-* Add this script at the end of your index.php file
-*/
-<script>
-    /**
-     * Ensure the Gantt chart takes the full available width
-     * This function adjusts width properties dynamically based on container size
-     */
-    function adjustGanttWidth() {
-        // Get the available width
-        const containerWidth = $('.container-fluid').width();
-        const cardBodyWidth = $('.card-body').width();
-        const availableWidth = Math.min(containerWidth, cardBodyWidth);
-
-        console.log('Available width:', availableWidth);
-
-        // Set the gantt container width
-        $('#ganttContainer').css('width', availableWidth + 'px');
-
-        // Calculate and set appropriate widths for nested elements
-        const labelWidth = parseInt($('.gantt-labels').css('width'));
-        const timelineWidth = availableWidth - labelWidth;
-
-        // Adjust timeline elements
-        $('.gantt-timeline').css('width', timelineWidth + 'px');
-        $('#ganttTimelineHeader').css('width', availableWidth + 'px');
-
-        // Make sure the gantt-body is also full width
-        $('#ganttBody').css('width', availableWidth + 'px');
-
-        console.log('Adjusted widths - Labels:', labelWidth, 'Timeline:', timelineWidth);
-    }
-
-    // Run on page load and window resize
-    $(document).ready(function() {
-        // Initial adjustment
-        setTimeout(adjustGanttWidth, 500);
-
-        // Update on window resize
-        $(window).on('resize', function() {
-            adjustGanttWidth();
-        });
-
-        // Also adjust when data is loaded
-        const originalShowChart = GanttChart.Core.showChart;
-        GanttChart.Core.showChart = function() {
-            originalShowChart();
-            setTimeout(adjustGanttWidth, 100);
-        };
     });
 </script>
 </body>

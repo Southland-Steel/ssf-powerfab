@@ -68,7 +68,7 @@ GanttChart.Custom = (function() {
     }
 
     /**
-     * Load project data from server
+     * Load project data from server with proper filter parameters
      * @param {string} filter - Filter to apply
      */
     function loadProjectData(filter) {
@@ -82,13 +82,22 @@ GanttChart.Custom = (function() {
 
         // Get endpoints from configuration
         const config = GanttChart.Core.getConfig();
-        const mainEndpoint = config.dataEndpoint || 'ajax_ssf_get_timelinefabrication.php';
-        const workpackagesEndpoint = config.workpackagesEndpoint || 'ajax_get_ssf_timelinefabrication_workpackages.php';
+        const mainEndpoint = config.dataEndpoint || 'ajax/get_timeline_data.php';
+        const workpackagesEndpoint = config.workpackagesEndpoint || 'ajax/get_workpackages.php';
+
+        // Build proper URLs with query parameters
+        const mainUrl = new URL(mainEndpoint, window.location.href);
+        if (filter && filter !== 'all') {
+            mainUrl.searchParams.append('filter', filter);
+        }
+
+        console.log('Loading data with filter:', filter);
+        console.log('Endpoint with filter:', mainUrl.toString());
 
         // Load main project data and workpackages in parallel
         Promise.all([
-            // Fetch main project data
-            fetch(mainEndpoint)
+            // Fetch main project data with filter
+            fetch(mainUrl.toString())
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
@@ -109,7 +118,8 @@ GanttChart.Custom = (function() {
                 // Store workpackage data
                 workpackages = workpackageData;
 
-                // Process and filter data if needed
+                // We still need to process the data to add any client-side filtering
+                // that might not be possible on the server
                 const processedData = processProjectData(projectData, filter);
 
                 // Update state with processed data

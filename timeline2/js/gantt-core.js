@@ -63,6 +63,14 @@ GanttChart.Core = (function() {
         // Initial data load
         GanttChart.Ajax.loadData(config.currentFilter);
 
+        // Set up window resize handler
+        $(window).on('resize', function() {
+            adjustGanttWidth();
+        });
+
+        // Initial width adjustment
+        setTimeout(adjustGanttWidth, 500);
+
         state.initialized = true;
     }
 
@@ -91,6 +99,9 @@ GanttChart.Core = (function() {
         $(config.loadingIndicator).hide();
         $(config.container).show();
         $(config.noItemsMessage).hide();
+
+        // Adjust width after showing the chart
+        setTimeout(adjustGanttWidth, 100);
     }
 
     /**
@@ -204,6 +215,35 @@ GanttChart.Core = (function() {
         return config;
     }
 
+    /**
+     * Ensure the Gantt chart takes the full available width
+     * This function adjusts width properties dynamically based on container size
+     */
+    function adjustGanttWidth() {
+        // Get the available width
+        const containerWidth = $('.container-fluid').width();
+        const cardBodyWidth = $('.card-body').width();
+        const availableWidth = Math.min(containerWidth, cardBodyWidth);
+
+        console.log('Available width:', availableWidth);
+
+        // Set the gantt container width
+        $('#ganttContainer').css('width', availableWidth + 'px');
+
+        // Calculate and set appropriate widths for nested elements
+        const labelWidth = parseInt($('.gantt-labels').css('width') || '200');
+        const timelineWidth = availableWidth - labelWidth;
+
+        // Adjust timeline elements
+        $('.gantt-timeline').css('width', timelineWidth + 'px');
+        $('#ganttTimelineHeader').css('width', availableWidth + 'px');
+
+        // Make sure the gantt-body is also full width
+        $('#ganttBody').css('width', availableWidth + 'px');
+
+        console.log('Adjusted widths - Labels:', labelWidth, 'Timeline:', timelineWidth);
+    }
+
     // Public API
     return {
         init: initialize,
@@ -217,7 +257,8 @@ GanttChart.Core = (function() {
         getConfig: getConfig,
         setConfig: setConfig,
         setState: updateState,
-        getState: getState
+        getState: getState,
+        adjustGanttWidth: adjustGanttWidth  // New public method
     };
 })();
 

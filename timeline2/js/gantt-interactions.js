@@ -291,20 +291,74 @@ GanttChart.Interactions = (function() {
      * Initialize filtering functionality
      */
     function initializeFiltering() {
-        // Set up custom filter buttons if they exist
-        $(document).on('click', '.gantt-filter-btn', function() {
-            const filter = $(this).data('filter');
-            if (filter) {
-                // FIXED: Instead of just filtering UI elements, reload data with filter
-                // This ensures we get fresh data from the server with the filter applied
-                GanttChart.Core.setConfig({ currentFilter: filter });
-                GanttChart.Ajax.loadData(filter);
+        // Track filters separately
+        let currentFilters = {
+            project: 'all',    // Project filter (all or specific project ID)
+            category: 'all'    // Category filter (all, in-progress, has-workpackage, etc.)
+        };
 
-                // Update active state
-                $('.gantt-filter-btn').removeClass('active');
-                $(this).addClass('active');
-            }
+        // Project filter dropdown handler (using event delegation)
+        $(document).on('click', '.dropdown-item[data-filter]', function(e) {
+            e.preventDefault();
+            const projectFilter = $(this).data('filter');
+            console.log('Project filter selected:', projectFilter);
+
+            // Update project filter but keep category filter
+            currentFilters.project = projectFilter;
+
+            // Update dropdown button text
+            $('#filterDropdownBtn').text($(this).text());
+
+            // Apply combined filters
+            applyFilters();
         });
+
+        // Category filter buttons handler
+        $('.gantt-filter-btn').on('click', function() {
+            const categoryFilter = $(this).data('filter');
+            console.log('Category filter clicked:', categoryFilter);
+
+            // Update category filter but keep project filter
+            currentFilters.category = categoryFilter;
+
+            // Update active state for category buttons
+            $('.gantt-filter-btn').removeClass('active');
+            $(this).addClass('active');
+
+            // Apply combined filters
+            applyFilters();
+        });
+
+        /**
+         * Apply both project and category filters
+         * Creates a combined filter string and loads data
+         */
+        function applyFilters() {
+            console.log('Applying filters:', currentFilters);
+
+            // Create combined filter string
+            let combinedFilter = '';
+
+            if (currentFilters.project !== 'all' && currentFilters.category !== 'all') {
+                // Both filters active
+                combinedFilter = `${currentFilters.project}:${currentFilters.category}`;
+            } else if (currentFilters.project !== 'all') {
+                // Only project filter active
+                combinedFilter = currentFilters.project;
+            } else if (currentFilters.category !== 'all') {
+                // Only category filter active
+                combinedFilter = currentFilters.category;
+            } else {
+                // No filters active
+                combinedFilter = 'all';
+            }
+
+            // Update config
+            GanttChart.Core.setConfig({ currentFilter: combinedFilter });
+
+            // Load data with combined filter
+            GanttChart.Ajax.loadData(combinedFilter);
+        }
     }
 
     /**
