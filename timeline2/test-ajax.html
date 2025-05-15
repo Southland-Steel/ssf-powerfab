@@ -1,0 +1,38 @@
+<!-- test-ajax.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AJAX Test</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+<h1>AJAX Test</h1>
+<button id="testButton">Test AJAX Call</button>
+<div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+
+<!-- Add this script at the end of your index.php, before the closing </body> tag -->
+<script>
+    // Debugging helper
+    function inspectGanttChart() {
+        console.log('GanttChart object:', GanttChart);
+        console.log('Core module:', GanttChart.Core);
+        console.log('Ajax module:', GanttChart.Ajax);
+        console.log('Custom module:', GanttChart.Custom);
+
+        // Check if functions exist
+        console.log('Core.init exists:', typeof GanttChart.Core.init === 'function');
+        console.log('Ajax.loadData exists:', typeof GanttChart.Ajax.loadData === 'function');
+
+        // Check config
+        console.log('Current config:', GanttChart.Core.getConfig());
+    }
+
+    // Call immediately after page load
+    $(document).ready(function() {
+        setTimeout(inspectGanttChart, 1000); // Wait 1 second after page load
+    });
+</script>
+
+
+</body>
+</html>

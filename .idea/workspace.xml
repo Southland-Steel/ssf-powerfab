@@ -4,15 +4,27 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Refactor and enhance workweeks module for data reliability&#10;&#10;Introduced validations, fallback mechanisms, and enhanced logging to address missing or invalid data in workweek properties like `TotalEstimatedManHours` and `Stations`. Improved performance with efficient batching while ensuring accurate calculations for station hours, weights, and completions. Updated documentation, UI, and debugging tools to streamline development and troubleshooting.">
-      <change afterPath="$PROJECT_DIR$/workweeks/css/workweeks-style-fixes.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/js/workweeks-help.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/js/workweeks-utils.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/workweeks/view_data.php" afterDir="false" />
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Refactor workweeks module and improve reliability&#10;&#10;Updated documentation and SQL queries to enhance clarity. Improved UI styling and responsiveness with new CSS, added help functionality, and optimized data loading with caching and batching. Introduced validations, fallback mechanisms, and export-to-CSV support for better usability and troubleshooting.">
+      <change afterPath="$PROJECT_DIR$/timeline2/ajax/get_catstatus.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/ajax/get_timeline_data.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/ajax/get_workpackages.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/css/gantt-custom.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/css/gantt-responsive.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/css/gantt.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/docs/gantt-help.md" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/index.php" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/js/gantt-ajax.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/js/gantt-core.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/js/gantt-custom.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/js/gantt-help.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/js/gantt-interactions.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/js/gantt-items.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/js/gantt-timeline.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/js/gantt-timeutils.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/timeline2/test-ajax.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/assets/css/styles.css" beforeDir="false" afterPath="$PROJECT_DIR$/assets/css/styles.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workweeks/docs/workweeks.md" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/docs/workweeks.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workweeks/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/index.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/js/workweeks-display.js" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/js/workweeks-display.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/workweeks/js/workweeks-stations.js" beforeDir="false" afterPath="$PROJECT_DIR$/workweeks/js/workweeks-stations.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -55,22 +67,23 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Program Files/Ampps/www4/assets/images&quot;,
-    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
-    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
-    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.LLMConfigurable&quot;,
-    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "master",
+    "last_opened_file_path": "C:/Program Files/Ampps/www4/timeline2/ajax",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "ml.llm.LLMConfigurable",
+    "vue.rearranger.settings.migration": "true"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Program Files\Ampps\www4\timeline2\ajax" />
       <recent name="C:\Program Files\Ampps\www4\assets\images" />
       <recent name="C:\Program Files\Ampps\www4" />
     </key>
@@ -133,7 +146,8 @@
       <workItem from="1746469926846" duration="294000" />
       <workItem from="1746470229613" duration="40000" />
       <workItem from="1747145599622" duration="14300000" />
-      <workItem from="1747246956051" duration="6228000" />
+      <workItem from="1747246956051" duration="8458000" />
+      <workItem from="1747315863259" duration="4741000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -423,7 +437,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747253352137</updated>
     </task>
-    <option name="localTasksCounter" value="37" />
+    <task id="LOCAL-00037" summary="Refactor workweeks module and improve reliability&#10;&#10;Updated documentation and SQL queries to enhance clarity. Improved UI styling and responsiveness with new CSS, added help functionality, and optimized data loading with caching and batching. Introduced validations, fallback mechanisms, and export-to-CSV support for better usability and troubleshooting.">
+      <option name="closed" value="true" />
+      <created>1747254648504</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1747254648504</updated>
+    </task>
+    <option name="localTasksCounter" value="38" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -459,7 +481,8 @@
     <MESSAGE value="Add Workweeks module with AJAX endpoints and documentation&#10;&#10;Implemented the Workweeks module to handle production data filtering by workweek. Added new AJAX endpoints for nested, cut, and kit data retrieval. Created comprehensive documentation, database service, and interactive UI support for efficient data handling and display." />
     <MESSAGE value="Add Workweeks module with AJAX endpoints and documentation&#10;&#10;Implemented new Workweeks module with endpoints for nested, cut, and kit data retrieval using AJAX. Added detailed module documentation, UI components for filters, summaries, and tables, and optimized data handling with batch processing and pagination. Updated project configuration and utility classes for seamless integration." />
     <MESSAGE value="Refactor and enhance workweeks module for data reliability&#10;&#10;Introduced validations, fallback mechanisms, and enhanced logging to address missing or invalid data in workweek properties like `TotalEstimatedManHours` and `Stations`. Improved performance with efficient batching while ensuring accurate calculations for station hours, weights, and completions. Updated documentation, UI, and debugging tools to streamline development and troubleshooting." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor and enhance workweeks module for data reliability&#10;&#10;Introduced validations, fallback mechanisms, and enhanced logging to address missing or invalid data in workweek properties like `TotalEstimatedManHours` and `Stations`. Improved performance with efficient batching while ensuring accurate calculations for station hours, weights, and completions. Updated documentation, UI, and debugging tools to streamline development and troubleshooting." />
+    <MESSAGE value="Refactor workweeks module and improve reliability&#10;&#10;Updated documentation and SQL queries to enhance clarity. Improved UI styling and responsiveness with new CSS, added help functionality, and optimized data loading with caching and batching. Introduced validations, fallback mechanisms, and export-to-CSV support for better usability and troubleshooting." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor workweeks module and improve reliability&#10;&#10;Updated documentation and SQL queries to enhance clarity. Improved UI styling and responsiveness with new CSS, added help functionality, and optimized data loading with caching and batching. Introduced validations, fallback mechanisms, and export-to-CSV support for better usability and troubleshooting." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

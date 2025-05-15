@@ -172,28 +172,23 @@ function addStationSummaryRow(stationTotals, data) {
 
             // Different display format based on station type
             if (station === 'NESTED') {
-                bodyHtml += `
-                <td class="sumcell ${isComplete ? 'col-complete' : ''}">
-                    ASMNEED: ${totals.completed} / ${totals.total}<br>
-                    PCNEED: ${totals.pieces_completed || 0} / ${totals.pieces_total || 0}<br>
-                    ASMWT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))}
-                </td>`;
+                        bodyHtml += `
+            <td class="sumcell ${isComplete ? 'col-complete' : ''}">
+                PCNEED: ${totals.pieces_completed || 0} / ${totals.pieces_total || 0}<br>
+                REMAIN: ${totals.pieces_total - totals.pieces_completed}
+            </td>`;
             } else if (station === 'CUT' || station === 'KIT') {
-                const assemblyQtyPercentage = safeDivide(totals.completed * 100, totals.total);
-
-                bodyHtml += `
-                <td class="sumcell ${isComplete ? 'col-complete' : ''}">
-                    ASMQTY: ${totals.completed} / ${totals.total} (${assemblyQtyPercentage.toFixed(1)}%)<br>
-                    PCQTY: ${totals.pieces_completed} / ${totals.pieces_total} (${(safeDivide(totals.pieces_completed * 100, totals.pieces_total)).toFixed(1)}%)<br>
-                    ASMWT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))} (${weightPercentage.toFixed(1)}%)
-                </td>`;
+                        bodyHtml += `
+            <td class="sumcell ${isComplete ? 'col-complete' : ''}">
+                PCQTY: ${totals.pieces_completed} / ${totals.pieces_total} (${(safeDivide(totals.pieces_completed * 100, totals.pieces_total)).toFixed(1)}%)
+            </td>`;
             } else {
-                bodyHtml += `
-                <td class="sumcell ${isComplete ? 'col-complete' : ''}">
-                    QTY: ${totals.completed} / ${totals.total} (${qtyPercentage.toFixed(1)}%)<br>
-                    HRS: ${formatNumberWithCommas(Math.round(totals.hours.completed))} / ${formatNumberWithCommas(Math.round(totals.hours.total))} (${hoursPercentage.toFixed(1)}%)<br>
-                    WT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))} (${weightPercentage.toFixed(1)}%)
-                </td>`;
+                        bodyHtml += `
+            <td class="sumcell ${isComplete ? 'col-complete' : ''}">
+                QTY: ${totals.completed} / ${totals.total} (${qtyPercentage.toFixed(1)}%)<br>
+                HRS: ${formatNumberWithCommas(Math.round(totals.hours.completed))} / ${formatNumberWithCommas(Math.round(totals.hours.total))} (${hoursPercentage.toFixed(1)}%)<br>
+                WT: ${formatNumberWithCommas(Math.round(totals.weight.completed))} / ${formatNumberWithCommas(Math.round(totals.weight.total))} (${weightPercentage.toFixed(1)}%)
+            </td>`;
             }
         }
     });

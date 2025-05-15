@@ -23,12 +23,50 @@ class Station {
 
     // Calculate completion for this station type
     calculateCompletion(stationData, assemblyData) {
-        if (!stationData) return { completed: 0, total: 0 };
+        if (!stationData || !stationData.Pieces || stationData.Pieces.length === 0) {
+            return {
+                completed: 0,
+                total: 0,
+                pieces: { completed: 0, total: 0 }
+            };
+        }
 
-        const completed = parseInt(stationData.StationQuantityCompleted) || 0;
-        const total = parseInt(stationData.StationTotalQuantity) || 0;
+        const totalNeeded = parseInt(assemblyData.SequenceMainMarkQuantity) || 0;
+        let totalPiecesCompleted = 0;
+        let totalPiecesNeeded = 0;
 
-        return { completed, total };
+        if (this.name === 'NESTED') {
+            // Special calculation for nesting that accounts for cut parts
+            stationData.Pieces.forEach(piece => {
+                const totalNeeded = parseInt(piece.TotalPieceMarkQuantityNeeded) || 0;
+                const stillNeedsNesting = parseInt(piece.StillNeedsNesting) || 0;
+                const alreadyNested = totalNeeded - stillNeedsNesting;
+
+                totalPiecesCompleted += alreadyNested;
+                totalPiecesNeeded += totalNeeded;
+            });
+        } else {
+            // Standard calculation for CUT and KIT
+            stationData.Pieces.forEach(piece => {
+                const totalNeeded = parseInt(piece.TotalPieceMarkQuantityNeeded) || 0;
+                totalPiecesNeeded += totalNeeded;
+
+                let pieceQty = 0;
+                if (this.name === 'CUT') pieceQty = parseInt(piece.QtyCut) || 0;
+                else if (this.name === 'KIT') pieceQty = parseInt(piece.QtyKitted) || 0;
+
+                totalPiecesCompleted += pieceQty;
+            });
+        }
+
+        return {
+            completed: 0,  // Not relevant for piece stations
+            total: totalNeeded,
+            pieces: {
+                completed: totalPiecesCompleted,
+                total: totalPiecesNeeded
+            }
+        };
     }
 
     // Render a cell for this station type
@@ -37,29 +75,28 @@ class Station {
             return `<td class="status-notstarted status-na">-</td>`;
         }
 
-        const { completed, total } = this.calculateCompletion(stationData, assemblyData);
-        const statusClass = this.getStatusClass(completed, total);
+        const { pieces } = this.calculateCompletion(stationData, assemblyData);
+        const statusClass = this.getStatusClass(pieces.completed, pieces.total);
 
-        // Calculate station-specific metrics
-        const stationHours = calculateStationHours(
-            assemblyData.RouteName,
-            assemblyData.Category,
-            parseFloat(assemblyData.TotalEstimatedManHours || 0)
-        );
-
-        const stationTotalHours = stationHours[this.name] || 0;
-        const completionRatio = safeDivide(completed, total);
-        const stationUsedHours = stationTotalHours * completionRatio;
-
-        const assemblyWeight = parseFloat(assemblyData.TotalNetWeight || 0);
-        const stationCompletedWeight = assemblyWeight * completionRatio;
-
-        return `
-        <td class="${statusClass}">
-            ${completed} / ${total}<br>
-            HRS: ${formatNumber(stationUsedHours)} / ${formatNumber(stationTotalHours)}<br>
-            WT: ${formatNumberWithCommas(Math.round(stationCompletedWeight))}#
-        </td>`;
+        // For NESTED, show remaining instead of completed
+        if (this.name === 'NESTED') {
+            const remaining = pieces.total - pieces.completed;
+            return `
+            <td class="${statusClass}">
+                <a href="#" class="station-details" data-station="${this.name}"
+                   data-assembly="${assemblyData.ProductionControlItemSequenceID}">
+                    PCS NEEDED: ${remaining} / ${pieces.total}
+                </a>
+            </td>`;
+        } else {
+            return `
+            <td class="${statusClass}">
+                <a href="#" class="station-details" data-station="${this.name}"
+                   data-assembly="${assemblyData.ProductionControlItemSequenceID}">
+                    PCS: ${pieces.completed} / ${pieces.total}
+                </a>
+            </td>`;
+        }
     }
 }
 
@@ -295,8 +332,23 @@ function showPiecemarkDetails(stationName, productionControlItemSequenceId) {
         minCompletedAssemblies = Math.min(minCompletedAssemblies, assembliesComplete);
 
         const status = completed >= needed ? 'Complete' : `${((completed/needed) * 100).toFixed(1)}%`;
+        if (stationName === 'NESTED') {
+            // For nesting, show how many still need nesting out of the total
+            const stillNeedsNesting = parseInt(piece.StillNeedsNesting) || 0;
+            const totalNeeded = piece.TotalPieceMarkQuantityNeeded;
+            const alreadyNested = totalNeeded - stillNeedsNesting;
+            completed = alreadyNested;
 
-        tableBody += `
+            tableBody += `
+    <tr class="${completed >= needed ? '' : 'uncompleted-piecemark'}">
+        <td>${piece.Shape}-${piece.PieceMark}</td>
+        <td>${piece.AssemblyEachQuantity}</td>
+        <td>${needed}</td>
+        <td>${completed}</td>
+        <td>Remaining: ${stillNeedsNesting}</td>
+    </tr>`;
+        } else {
+            tableBody += `
         <tr class="${completed >= needed ? '' : 'uncompleted-piecemark'}">
             <td>${piece.Shape}-${piece.PieceMark}</td>
             <td>${piece.AssemblyEachQuantity}</td>
@@ -304,6 +356,7 @@ function showPiecemarkDetails(stationName, productionControlItemSequenceId) {
             <td>${completed}</td>
             <td>${status}</td>
         </tr>`;
+        }
     });
 
     // Add summary row
