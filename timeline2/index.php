@@ -1,7 +1,7 @@
 <?php
 /**
- * File: index.php
- * Modified Gantt chart page with updated Ajax endpoints
+ * File: index.php (Updated with Theme Support)
+ * Modified Gantt chart page with theme switching
  */
 $pageTitle = 'Project Schedule Gantt Chart';
 
@@ -10,6 +10,7 @@ $additionalCss = '
 <link rel="stylesheet" href="css/gantt.css">
 <link rel="stylesheet" href="css/gantt-responsive.css">
 <link rel="stylesheet" href="css/gantt-custom.css">
+<link rel="stylesheet" href="css/gantt-themes.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 ';
 
@@ -44,6 +45,16 @@ $headerScripts = '
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Project Schedule Gantt Chart<span id="itemCountBadge" class="badge bg-secondary ms-2" title="Number of items displayed">0</span></h5>
                     <div>
+                        <!-- Theme Switch -->
+                        <span class="me-2">
+                                <i class="bi bi-moon-fill theme-icon-dark"></i>
+                                <i class="bi bi-sun-fill theme-icon-light"></i>
+                                <label class="theme-switch ms-1">
+                                    <input type="checkbox" id="themeSwitch" checked>
+                                    <span class="theme-switch-slider"></span>
+                                </label>
+                            </span>
+
                         <button id="ganttZoomOut" class="btn btn-sm btn-outline-secondary" title="Zoom Out">
                             <i class="bi bi-zoom-out"></i>
                         </button>
@@ -81,22 +92,22 @@ $headerScripts = '
                 <div class="card-body p-0">
                     <!-- Legend for Gantt Chart -->
                     <div class="bg-light p-2 border-bottom" id="ganttLegend">
-                        <small class="d-inline-block me-3"><span style="display:inline-block;width:12px;height:12px;background-color:#8bb9fe;margin-right:5px;"></span> Not Started</small>
-                        <small class="d-inline-block me-3"><span style="display:inline-block;width:12px;height:12px;background-color:#0d6efd;margin-right:5px;"></span> In Progress</small>
-                        <small class="d-inline-block me-3"><span style="display:inline-block;width:12px;height:12px;background-color:#198754;margin-right:5px;"></span> Completed</small>
-                        <small class="d-inline-block me-3"><span style="display:inline-block;width:12px;height:12px;background-color:#dc3545;margin-right:5px;"></span> Late</small>
-                        <small class="d-inline-block me-3"><span style="display:inline-block;width:12px;height:12px;background-color:#6c757d;margin-right:5px;"></span> On Hold</small>
-                        <small class="d-inline-block me-3"><span style="display:inline-block;width:2px;height:12px;background-color:#0d6efd;margin-right:5px;"></span> Today</small>
+                        <small class="d-inline-block me-3"><span style="display:inline-block;width:12px;height:12px;background-color:var(--status-not-started);margin-right:5px;"></span> Not Started</small>
+                        <small class="d-inline-block me-3"><span style="display:inline-block;width:12px;height:12px;background-color:var(--status-in-progress);margin-right:5px;"></span> In Progress</small>
+                        <small class="d-inline-block me-3"><span style="display:inline-block;width:12px;height:12px;background-color:var(--status-completed);margin-right:5px;"></span> Completed</small>
+                        <small class="d-inline-block me-3"><span style="display:inline-block;width:12px;height:12px;background-color:var(--status-late);margin-right:5px;"></span> Late</small>
+                        <small class="d-inline-block me-3"><span style="display:inline-block;width:12px;height:12px;background-color:var(--status-on-hold);margin-right:5px;"></span> On Hold</small>
+                        <small class="d-inline-block me-3"><span style="display:inline-block;width:2px;height:12px;background-color:var(--status-in-progress);margin-right:5px;"></span> Today</small>
                     </div>
 
                     <!-- Additional legend section: Markers and indicators -->
                     <div class="bg-light p-2 border-bottom">
                         <small class="d-inline-block me-3"><span style="display:inline-block;width:10px;height:10px;clip-path:polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);background-color:#7952b3;margin-right:5px;"></span> Start Date</small>
-                        <small class="d-inline-block me-3"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:#dc3545;margin-right:5px;"></span> End Date</small>
+                        <small class="d-inline-block me-3"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background-color:var(--status-late);margin-right:5px;"></span> End Date</small>
                         <small class="d-inline-block me-3"><span style="display:inline-block;width:10px;height:10px;clip-path:polygon(50% 0%, 100% 100%, 0% 100%);background-color:#fd7e14;margin-right:5px;"></span> Work Package</small>
                         <small class="d-inline-block me-3"><span style="display:inline-block;width:16px;height:16px;background-color:#ffc107;border-radius:50%;text-align:center;color:#000;font-weight:bold;">!</span> Warning</small>
-                        <small class="d-inline-block me-3"><span style="display:inline-block;width:16px;height:16px;background-color:#dc3545;border-radius:50%;text-align:center;color:#fff;font-weight:bold;">!</span> Critical</small>
-                        <small class="d-inline-block me-3"><span style="display:inline-block;width:14px;height:14px;color:#0d6efd;font-size:14px;"><i class="bi bi-link"></i></span> Linked Item</small>
+                        <small class="d-inline-block me-3"><span style="display:inline-block;width:16px;height:16px;background-color:var(--status-late);border-radius:50%;text-align:center;color:#fff;font-weight:bold;">!</span> Critical</small>
+                        <small class="d-inline-block me-3"><span style="display:inline-block;width:14px;height:14px;color:var(--status-in-progress);font-size:14px;"><i class="bi bi-link"></i></span> Linked Item</small>
                     </div>
 
                     <!-- Gantt filter buttons -->
@@ -183,11 +194,14 @@ $headerScripts = '
 <script src="js/gantt-interactions.js"></script>
 <script src="js/gantt-ajax.js"></script>
 <script src="js/gantt-help.js"></script>
-<script src="js/gantt-custom.js"></script>
+<script src="js/gantt-theme.js"></script>
 
+<!-- Custom script for this specific implementation -->
+<script src="js/gantt-custom.js"></script>
 
 <script>
     $(document).ready(function() {
+        console.log('Document ready');
 
         // First, set the configuration
         GanttChart.Core.setConfig({
@@ -199,6 +213,11 @@ $headerScripts = '
             retryOnFailure: true,
             maxRetries: 3
         });
+        console.log('Config set');
+
+        // Initialize theme module
+        GanttChart.Theme.init();
+        console.log('Theme initialized');
 
         // Initialize the core functionality but prevent automatic data loading
         try {
