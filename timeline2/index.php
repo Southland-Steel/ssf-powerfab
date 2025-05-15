@@ -71,7 +71,7 @@ $headerScripts = '
 
                         <div class="btn-group ms-2">
                             <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" id="filterDropdownBtn">
-                                <i class="bi bi-filter"></i> All Projects
+                                <i class="bi bi-filter"></i> All
                             </button>
                             <ul class="dropdown-menu dropdown-menu-end" id="projectFilterDropdown">
                                 <li><a class="dropdown-item" href="#" data-filter="all">All Projects</a></li>
@@ -112,7 +112,7 @@ $headerScripts = '
 
                     <!-- Gantt filter buttons -->
                     <div class="gantt-filter-container p-2 border-bottom">
-                        <button class="gantt-filter-btn active" data-filter="all">All Projects</button>
+                        <button class="gantt-filter-btn active" data-filter="all">All</button>
                         <button class="gantt-filter-btn" data-filter="in-progress">In Progress</button>
                         <button class="gantt-filter-btn" data-filter="ready-for-fabrication">Ready for Fabrication</button>
                         <button class="gantt-filter-btn" data-filter="has-workpackage">Has Work Package</button>
@@ -245,6 +245,127 @@ $headerScripts = '
             console.error('Error during initialization:', error);
             alert('An error occurred during initialization. See console for details.');
         }
+    });
+</script>
+<script>
+    // Track filters separately
+    var currentFilters = {
+        project: 'all',    // Project filter (all or specific project ID)
+        category: 'all'    // Category filter (all, in-progress, has-workpackage, etc.)
+    };
+
+    $(document).ready(function() {
+        // Project filter dropdown handler (using event delegation)
+        $(document).on('click', '.dropdown-item[data-filter]', function(e) {
+            e.preventDefault();
+            const projectFilter = $(this).data('filter');
+            console.log('Project filter selected:', projectFilter);
+
+            // Update project filter but keep category filter
+            currentFilters.project = projectFilter;
+
+            // Update dropdown button text
+            $('#filterDropdownBtn').text($(this).text());
+
+            // Apply combined filters
+            applyFilters();
+        });
+
+        // Category filter buttons handler
+        $('.gantt-filter-btn').on('click', function() {
+            const categoryFilter = $(this).data('filter');
+            console.log('Category filter clicked:', categoryFilter);
+
+            // Update category filter but keep project filter
+            currentFilters.category = categoryFilter;
+
+            // Update active state for category buttons
+            $('.gantt-filter-btn').removeClass('active');
+            $(this).addClass('active');
+
+            // Apply combined filters
+            applyFilters();
+        });
+
+        // Function to apply both filters
+        function applyFilters() {
+            console.log('Applying filters:', currentFilters);
+
+            // Create combined filter string
+            let combinedFilter = '';
+
+            if (currentFilters.project !== 'all' && currentFilters.category !== 'all') {
+                // Both filters active
+                combinedFilter = `${currentFilters.project}:${currentFilters.category}`;
+            } else if (currentFilters.project !== 'all') {
+                // Only project filter active
+                combinedFilter = currentFilters.project;
+            } else if (currentFilters.category !== 'all') {
+                // Only category filter active
+                combinedFilter = currentFilters.category;
+            } else {
+                // No filters active
+                combinedFilter = 'all';
+            }
+
+            // Update config
+            GanttChart.Core.setConfig({ currentFilter: combinedFilter });
+
+            // Load data with combined filter
+            GanttChart.Ajax.loadData(combinedFilter);
+        }
+    });
+</script>
+/**
+* JavaScript enhancements to ensure Gantt chart takes full width
+* Add this script at the end of your index.php file
+*/
+<script>
+    /**
+     * Ensure the Gantt chart takes the full available width
+     * This function adjusts width properties dynamically based on container size
+     */
+    function adjustGanttWidth() {
+        // Get the available width
+        const containerWidth = $('.container-fluid').width();
+        const cardBodyWidth = $('.card-body').width();
+        const availableWidth = Math.min(containerWidth, cardBodyWidth);
+
+        console.log('Available width:', availableWidth);
+
+        // Set the gantt container width
+        $('#ganttContainer').css('width', availableWidth + 'px');
+
+        // Calculate and set appropriate widths for nested elements
+        const labelWidth = parseInt($('.gantt-labels').css('width'));
+        const timelineWidth = availableWidth - labelWidth;
+
+        // Adjust timeline elements
+        $('.gantt-timeline').css('width', timelineWidth + 'px');
+        $('#ganttTimelineHeader').css('width', availableWidth + 'px');
+
+        // Make sure the gantt-body is also full width
+        $('#ganttBody').css('width', availableWidth + 'px');
+
+        console.log('Adjusted widths - Labels:', labelWidth, 'Timeline:', timelineWidth);
+    }
+
+    // Run on page load and window resize
+    $(document).ready(function() {
+        // Initial adjustment
+        setTimeout(adjustGanttWidth, 500);
+
+        // Update on window resize
+        $(window).on('resize', function() {
+            adjustGanttWidth();
+        });
+
+        // Also adjust when data is loaded
+        const originalShowChart = GanttChart.Core.showChart;
+        GanttChart.Core.showChart = function() {
+            originalShowChart();
+            setTimeout(adjustGanttWidth, 100);
+        };
     });
 </script>
 </body>

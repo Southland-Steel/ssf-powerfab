@@ -315,7 +315,7 @@ input:checked + .theme-switch-slider:before {
 
 .wp-bracket.wp-start,
 .wp-bracket.wp-end {
-    border-left-color: rgba(121, 82, 179, 0.6); /* Semi-transparent purple */
+    border-left-color: var(--theme-tooltip-bg); /* Semi-transparent purple */
 }
 
 /* Badge colors */

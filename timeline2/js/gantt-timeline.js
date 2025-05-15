@@ -49,10 +49,12 @@ GanttChart.Timeline = (function() {
                 GanttChart.TimeUtils.initialize(startDate, endDate);
             }
 
-            // Rest of the function...
-            // [Keep existing code]
+            // IMPROVED STRUCTURE: Create a proper header structure
+            // First create the label placeholder to match the gantt-labels
+            const $labelSpace = $('<div class="timeline-label-space"></div>');
+            $timelineHeader.append($labelSpace);
 
-            // Create container for weeks
+            // Then create container for weeks
             const $weeksContainer = $('<div class="timeline-weeks-container"></div>');
             $timelineHeader.append($weeksContainer);
 

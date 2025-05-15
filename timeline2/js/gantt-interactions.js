@@ -295,7 +295,10 @@ GanttChart.Interactions = (function() {
         $(document).on('click', '.gantt-filter-btn', function() {
             const filter = $(this).data('filter');
             if (filter) {
-                filterItems(filter);
+                // FIXED: Instead of just filtering UI elements, reload data with filter
+                // This ensures we get fresh data from the server with the filter applied
+                GanttChart.Core.setConfig({ currentFilter: filter });
+                GanttChart.Ajax.loadData(filter);
 
                 // Update active state
                 $('.gantt-filter-btn').removeClass('active');
@@ -309,6 +312,7 @@ GanttChart.Interactions = (function() {
      * @param {string} filter - Filter name
      */
     function filterItems(filter) {
+        console.log("Client-side filtering with: " + filter);
         // Skip if no filter or 'all'
         if (!filter || filter === 'all') {
             $('.gantt-row').show();
@@ -331,7 +335,7 @@ GanttChart.Interactions = (function() {
             $('.gantt-row .date-conflict-warning.at-risk').closest('.gantt-row').show();
         } else if (filter === 'high-priority') {
             $('.gantt-row.priority-high').show();
-        } else if (filter === 'status') {
+        } else if (filter.startsWith('status-')) {
             // Filter by status if filter is 'status-value'
             const statusMatch = filter.match(/^status-(.+)$/);
             if (statusMatch) {

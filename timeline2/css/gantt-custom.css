@@ -6,6 +6,10 @@
 /* Project-specific styling for Gantt chart */
 
 /* Row styles */
+.gantt-row {
+    width: 100%;
+}
+
 .gantt-row.project-row {
     border-left: 4px solid transparent;
 }
@@ -43,9 +47,12 @@
 
 /* Timeline and chart styles */
 .gantt-timeline {
+    width: calc(100% - 200px); /* Adjust for the width of the labels */
     margin-left: 200px;
-    position: relative;
-    height: 100%;
+}
+
+.gantt-timeline-header {
+    width: 100%;
 }
 
 /* Bar styles */
@@ -158,11 +165,11 @@
 }
 
 .wp-bracket.wp-start {
-    border-left: 2px dashed #7952b3;
+    border-left: 2px dashed white;
 }
 
 .wp-bracket.wp-end {
-    border-left: 2px dashed #7952b3;
+    border-left: 2px dashed white;
 }
 
 /* Detail panel styles */
@@ -209,7 +216,8 @@
         width: 150px;
     }
 
-.gantt-timeline {
+    .gantt-timeline {
+        width: calc(100% - 150px);
         margin-left: 150px;
     }
 
@@ -224,11 +232,69 @@
         padding: 5px;
     }
 
-.gantt-timeline {
+    .gantt-timeline {
+        width: calc(100% - 120px);
         margin-left: 120px;
     }
 
 .gantt-pmname {
         font-size: 9px;
+    }
+}
+
+.gantt-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden; /* Hide horizontal scrollbar on the container */
+}
+
+.container-fluid {
+    padding-left: 10px;
+    padding-right: 10px;
+    max-width: 100%;
+}
+
+/* Make sure the card takes full width */
+.card {
+    width: 100%;
+}
+
+/* Fix any potential overflow issues */
+.card-body {
+    overflow-x: hidden;
+}
+
+/* Make the total body not have horizontal scrollbars */
+body {
+    overflow-x: hidden;
+}
+.gantt-timeline-header {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.timeline-label-space {
+    width: 215px;
+    flex-shrink: 0;
+    background-color: var(--theme-header-bg);
+    border-right: 1px solid var(--theme-border-color);
+}
+
+.timeline-weeks-container {
+    flex-grow: 1;
+    position: relative;
+    height: 100%;
+}
+
+@media (max-width: 768px) {
+    .timeline-label-space {
+        width: 150px;
+    }
+}
+
+@media (max-width: 576px) {
+    .timeline-label-space {
+        width: 120px;
     }
 }

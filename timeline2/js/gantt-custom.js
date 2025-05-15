@@ -31,6 +31,42 @@ GanttChart.Custom = (function() {
         GanttChart.Ajax.exportToCsv = exportProjectData;
     }
 
+    function updateProjectFilters(sequences) {
+        const $dropdown = $('#projectFilterDropdown');
+
+        // Clear existing project filters
+        $dropdown.find('li:not(:first-child)').remove();
+
+        // Get unique project numbers
+        const projects = [...new Set(sequences.map(seq => seq.project))];
+
+        // Only add divider if there are projects
+        if (projects.length > 0) {
+            $dropdown.append('<li><hr class="dropdown-divider"></li>');
+        }
+
+        // Add filters for each project
+        projects.forEach(project => {
+            $dropdown.append(`<li><a class="dropdown-item" href="#" data-filter="${project}">${project}</a></li>`);
+        });
+
+        // Explicitly bind click events to the newly added dropdown items
+        $('.dropdown-item[data-filter]').off('click').on('click', function(e) {
+            e.preventDefault();
+            const filter = $(this).data('filter');
+            console.log('Project filter selected:', filter);
+
+            // Update button text
+            $('#filterDropdownBtn').text($(this).text());
+
+            // Update current filter in config
+            GanttChart.Core.setConfig({ currentFilter: filter });
+
+            // Load data with the selected filter
+            GanttChart.Ajax.loadData(filter);
+        });
+    }
+
     /**
      * Load project data from server
      * @param {string} filter - Filter to apply
@@ -144,6 +180,8 @@ GanttChart.Custom = (function() {
      * @return {Object} Processed data
      */
     function processProjectData(data, filter) {
+        console.log('Processing data with filter:', filter);
+
         // If no data or empty sequences, return empty structure
         if (!data || !data.sequences || data.sequences.length === 0) {
             return {
@@ -157,26 +195,70 @@ GanttChart.Custom = (function() {
 
         // Apply filter if needed
         let filteredSequences = data.sequences;
+
         if (filter && filter !== 'all') {
+            console.log('Applying filter:', filter);
+
+            // Check if filter is combined (project:category)
+            const combinedFilter = filter.split(':');
+            const projectFilter = combinedFilter[0];
+            const categoryFilter = combinedFilter.length > 1 ? combinedFilter[1] : null;
+
+            console.log('Parsed filters - Project:', projectFilter, 'Category:', categoryFilter);
+
+            // Filter sequences based on both project and category if available
             filteredSequences = data.sequences.filter(sequence => {
-                switch (filter) {
-                    case 'in-progress':
-                        return sequence.fabrication.percentage > 0 && sequence.fabrication.percentage < 100;
-                    case 'ready-for-fabrication':
-                        return sequence.iff.percentage >= 100;
-                    case 'has-workpackage':
-                        return hasWorkPackages(sequence);
-                    case 'categorize-needed':
-                        return sequence.categorize.percentage < 100;
-                    default:
-                        // If the filter is a project number, filter by that
-                        if (filter.match(/^[A-Za-z0-9-]+$/)) {
-                            return sequence.project === filter;
-                        }
-                        return true;
+                // First apply project filter if it's not 'all'
+                if (projectFilter !== 'all' && projectFilter.match(/^[A-Za-z0-9\-]+$/)) {
+                    // Skip sequence if it doesn't match project
+                    if (sequence.project !== projectFilter) {
+                        return false;
+                    }
+                }
+
+                // Then apply category filter if it exists
+                if (categoryFilter) {
+                    switch (categoryFilter) {
+                        case 'in-progress':
+                            return sequence.fabrication.percentage > 0 && sequence.fabrication.percentage < 100;
+                        case 'ready-for-fabrication':
+                            return sequence.iff.percentage >= 100;
+                        case 'has-workpackage':
+                            return sequence.hasWorkPackage === true ||
+                                sequence.hasWP === 1 ||
+                                hasWorkPackages(sequence);
+                        case 'categorize-needed':
+                            return sequence.categorize.percentage < 100;
+                        case 'all':
+                            return true;
+                        default:
+                            return true;
+                    }
+                } else {
+                    // Single filter that's not a combined one
+                    switch (projectFilter) {
+                        case 'in-progress':
+                            return sequence.fabrication.percentage > 0 && sequence.fabrication.percentage < 100;
+                        case 'ready-for-fabrication':
+                            return sequence.iff.percentage >= 100;
+                        case 'has-workpackage':
+                            return sequence.hasWorkPackage === true ||
+                                sequence.hasWP === 1 ||
+                                hasWorkPackages(sequence);
+                        case 'categorize-needed':
+                            return sequence.categorize.percentage < 100;
+                        default:
+                            // This handles the case where there's only a project filter
+                            if (projectFilter.match(/^[A-Za-z0-9\-]+$/)) {
+                                return sequence.project === projectFilter;
+                            }
+                            return true;
+                    }
                 }
             });
         }
+
+        console.log('Filtered sequences count:', filteredSequences.length);
 
         // Return processed data
         return {
@@ -221,24 +303,38 @@ GanttChart.Custom = (function() {
      * Update project filters dropdown
      * @param {Array} sequences - Project sequences
      */
-    function updateProjectFilters(sequences) {
-        const $dropdown = $('#projectFilterDropdown');
-
-        // Clear existing project filters
-        $dropdown.find('li:not(:first-child)').remove();
-
-        // Get unique project numbers
-        const projects = [...new Set(sequences.map(seq => seq.project))];
-
-        // Only add divider if there are projects
-        if (projects.length > 0) {
-            $dropdown.append('<li><hr class="dropdown-divider"></li>');
+    function filterItems(filter) {
+        console.log("Client-side filtering with: " + filter);
+        // Skip if no filter or 'all'
+        if (!filter || filter === 'all') {
+            $('.gantt-row').show();
+            return;
         }
 
-        // Add filters for each project
-        projects.forEach(project => {
-            $dropdown.append(`<li><a class="dropdown-item" href="#" data-filter="${project}">${project}</a></li>`);
-        });
+        // Hide all rows first
+        $('.gantt-row').hide();
+
+        // Show rows that match the filter
+        if (filter === 'in-progress') {
+            $('.gantt-row .item-bar.in-progress').closest('.gantt-row').show();
+        } else if (filter === 'completed') {
+            $('.gantt-row .item-bar.completed').closest('.gantt-row').show();
+        } else if (filter === 'not-started') {
+            $('.gantt-row .item-bar.not-started').closest('.gantt-row').show();
+        } else if (filter === 'overdue') {
+            $('.gantt-row .date-conflict-warning.overdue').closest('.gantt-row').show();
+        } else if (filter === 'at-risk') {
+            $('.gantt-row .date-conflict-warning.at-risk').closest('.gantt-row').show();
+        } else if (filter === 'high-priority') {
+            $('.gantt-row.priority-high').show();
+        } else if (filter.startsWith('status-')) {
+            // Filter by status if filter is 'status-value'
+            const statusMatch = filter.match(/^status-(.+)$/);
+            if (statusMatch) {
+                const status = statusMatch[1];
+                $(`.gantt-row[data-status="${status}"]`).show();
+            }
+        }
     }
 
     /**
@@ -901,6 +997,21 @@ GanttChart.Custom = (function() {
             // Fall back to original behavior if our custom init fails
             GanttChart.Ajax.loadData = GanttChart.Ajax.loadData || originalLoadData;
         }
+
+        $(document).on('click', '.dropdown-item[data-filter]', function(e) {
+            e.preventDefault();
+            const filter = $(this).data('filter');
+            console.log('Project filter selected:', filter);
+
+            // Update button text
+            $('#filterDropdownBtn').text($(this).text());
+
+            // Update current filter in config
+            GanttChart.Core.setConfig({ currentFilter: filter });
+
+            // Load data with the selected filter
+            GanttChart.Ajax.loadData(filter);
+        });
     });
 
     // Public API

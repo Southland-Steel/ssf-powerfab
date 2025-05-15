@@ -4,11 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add Gantt chart functionality with new endpoints and UI&#10;&#10;Implemented core features for a Gantt chart, including a dynamic AJAX endpoint for categorization status. Introduced associated frontend elements and utility scripts to handle data filtering, visualization, and user interactions. Enhanced project structure with organized modules for streamlined maintenance and scalability.">
-      <change afterPath="$PROJECT_DIR$/timeline2/css/gantt-themes.css" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/timeline2/js/gantt-theme.js" afterDir="false" />
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add theme support for Gantt chart&#10;&#10;Introduced CSS variables and new stylesheets to enable light and dark themes for the Gantt chart UI. Implemented a JavaScript module to handle theme switching with persistence using localStorage, and updated HTML structure to support theme toggling.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline2/css/gantt-custom.css" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/css/gantt-custom.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline2/css/gantt-themes.css" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/css/gantt-themes.css" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/timeline2/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/index.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline2/js/gantt-custom.js" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/js/gantt-custom.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline2/js/gantt-interactions.js" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/js/gantt-interactions.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline2/js/gantt-timeline.js" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/js/gantt-timeline.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -131,7 +134,7 @@
       <workItem from="1746470229613" duration="40000" />
       <workItem from="1747145599622" duration="14300000" />
       <workItem from="1747246956051" duration="8458000" />
-      <workItem from="1747315863259" duration="6881000" />
+      <workItem from="1747315863259" duration="8892000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -437,7 +440,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747333107572</updated>
     </task>
-    <option name="localTasksCounter" value="39" />
+    <task id="LOCAL-00039" summary="Add theme support for Gantt chart&#10;&#10;Introduced CSS variables and new stylesheets to enable light and dark themes for the Gantt chart UI. Implemented a JavaScript module to handle theme switching with persistence using localStorage, and updated HTML structure to support theme toggling.">
+      <option name="closed" value="true" />
+      <created>1747334662344</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1747334662344</updated>
+    </task>
+    <option name="localTasksCounter" value="40" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -475,7 +486,8 @@
     <MESSAGE value="Refactor and enhance workweeks module for data reliability&#10;&#10;Introduced validations, fallback mechanisms, and enhanced logging to address missing or invalid data in workweek properties like `TotalEstimatedManHours` and `Stations`. Improved performance with efficient batching while ensuring accurate calculations for station hours, weights, and completions. Updated documentation, UI, and debugging tools to streamline development and troubleshooting." />
     <MESSAGE value="Refactor workweeks module and improve reliability&#10;&#10;Updated documentation and SQL queries to enhance clarity. Improved UI styling and responsiveness with new CSS, added help functionality, and optimized data loading with caching and batching. Introduced validations, fallback mechanisms, and export-to-CSV support for better usability and troubleshooting." />
     <MESSAGE value="Add Gantt chart functionality with new endpoints and UI&#10;&#10;Implemented core features for a Gantt chart, including a dynamic AJAX endpoint for categorization status. Introduced associated frontend elements and utility scripts to handle data filtering, visualization, and user interactions. Enhanced project structure with organized modules for streamlined maintenance and scalability." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add Gantt chart functionality with new endpoints and UI&#10;&#10;Implemented core features for a Gantt chart, including a dynamic AJAX endpoint for categorization status. Introduced associated frontend elements and utility scripts to handle data filtering, visualization, and user interactions. Enhanced project structure with organized modules for streamlined maintenance and scalability." />
+    <MESSAGE value="Add theme support for Gantt chart&#10;&#10;Introduced CSS variables and new stylesheets to enable light and dark themes for the Gantt chart UI. Implemented a JavaScript module to handle theme switching with persistence using localStorage, and updated HTML structure to support theme toggling." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add theme support for Gantt chart&#10;&#10;Introduced CSS variables and new stylesheets to enable light and dark themes for the Gantt chart UI. Implemented a JavaScript module to handle theme switching with persistence using localStorage, and updated HTML structure to support theme toggling." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
