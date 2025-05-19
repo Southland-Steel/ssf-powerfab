@@ -156,8 +156,6 @@ GanttChart.Custom = (function() {
                     // Show chart
                     GanttChart.Core.showChart();
 
-                    // Load categorization status data for the rows
-                    loadCategorizationStatus(processedData.sequences);
                 } else {
                     // Set the item count badge to 0
                     if ($('#itemCountBadge').length) {
@@ -184,12 +182,22 @@ GanttChart.Custom = (function() {
     }
 
     /**
+     * File: js/gantt-custom.js (Modified)
+     * Fix for the filter.split error in processProjectData function
+     */
+
+    /**
      * Process project data from server response
      * @param {Object} data - Raw project data
-     * @param {string} filter - Filter to apply
+     * @param {string|any} filter - Filter to apply
      * @return {Object} Processed data
      */
     function processProjectData(data, filter) {
+        // Ensure filter is a string to prevent split errors
+        if (filter === null || filter === undefined || typeof filter !== 'string') {
+            filter = String(filter || 'all');
+        }
+
         console.log('Processing data with filter:', filter);
 
         // If no data or empty sequences, return empty structure
@@ -209,10 +217,24 @@ GanttChart.Custom = (function() {
         if (filter && filter !== 'all') {
             console.log('Applying filter:', filter);
 
-            // Check if filter is combined (project:category)
-            const combinedFilter = filter.split(':');
-            const projectFilter = combinedFilter[0];
-            const categoryFilter = combinedFilter.length > 1 ? combinedFilter[1] : null;
+            // Initialize default values
+            let projectFilter = filter;
+            let categoryFilter = null;
+
+            // Safely check for combined filter (project:category)
+            try {
+                // Only split if there's a colon in the filter
+                if (filter.indexOf(':') !== -1) {
+                    const combinedFilter = filter.split(':');
+                    projectFilter = combinedFilter[0] || filter;
+                    categoryFilter = combinedFilter.length > 1 ? combinedFilter[1] : null;
+                }
+            } catch (error) {
+                console.error('Error splitting filter:', error);
+                // Use the original filter value as fallback
+                projectFilter = filter;
+                categoryFilter = null;
+            }
 
             console.log('Parsed filters - Project:', projectFilter, 'Category:', categoryFilter);
 
@@ -270,28 +292,55 @@ GanttChart.Custom = (function() {
 
         console.log('Filtered sequences count:', filteredSequences.length);
 
-        filteredSequences.sort(function(a, b) {
-            // Get start dates
-            const aStartDate = GanttChart.Core.parseDate(a.fabrication.start);
-            const bStartDate = GanttChart.Core.parseDate(b.fabrication.start);
+        // Sort by start date
+        try {
+            filteredSequences.sort(function(a, b) {
+                // Get start dates with error handling
+                let aStartDate, bStartDate;
+                try {
+                    aStartDate = a.fabrication.start ?
+                        GanttChart.Core.parseDate(a.fabrication.start) : new Date();
+                } catch (e) {
+                    aStartDate = new Date();
+                }
 
-            // Get end dates
-            const aEndDate = GanttChart.Core.parseDate(a.fabrication.end);
-            const bEndDate = GanttChart.Core.parseDate(b.fabrication.end);
+                try {
+                    bStartDate = b.fabrication.start ?
+                        GanttChart.Core.parseDate(b.fabrication.start) : new Date();
+                } catch (e) {
+                    bStartDate = new Date();
+                }
 
-            // If start dates are the same, compare end dates
-            if (aStartDate.getTime() === bStartDate.getTime()) {
-                return aEndDate.getTime() - bEndDate.getTime();
-            }
+                // Get end dates with error handling
+                let aEndDate, bEndDate;
+                try {
+                    aEndDate = a.fabrication.end ?
+                        GanttChart.Core.parseDate(a.fabrication.end) :
+                        new Date(aStartDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+                } catch (e) {
+                    aEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                }
 
-            // Otherwise, compare start dates
-            return aStartDate.getTime() - bStartDate.getTime();
-        });
+                try {
+                    bEndDate = b.fabrication.end ?
+                        GanttChart.Core.parseDate(b.fabrication.end) :
+                        new Date(bStartDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+                } catch (e) {
+                    bEndDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                }
 
-        return {
-            dateRange: data.dateRange,
-            sequences: filteredSequences
-        };
+                // If start dates are the same, compare end dates
+                if (aStartDate.getTime() === bStartDate.getTime()) {
+                    return aEndDate.getTime() - bEndDate.getTime();
+                }
+
+                // Otherwise, compare start dates
+                return aStartDate.getTime() - bStartDate.getTime();
+            });
+        } catch (error) {
+            console.error('Error sorting sequences:', error);
+            // Just leave them unsorted in case of error
+        }
 
         // Return processed data
         return {
@@ -802,9 +851,33 @@ GanttChart.Custom = (function() {
         // Skip if no sequences
         if (!sequences || sequences.length === 0) return;
 
+        // Use cache if available for the current job
+        const currentJob = window.currentJobFilter || 'all';
+
+        if (window.catStatusCache &&
+            window.catStatusCache[currentJob] &&
+            Object.keys(window.catStatusCache[currentJob]).length > 0) {
+
+            console.log('Using cached categorization status for job:', currentJob);
+
+            // Apply the cached categorization status
+            const cachedStatus = window.catStatusCache[currentJob];
+            Object.keys(cachedStatus).forEach(rowId => {
+                updateRowCategorization(rowId, cachedStatus[rowId]);
+            });
+
+            return;
+        }
+
+        // Cancel any existing request
+        if (window.catStatusXHR && window.catStatusXHR.abort) {
+            console.log('Aborting previous categorization status request');
+            window.catStatusXHR.abort();
+        }
+
         // Get endpoint from configuration
         const config = GanttChart.Core.getConfig();
-        const endpoint = config.catstatusEndpoint || 'ajax_get_ssf_timelinefabrication_catstatus.php';
+        const endpoint = config.catstatusEndpoint || 'ajax/get_catstatus.php';
 
         // Prepare payload with job sequences
         const payload = {
@@ -815,39 +888,55 @@ GanttChart.Custom = (function() {
         };
 
         // Make request to get categorization status
-        fetch(endpoint, {
+        console.log('Loading categorization status for job:', currentJob);
+
+        window.catStatusXHR = $.ajax({
+            url: endpoint,
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(payload)
-        })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return response.json();
-            })
-            .then(data => {
+            data: JSON.stringify(payload),
+            success: function(data) {
                 // Skip if error in response
                 if (data.error) {
                     console.error('Error loading categorization status:', data.error);
                     return;
                 }
 
+                // Initialize cache if needed
+                if (!window.catStatusCache) {
+                    window.catStatusCache = {};
+                }
+
+                // Create cache entry for this job
+                window.catStatusCache[currentJob] = {};
+
                 // Process and store categorization status data
-                categorizationStatus = {};
                 data.forEach(entry => {
                     const rowId = `${entry.JobNumber}:${entry.SequenceName}`;
-                    categorizationStatus[rowId] = entry;
 
-                    // Update row status classes based on categorization
+                    // Store in cache
+                    window.catStatusCache[currentJob][rowId] = entry;
+
+                    // Update row status
                     updateRowCategorization(rowId, entry);
                 });
-            })
-            .catch(error => {
-                console.error('Error loading categorization status:', error);
-            });
+
+                console.log('Categorization status loaded and cached for job:', currentJob);
+            },
+            error: function(xhr, status, error) {
+                // Only log error if not aborted
+                if (status !== 'abort') {
+                    console.error('Error loading categorization status:', error);
+                }
+            },
+            complete: function() {
+                window.catStatusXHR = null;
+            }
+        });
+
+        return window.catStatusXHR;
     }
 
     /**
@@ -1046,13 +1135,23 @@ GanttChart.Custom = (function() {
             const filter = $(this).data('filter');
             console.log('Project filter selected:', filter);
 
-            // Update button text
-            $('#filterDropdownBtn').text($(this).text());
+            // Store the current job filter globally
+            window.currentJobFilter = filter;
+
+            // Update dropdown button text
+            $('#filterDropdownBtn').html('<i class="bi bi-filter"></i> ' + $(this).text());
+
+            // Reset the category filter buttons to "All"
+            $('.gantt-filter-btn').removeClass('active');
+            $('.gantt-filter-btn[data-filter="all"]').addClass('active');
+
+            // Clear the categorization status cache when changing jobs
+            window.catStatusCache = {};
 
             // Update current filter in config
             GanttChart.Core.setConfig({ currentFilter: filter });
 
-            // Load data with the selected filter
+            // Load data with the selected filter - this triggers a server request
             GanttChart.Ajax.loadData(filter);
         });
     });

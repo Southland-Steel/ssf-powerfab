@@ -1,7 +1,7 @@
 <?php
 /**
- * File: index.php (Cleaned up - removing inline scripts)
- * Modified Gantt chart page with theme switching
+ * File: index.php (Modified with client-side filtering)
+ * Gantt chart page with enhanced client-side filtering
  */
 $pageTitle = 'Project Schedule Gantt Chart';
 
@@ -110,7 +110,7 @@ $headerScripts = '
                         <small class="d-inline-block me-3"><span style="display:inline-block;width:14px;height:14px;color:var(--status-in-progress);font-size:14px;"><i class="bi bi-link"></i></span> Linked Item</small>
                     </div>
 
-                    <!-- Gantt filter buttons -->
+                    <!-- Gantt filter buttons - now using client-side filtering -->
                     <div class="gantt-filter-container p-2 border-bottom">
                         <button class="gantt-filter-btn active" data-filter="all">All</button>
                         <button class="gantt-filter-btn" data-filter="in-progress">In Progress</button>
@@ -199,7 +199,19 @@ $headerScripts = '
 <!-- Custom script for this specific implementation -->
 <script src="js/gantt-custom.js"></script>
 
+<!-- Add the client-side filtering script -->
+<script src="js/gantt-client-filtering.js"></script>
+
 <script>
+    window.timelineData = null;        // Cached timeline data
+    window.workpackagesData = null;    // Cached workpackages data
+    window.loadedDataFilter = null;    // Current filter for loaded data
+    window.timelineXHR = null;         // Timeline data request object
+    window.workpackagesXHR = null;     // Workpackages request object
+    window.currentJobFilter = 'all';   // Current job filter
+    window.catStatusCache = {};        // Cache for categorization status
+    window.catStatusXHR = null;        // Categorization status request object
+
     $(document).ready(function() {
         console.log('Document ready');
 

@@ -40,11 +40,9 @@ GanttChart.Ajax = (function() {
      */
     function handleDataSuccess(response) {
         try {
-            console.log('Data received:', response);
 
             // Validate response
             if (!response) {
-                console.error('Empty response received');
                 GanttChart.Core.showNoItems();
                 return;
             }
@@ -52,9 +50,6 @@ GanttChart.Ajax = (function() {
             // Extract data structure - try to handle different formats
             const sequences = response.sequences || (response.data && response.data.sequences) || [];
             const dateRange = response.dateRange || (response.data && response.data.date_range) || null;
-
-            console.log('Extracted sequences:', sequences.length);
-            console.log('Extracted dateRange:', dateRange);
 
             // Validate data fields
             if (!dateRange || !dateRange.start || !dateRange.end) {
@@ -64,14 +59,12 @@ GanttChart.Ajax = (function() {
             }
 
             // Update state with new data
-            console.log('Updating state with date range:', dateRange);
             GanttChart.Core.setState({
                 items: sequences,
                 dateRange: dateRange
             });
 
             // Explicitly initialize TimeUtils with date range
-            console.log('Explicitly initializing TimeUtils');
             if (GanttChart.TimeUtils && typeof GanttChart.TimeUtils.initialize === 'function') {
                 GanttChart.TimeUtils.initialize(dateRange.start, dateRange.end);
             }

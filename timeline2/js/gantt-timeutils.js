@@ -18,17 +18,9 @@ GanttChart.TimeUtils = (function() {
      * @param {string|Date} maxDate - End date for timeline
      */
     function initialize(minDate, maxDate) {
-        console.log('TimeUtils initializing with dates:', minDate, maxDate);
 
         if (!minDate || !maxDate) {
             console.error('Invalid date range provided to TimeUtils.initialize:', { minDate, maxDate });
-
-            // Provide fallback values if no valid dates are provided
-            const today = new Date();
-            minDate = minDate || new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30);
-            maxDate = maxDate || new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30);
-
-            console.log('Using fallback date range:', { minDate, maxDate });
         }
 
         // Parse and store dates

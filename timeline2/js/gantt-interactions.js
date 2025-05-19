@@ -362,40 +362,115 @@ GanttChart.Interactions = (function() {
     }
 
     /**
+     * Fix for gantt-interactions.js
+     * This separates client-side filtering from server-side filtering
+     *
+     * Find the GanttChart.Interactions module in gantt-interactions.js
+     * and replace the filterItems function with this version
+     */
+
+    /**
      * Filter items by specific criteria
      * @param {string} filter - Filter name
      */
     function filterItems(filter) {
         console.log("Client-side filtering with: " + filter);
+
         // Skip if no filter or 'all'
         if (!filter || filter === 'all') {
             $('.gantt-row').show();
+            updateItemCountBadge($('.gantt-row:visible').length);
             return;
         }
 
         // Hide all rows first
         $('.gantt-row').hide();
 
+        // Track visible rows for badge update
+        let visibleRows = 0;
+
+        // Get the current job filter if available
+        const currentJobFilter = window.currentJobFilter || 'all';
+
         // Show rows that match the filter
-        if (filter === 'in-progress') {
-            $('.gantt-row .item-bar.in-progress').closest('.gantt-row').show();
-        } else if (filter === 'completed') {
-            $('.gantt-row .item-bar.completed').closest('.gantt-row').show();
-        } else if (filter === 'not-started') {
-            $('.gantt-row .item-bar.not-started').closest('.gantt-row').show();
-        } else if (filter === 'overdue') {
-            $('.gantt-row .date-conflict-warning.overdue').closest('.gantt-row').show();
-        } else if (filter === 'at-risk') {
-            $('.gantt-row .date-conflict-warning.at-risk').closest('.gantt-row').show();
-        } else if (filter === 'high-priority') {
-            $('.gantt-row.priority-high').show();
-        } else if (filter.startsWith('status-')) {
-            // Filter by status if filter is 'status-value'
-            const statusMatch = filter.match(/^status-(.+)$/);
-            if (statusMatch) {
-                const status = statusMatch[1];
-                $(`.gantt-row[data-status="${status}"]`).show();
+        $('.gantt-row').each(function() {
+            const $row = $(this);
+            const project = $row.data('project');
+
+            // Skip if this doesn't match the current job filter (when not 'all')
+            if (currentJobFilter !== 'all' && project !== currentJobFilter) {
+                return;
             }
+
+            // Apply category filter
+            let showRow = false;
+
+            if (filter === 'in-progress') {
+                showRow = $row.find('.item-bar.in-progress').length > 0;
+            } else if (filter === 'completed') {
+                showRow = $row.find('.item-bar.completed').length > 0;
+            } else if (filter === 'not-started') {
+                showRow = $row.find('.item-bar.not-started').length > 0;
+            } else if (filter === 'overdue') {
+                showRow = $row.find('.date-conflict-warning.overdue').length > 0;
+            } else if (filter === 'at-risk') {
+                showRow = $row.find('.date-conflict-warning.at-risk').length > 0;
+            } else if (filter === 'high-priority') {
+                showRow = $row.hasClass('priority-high');
+            } else if (filter === 'ready-for-fabrication') {
+                // Check for IFF completion - row must have 'categorize-success' class
+                showRow = $row.find('.gantt-labels.categorize-success').length > 0;
+            } else if (filter === 'has-workpackage') {
+                // Check for workpackage - row must have 'has-wp' class
+                showRow = $row.hasClass('has-wp');
+            } else if (filter === 'categorize-needed') {
+                // Check for categorization needed - row doesn't have 'categorize-success'
+                showRow = $row.find('.gantt-labels:not(.categorize-success)').length > 0;
+            } else if (filter.startsWith('status-')) {
+                // Filter by status if filter is 'status-value'
+                const statusMatch = filter.match(/^status-(.+)$/);
+                if (statusMatch) {
+                    const status = statusMatch[1];
+                    showRow = $row.data('status') === status;
+                }
+            }
+
+            if (showRow) {
+                $row.show();
+                visibleRows++;
+            }
+        });
+
+        // Show/hide empty message
+        if (visibleRows === 0) {
+            $('#noItemsMessage').show();
+            $('#ganttContainer').hide();
+        } else {
+            $('#noItemsMessage').hide();
+            $('#ganttContainer').show();
+        }
+
+        // Update the item count badge
+        updateItemCountBadge(visibleRows);
+    }
+
+    /**
+     * Update item count badge
+     * @param {number} count - Number of visible items
+     */
+    function updateItemCountBadge(count) {
+        const $badge = $('#itemCountBadge');
+        if (!$badge.length) return;
+
+        $badge.text(count);
+
+        // Change badge color based on count
+        if (count > 20) {
+            $badge.removeClass('bg-secondary bg-success').addClass('bg-primary');
+        } else if (count > 0) {
+            $badge.removeClass('bg-secondary bg-primary').addClass('bg-success');
+        } else {
+            $badge.removeClass('bg-success bg-primary').addClass('bg-secondary');
         }
     }
 

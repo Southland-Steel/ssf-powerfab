@@ -1,11 +1,16 @@
 <?php
 /**
- * File: ajax/get_timeline_data.php
+ * File: ajax/get_timeline_data.php (Modified)
  * Endpoint for retrieving main Gantt chart data
+ * Improved to ensure correct date range when filtering by job
  */
 require_once('../../config_ssf_db.php');
 header('Content-Type: application/json');
 
+// Get filter from request
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
+
+// Initialize response data structure
 $ganttData = [
     'dateRange' => [
         'start' => date('Y-m-d', strtotime('-5 days')),
@@ -14,27 +19,46 @@ $ganttData = [
     'sequences' => []
 ];
 
-// First query to get relevant RowGroupIDs
+// Parse filter to extract project filter
+$projectFilter = $filter;
+$categoryFilter = null;
+
+// Check if filter contains category component
+if (is_string($filter) && strpos($filter, ':') !== false) {
+    $filterParts = explode(':', $filter);
+    $projectFilter = $filterParts[0];
+    $categoryFilter = isset($filterParts[1]) ? $filterParts[1] : null;
+}
+
+// Build the base query to get relevant RowGroupIDs
+$baseQueryParams = [];
 $sql_base = "SELECT DISTINCT CONCAT(p.JobNumber, ':', sbdeval.Description) as RowGroupID
 FROM scheduletasks as st
-inner join scheduledescriptions as sd ON sd.ScheduleDescriptionID = st.ScheduleDescriptionID
-inner join projects as p on p.ProjectID = st.ProjectID
-inner join schedulebaselines as sb on sb.ScheduleBaselineID = st.ScheduleBaselineID
-inner join schedulebreakdownelements as sbde ON sbde.ScheduleBreakdownElementID = st.ScheduleBreakdownElementID
-inner join scheduledescriptions as sbdeval ON sbdeval.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
-inner join resources ON resources.ResourceID = st.ResourceID
-inner join jobstatuses as js ON js.JobStatusID = p.JobStatusID
+INNER JOIN scheduledescriptions as sd ON sd.ScheduleDescriptionID = st.ScheduleDescriptionID
+INNER JOIN projects as p on p.ProjectID = st.ProjectID
+INNER JOIN schedulebaselines as sb on sb.ScheduleBaselineID = st.ScheduleBaselineID
+INNER JOIN schedulebreakdownelements as sbde ON sbde.ScheduleBreakdownElementID = st.ScheduleBreakdownElementID
+INNER JOIN scheduledescriptions as sbdeval ON sbdeval.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
+INNER JOIN resources ON resources.ResourceID = st.ResourceID
+INNER JOIN jobstatuses as js ON js.JobStatusID = p.JobStatusID
 WHERE sb.IsCurrent = 1 
 AND js.Purpose = 0 
 AND st.PercentCompleted < 0.99
 AND resources.Description = 'Fabrication' 
-AND sbdeval.Description IS NOT NULL
-ORDER BY sbdeval.Description
-";
+AND sbdeval.Description IS NOT NULL";
 
-$base_results = $db->query($sql_base);
+// Apply project filter if not 'all'
+if ($projectFilter !== 'all' && preg_match('/^[A-Za-z0-9\-]+$/', $projectFilter)) {
+    $sql_base .= " AND p.JobNumber = ?";
+    $baseQueryParams[] = $projectFilter;
+}
+
+$sql_base .= " ORDER BY sbdeval.Description";
+
+$base_stmt = $db->prepare($sql_base);
+$base_stmt->execute($baseQueryParams);
 $row_group_ids = [];
-while ($row = $base_results->fetch(PDO::FETCH_ASSOC)) {
+while ($row = $base_stmt->fetch(PDO::FETCH_ASSOC)) {
     $row_group_ids[] = "'" . $row['RowGroupID'] . "'";
 }
 
@@ -43,8 +67,8 @@ if (empty($row_group_ids)) {
     exit;
 }
 
-// Main query
-$sql = "select 
+// Main query to get sequence data
+$sql = "SELECT 
    st.ScheduleTaskID,
    CASE 
     WHEN resources.Description = 'Procurement' 
@@ -79,25 +103,25 @@ $sql = "select
        WHEN resources.Description = 'CNC' AND sd.Description = 'Part Categorization' THEN 'categorize'
        ELSE 'fabrication'
    END as TaskType
-from scheduletasks as st
-inner join scheduledescriptions as sd ON sd.ScheduleDescriptionID = st.ScheduleDescriptionID
-inner join projects as p on p.ProjectID = st.ProjectID
-inner join schedulebaselines as sb on sb.ScheduleBaselineID = st.ScheduleBaselineID
-inner join schedulebreakdownelements as sbde ON sbde.ScheduleBreakdownElementID = st.ScheduleBreakdownElementID
-inner join scheduledescriptions as sbdeval ON sbdeval.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
-left join schedulebreakdownelements as sbdep on sbdep.ScheduleBreakdownElementID = sbde.ParentScheduleBreakdownElementID
-left join scheduledescriptions as sbdepval on sbdepval.ScheduleDescriptionID = sbdep.ScheduleBreakdownValueID
-inner join resources ON resources.ResourceID = st.ResourceID
-inner join jobstatuses as js ON js.JobStatusID = p.JobStatusID
-where sb.IsCurrent = 1 
-   and js.Purpose = 0 
-   and CONCAT(p.JobNumber, ':', sbdeval.Description) IN (" . implode(',', $row_group_ids) . ")
-   and (
-       (resources.Description = 'Document Control' and sd.Description = 'Issued For Fabrication')
-       or (resources.Description = 'Procurement' and sd.Description = 'Material Purchased')
-       or (resources.Description = 'Procurement' and sd.Description = 'Material Received')
-       or (resources.Description = 'CNC' and sd.Description = 'Part Categorization')
-       or (resources.Description = 'Fabrication')
+FROM scheduletasks as st
+INNER JOIN scheduledescriptions as sd ON sd.ScheduleDescriptionID = st.ScheduleDescriptionID
+INNER JOIN projects as p on p.ProjectID = st.ProjectID
+INNER JOIN schedulebaselines as sb on sb.ScheduleBaselineID = st.ScheduleBaselineID
+INNER JOIN schedulebreakdownelements as sbde ON sbde.ScheduleBreakdownElementID = st.ScheduleBreakdownElementID
+INNER JOIN scheduledescriptions as sbdeval ON sbdeval.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
+LEFT JOIN schedulebreakdownelements as sbdep on sbdep.ScheduleBreakdownElementID = sbde.ParentScheduleBreakdownElementID
+LEFT JOIN scheduledescriptions as sbdepval on sbdepval.ScheduleDescriptionID = sbdep.ScheduleBreakdownValueID
+INNER JOIN resources ON resources.ResourceID = st.ResourceID
+INNER JOIN jobstatuses as js ON js.JobStatusID = p.JobStatusID
+WHERE sb.IsCurrent = 1 
+   AND js.Purpose = 0 
+   AND CONCAT(p.JobNumber, ':', sbdeval.Description) IN (" . implode(',', $row_group_ids) . ")
+   AND (
+       (resources.Description = 'Document Control' AND sd.Description = 'Issued For Fabrication')
+       OR (resources.Description = 'Procurement' AND sd.Description = 'Material Purchased')
+       OR (resources.Description = 'Procurement' AND sd.Description = 'Material Received')
+       OR (resources.Description = 'CNC' AND sd.Description = 'Part Categorization')
+       OR (resources.Description = 'Fabrication')
    )
    AND sbdeval.Description IS NOT NULL
    ORDER BY sbdeval.Description";
@@ -128,6 +152,7 @@ while ($row = $sql_results->fetch(PDO::FETCH_ASSOC)) {
                 'id' => ''
             ],
             'hasWorkPackage' => false,
+            'hasWP' => $row['HasWP'],
             'wp' => ['start' => date('Y-m-d'), 'end' => date('Y-m-d', strtotime('+30 days'))]
         ];
     }
@@ -145,26 +170,46 @@ while ($row = $sql_results->fetch(PDO::FETCH_ASSOC)) {
         $sequences[$sequenceKey][$row['TaskType']]['start'] = $row['ActualStartDate'];
         $sequences[$sequenceKey][$row['TaskType']]['percentage'] = $row['PercentCompleted'];
     }
+
+    // Track hasWP property
+    $sequences[$sequenceKey]['hasWP'] = $row['HasWP'];
 }
 
 $ganttData['sequences'] = array_values($sequences);
 
 // Find absolute earliest and latest dates across all sequences and all date fields
-foreach ($ganttData['sequences'] as $sequence) {
+foreach ($ganttData['sequences'] as &$sequence) {
+    // Collect all dates from this sequence for finding min/max
     $dates = [];
-    if (isset($sequence['fabrication'])) {
-        $dates[] = $sequence['fabrication']['start'];
-        $dates[] = $sequence['fabrication']['end'];
-    }
-    $dates[] = $sequence['iff']['start'];
-    $dates[] = $sequence['nsi']['start'];
-    $dates[] = $sequence['categorize']['start'];
 
-    if ($sequence['hasWorkPackage']) {
+    // Add fabrication dates
+    if (isset($sequence['fabrication'])) {
+        if ($sequence['fabrication']['start']) {
+            $dates[] = $sequence['fabrication']['start'];
+        }
+        if ($sequence['fabrication']['end']) {
+            $dates[] = $sequence['fabrication']['end'];
+        }
+    }
+
+    // Add other milestone dates
+    if ($sequence['iff']['percentage'] != -1 && $sequence['iff']['start']) {
+        $dates[] = $sequence['iff']['start'];
+    }
+    if ($sequence['nsi']['percentage'] != -1 && $sequence['nsi']['start']) {
+        $dates[] = $sequence['nsi']['start'];
+    }
+    if ($sequence['categorize']['percentage'] != -1 && $sequence['categorize']['start']) {
+        $dates[] = $sequence['categorize']['start'];
+    }
+
+    // Add workpackage dates if applicable
+    if ($sequence['hasWorkPackage'] || $sequence['hasWP']) {
         $dates[] = $sequence['wp']['start'];
         $dates[] = $sequence['wp']['end'];
     }
 
+    // Update earliest/latest dates
     foreach ($dates as $date) {
         if ($date) {
             $timestamp = strtotime($date);
@@ -178,24 +223,36 @@ foreach ($ganttData['sequences'] as $sequence) {
             }
         }
     }
-}
 
-$today = date('Y-m-d');
-$fiveDaysBeforeToday = date('Y-m-d', strtotime('-5 days'));
-$fiveDaysAfterToday = date('Y-m-d', strtotime('+5 days'));
-
-$ganttData['dateRange']['start'] = (strtotime($earliestDate) > strtotime($today)) ? $fiveDaysBeforeToday : $earliestDate;
-$ganttData['dateRange']['end'] = (strtotime($latestDate) < strtotime($today)) ? $fiveDaysAfterToday : $latestDate;
-
-foreach ($ganttData['sequences'] as &$sequence) {
+    // Set default values for any missing dates
     if ($sequence['iff']['percentage'] == -1) {
-        $sequence['iff']['start'] = $ganttData['dateRange']['start'];
+        $sequence['iff']['start'] = $sequence['fabrication']['start'] ?? date('Y-m-d');
     }
     if ($sequence['nsi']['percentage'] == -1) {
-        $sequence['nsi']['start'] = $ganttData['dateRange']['start'];
+        $sequence['nsi']['start'] = $sequence['fabrication']['start'] ?? date('Y-m-d');
     }
 }
 
+// Calculate appropriate date range
+$today = date('Y-m-d');
+
+// Add 5 days padding to the beginning and end of the date range
+$earliestDate = $earliestDate ? date('Y-m-d', strtotime($earliestDate . ' -5 days')) : date('Y-m-d', strtotime('-5 days'));
+$latestDate = $latestDate ? date('Y-m-d', strtotime($latestDate . ' +5 days')) : date('Y-m-d', strtotime('+5 days'));
+
+// Always include today in the range
+if (strtotime($today) < strtotime($earliestDate)) {
+    $earliestDate = date('Y-m-d', strtotime($today . ' -2 days'));
+}
+if (strtotime($today) > strtotime($latestDate)) {
+    $latestDate = date('Y-m-d', strtotime($today . ' +2 days'));
+}
+
+// Set the final date range
+$ganttData['dateRange']['start'] = $earliestDate;
+$ganttData['dateRange']['end'] = $latestDate;
+
+// Filter out sequences with null sequence
 $ganttData['sequences'] = array_values(array_filter($ganttData['sequences'], function($sequence) {
     return $sequence['sequence'] !== null;
 }));
