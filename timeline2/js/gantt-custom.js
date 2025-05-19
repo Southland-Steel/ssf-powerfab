@@ -15,7 +15,6 @@ GanttChart.Custom = (function() {
      * Initialize custom implementation
      */
     function initialize() {
-        // Don't override Ajax.loadData anymore - we're using delegation in the other direction
 
         // Override the Items.generate method to use our custom implementation
         const originalGenerate = GanttChart.Items.generate;
@@ -25,123 +24,6 @@ GanttChart.Custom = (function() {
 
         // Override the Ajax exportToCsv method with our custom implementation
         GanttChart.Ajax.exportToCsv = exportProjectData;
-    }
-
-    /**
-     * Load project data from server with proper filter parameters
-     * This is now a public method that can be called from GanttChart.Ajax.loadData
-     * @param {string} filter - Filter to apply
-     */
-    function loadProjectData(filter) {
-        // Show loading state
-        GanttChart.Core.showLoading();
-
-        // Reset the item count badge
-        if ($('#itemCountBadge').length) {
-            $('#itemCountBadge').text('0');
-        }
-
-        // Get endpoints from configuration
-        const config = GanttChart.Core.getConfig();
-        const mainEndpoint = config.dataEndpoint || 'ajax/get_timeline_data.php';
-        const workpackagesEndpoint = config.workpackagesEndpoint || 'ajax/get_workpackages.php';
-
-        // Build proper URLs with query parameters
-        const mainUrl = new URL(mainEndpoint, window.location.href);
-        if (filter && filter !== 'all') {
-            mainUrl.searchParams.append('filter', filter);
-        }
-
-        console.log('Loading data with filter:', filter);
-        console.log('Endpoint with filter:', mainUrl.toString());
-
-        // Load main project data and workpackages in parallel
-        Promise.all([
-            // Fetch main project data with filter
-            fetch(mainUrl.toString())
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                }),
-
-            // Fetch workpackage data
-            fetch(workpackagesEndpoint)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-        ])
-            .then(([projectData, workpackageData]) => {
-                // Store workpackage data
-                workpackages = workpackageData;
-
-                // Process the data to add any client-side filtering
-                const processedData = processProjectData(projectData, filter);
-
-                // Update state with processed data
-                GanttChart.Core.setState({
-                    items: processedData.sequences,
-                    dateRange: processedData.dateRange
-                });
-
-                // Update project filters dropdown
-                updateProjectFilters(processedData.sequences);
-
-                if (processedData.sequences.length > 0) {
-                    // Update the item count badge
-                    if ($('#itemCountBadge').length) {
-                        updateItemCountBadge(processedData.sequences.length);
-                    }
-
-                    // Generate timeline
-                    GanttChart.Timeline.generate(
-                        processedData.dateRange.start,
-                        processedData.dateRange.end
-                    );
-
-                    // Generate project rows (custom implementation)
-                    generateProjectRows(
-                        processedData.sequences,
-                        processedData.dateRange.start,
-                        processedData.dateRange.end
-                    );
-
-                    // Initialize interactions
-                    GanttChart.Interactions.init();
-
-                    // Show chart
-                    GanttChart.Core.showChart();
-
-                    // Remove the categorization status loading
-                    // This line should be removed if you've taken out get_catstatus
-                    // loadCategorizationStatus(processedData.sequences);
-                } else {
-                    // Set the item count badge to 0
-                    if ($('#itemCountBadge').length) {
-                        $('#itemCountBadge').text('0').removeClass('bg-success bg-primary').addClass('bg-secondary');
-                    }
-
-                    // Show no items message
-                    GanttChart.Core.showNoItems();
-                }
-            })
-            .catch(error => {
-                console.error('Error loading data:', error);
-
-                // Set the item count badge to 0
-                if ($('#itemCountBadge').length) {
-                    $('#itemCountBadge').text('0').removeClass('bg-success bg-primary').addClass('bg-secondary');
-                }
-
-                GanttChart.Core.showNoItems();
-
-                // Show alert
-                alert('Error loading data: ' + error.message);
-            });
     }
 
     function updateProjectFilters(sequences) {
@@ -257,6 +139,7 @@ GanttChart.Custom = (function() {
                     // Show chart
                     GanttChart.Core.showChart();
 
+                    loadCategorizationStatus(processedData.sequences);
                 } else {
                     // Set the item count badge to 0
                     if ($('#itemCountBadge').length) {
@@ -952,30 +835,6 @@ GanttChart.Custom = (function() {
         // Skip if no sequences
         if (!sequences || sequences.length === 0) return;
 
-        // Use cache if available for the current job
-        const currentJob = window.currentJobFilter || 'all';
-
-        if (window.catStatusCache &&
-            window.catStatusCache[currentJob] &&
-            Object.keys(window.catStatusCache[currentJob]).length > 0) {
-
-            console.log('Using cached categorization status for job:', currentJob);
-
-            // Apply the cached categorization status
-            const cachedStatus = window.catStatusCache[currentJob];
-            Object.keys(cachedStatus).forEach(rowId => {
-                updateRowCategorization(rowId, cachedStatus[rowId]);
-            });
-
-            return;
-        }
-
-        // Cancel any existing request
-        if (window.catStatusXHR && window.catStatusXHR.abort) {
-            console.log('Aborting previous categorization status request');
-            window.catStatusXHR.abort();
-        }
-
         // Get endpoint from configuration
         const config = GanttChart.Core.getConfig();
         const endpoint = config.catstatusEndpoint || 'ajax/get_catstatus.php';
@@ -988,56 +847,44 @@ GanttChart.Custom = (function() {
             }))
         };
 
-        // Make request to get categorization status
-        console.log('Loading categorization status for job:', currentJob);
+        console.log('Loading categorization status for', sequences.length, 'sequences');
 
-        window.catStatusXHR = $.ajax({
-            url: endpoint,
+        // Make request to get categorization status
+        fetch(endpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            data: JSON.stringify(payload),
-            success: function(data) {
+            body: JSON.stringify(payload)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
                 // Skip if error in response
                 if (data.error) {
                     console.error('Error loading categorization status:', data.error);
                     return;
                 }
 
-                // Initialize cache if needed
-                if (!window.catStatusCache) {
-                    window.catStatusCache = {};
-                }
-
-                // Create cache entry for this job
-                window.catStatusCache[currentJob] = {};
+                console.log('Categorization status loaded for', data.length, 'sequences');
 
                 // Process and store categorization status data
+                categorizationStatus = {};
                 data.forEach(entry => {
                     const rowId = `${entry.JobNumber}:${entry.SequenceName}`;
+                    categorizationStatus[rowId] = entry;
 
-                    // Store in cache
-                    window.catStatusCache[currentJob][rowId] = entry;
-
-                    // Update row status
+                    // Update row status classes based on categorization
                     updateRowCategorization(rowId, entry);
                 });
-
-                console.log('Categorization status loaded and cached for job:', currentJob);
-            },
-            error: function(xhr, status, error) {
-                // Only log error if not aborted
-                if (status !== 'abort') {
-                    console.error('Error loading categorization status:', error);
-                }
-            },
-            complete: function() {
-                window.catStatusXHR = null;
-            }
-        });
-
-        return window.catStatusXHR;
+            })
+            .catch(error => {
+                console.error('Error loading categorization status:', error);
+            });
     }
 
     /**
@@ -1046,12 +893,20 @@ GanttChart.Custom = (function() {
      * @param {Object} catStatus - Categorization status object
      */
     function updateRowCategorization(rowId, catStatus) {
+        console.log('Updating categorization for row', rowId);
+
         const $labels = $(`.gantt-labels[data-rowid="${rowId}"]`);
-        if (!$labels.length) return;
+        if (!$labels.length) {
+            console.log('Label element not found for row', rowId);
+            return;
+        }
 
         // Get the corresponding gantt-chart div
         const $chart = $labels.closest('.gantt-row').find('.gantt-timeline');
-        if (!$chart.length) return;
+        if (!$chart.length) {
+            console.log('Chart element not found for row', rowId);
+            return;
+        }
 
         // Calculate percentages
         const totalItems = catStatus.TotalItems || 0;
@@ -1062,10 +917,10 @@ GanttChart.Custom = (function() {
 
         // Set tooltip text
         $labels.attr('title', `
-            Total Items: ${totalItems}
-            IFF Status: ${catStatus.IFFCount} - IFF (${iffPercentage}%)
-            Categorization Status: ${catStatus.CategorizedCount} - Categorized (${categorizedPercentage}%)
-        `);
+        Total Items: ${totalItems}
+        IFF Status: ${catStatus.IFFCount} - IFF (${iffPercentage}%)
+        Categorization Status: ${catStatus.CategorizedCount} - Categorized (${categorizedPercentage}%)
+    `);
 
         // Update classes based on status
         $labels.removeClass('categorize-success categorize-danger');

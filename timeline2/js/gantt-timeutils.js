@@ -12,15 +12,18 @@ GanttChart.TimeUtils = (function() {
     let totalTimespan = 0;
     let initialized = false;
 
-    /**
-     * Initialize with timeline date range
-     * @param {string|Date} minDate - Start date for timeline
-     * @param {string|Date} maxDate - End date for timeline
-     */
     function initialize(minDate, maxDate) {
+        console.log('TimeUtils initializing with dates:', minDate, maxDate);
 
         if (!minDate || !maxDate) {
             console.error('Invalid date range provided to TimeUtils.initialize:', { minDate, maxDate });
+
+            // Provide fallback values if no valid dates are provided
+            const today = new Date();
+            minDate = minDate || new Date(today.getFullYear(), today.getMonth(), today.getDate() - 30);
+            maxDate = maxDate || new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30);
+
+            console.log('Using fallback date range:', { minDate, maxDate });
         }
 
         // Parse and store dates
@@ -63,14 +66,24 @@ GanttChart.TimeUtils = (function() {
     function ensureInitialized() {
         if (initialized) return true;
 
+        // Try to get date range from Core state
         const state = GanttChart.Core.getState();
-        if (state.dateRange && state.dateRange.min_date && state.dateRange.max_date) {
-            initialize(state.dateRange.min_date, state.dateRange.max_date);
+        if (state.dateRange && state.dateRange.start && state.dateRange.end) {
+            // Use start/end from state
+            initialize(state.dateRange.start, state.dateRange.end);
             return true;
         }
 
-        console.warn('TimeUtils not initialized and no date range available in Core state');
-        return false;
+        // Add fallback initialization with today +/- 30 days if no date range exists
+        console.warn('TimeUtils not initialized and no date range available in Core state. Using fallback dates.');
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(today.getDate() - 30);
+        const endDate = new Date(today);
+        endDate.setDate(today.getDate() + 30);
+
+        initialize(startDate, endDate);
+        return true;
     }
 
     /**

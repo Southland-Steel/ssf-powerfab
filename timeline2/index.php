@@ -258,10 +258,10 @@ $headerScripts = '
         GanttChart.Core.setConfig({
             dataEndpoint: 'ajax/get_timeline_data.php',
             workpackagesEndpoint: 'ajax/get_workpackages.php',
-            // catstatusEndpoint: 'ajax/get_catstatus.php', // Remove if you've taken out catstatus
+            catstatusEndpoint: 'ajax/get_catstatus.php',
             helpDocPath: 'docs/gantt-help.md',
             // Add a retry option for data loading
-            retryOnFailure: true,
+            retryOnFailure: false,
             maxRetries: 3
         });
         console.log('Config set');

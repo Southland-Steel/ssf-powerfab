@@ -14,12 +14,14 @@ GanttChart.Timeline = (function() {
     function generateTimeline(minDate, maxDate) {
         try {
             console.log('Generating timeline with dates:', minDate, maxDate);
+            console.log(GanttChart);
             const $timelineHeader = $(GanttChart.Core.getConfig().timelineHeader);
             $timelineHeader.empty();
 
             // Ensure TimeUtils is initialized
             if (!GanttChart.TimeUtils.ensureInitialized()) {
                 console.log('Initializing TimeUtils from Timeline generator');
+                console.log(GanttChart);
                 GanttChart.TimeUtils.initialize(minDate, maxDate);
             }
 
