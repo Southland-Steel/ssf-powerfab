@@ -4,14 +4,14 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Refactor Gantt chart filtering and enhance responsiveness&#10;&#10;Refactored project and category filtering logic for better independence and UI updates. Improved Gantt chart responsiveness by centralizing width adjustments and ensuring proper rendering on resize or data reload. Enhanced visuals and functionality with sorting, new CSS updates, and optimizations in inline scripts.">
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Refactor Gantt chart filtering and optimize timeline logic&#10;&#10;Separated client-side and server-side filtering for clarity and improved performance. Enhanced client-side filtering functionality to support more granular project and category filters. Fixed error handling and optimized sequence processing, sorting, and cache management in the timeline and categorization workflows.">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/timeline2/ajax/get_timeline_data.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/ajax/get_timeline_data.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/timeline2/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/index.php" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/timeline2/js/gantt-ajax.js" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/js/gantt-ajax.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline2/js/gantt-core.js" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/js/gantt-core.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/timeline2/js/gantt-custom.js" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/js/gantt-custom.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/timeline2/js/gantt-interactions.js" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/js/gantt-interactions.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/timeline2/js/gantt-timeutils.js" beforeDir="false" afterPath="$PROJECT_DIR$/timeline2/js/gantt-timeutils.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline2/test-ajax.html" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -136,7 +136,7 @@
       <workItem from="1747246956051" duration="8458000" />
       <workItem from="1747315863259" duration="19814000" />
       <workItem from="1747412209846" duration="2339000" />
-      <workItem from="1747663306648" duration="3009000" />
+      <workItem from="1747663306648" duration="8232000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -474,7 +474,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747344878339</updated>
     </task>
-    <option name="localTasksCounter" value="43" />
+    <task id="LOCAL-00043" summary="Refactor Gantt chart filtering and optimize timeline logic&#10;&#10;Separated client-side and server-side filtering for clarity and improved performance. Enhanced client-side filtering functionality to support more granular project and category filters. Fixed error handling and optimized sequence processing, sorting, and cache management in the timeline and categorization workflows.">
+      <option name="closed" value="true" />
+      <created>1747681141208</created>
+      <option name="number" value="00043" />
+      <option name="presentableId" value="LOCAL-00043" />
+      <option name="project" value="LOCAL" />
+      <updated>1747681141208</updated>
+    </task>
+    <option name="localTasksCounter" value="44" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -515,7 +523,9 @@
     <MESSAGE value="Add theme support for Gantt chart&#10;&#10;Introduced CSS variables and new stylesheets to enable light and dark themes for the Gantt chart UI. Implemented a JavaScript module to handle theme switching with persistence using localStorage, and updated HTML structure to support theme toggling." />
     <MESSAGE value="Refactor filtering and enhance Gantt chart responsiveness&#10;&#10;Refactored filtering logic to handle project and category filters independently with improved UI updates. Centralized width adjustments for Gantt chart elements, ensuring full container usage and responsiveness on window resize or data reload. Removed redundant inline scripts, cleaning up the index.php file." />
     <MESSAGE value="Refactor Gantt chart filtering and enhance responsiveness&#10;&#10;Refactored project and category filtering logic for better independence and UI updates. Improved Gantt chart responsiveness by centralizing width adjustments and ensuring proper rendering on resize or data reload. Enhanced visuals and functionality with sorting, new CSS updates, and optimizations in inline scripts." />
-    <option name="LAST_COMMIT_MESSAGE" value="Refactor Gantt chart filtering and enhance responsiveness&#10;&#10;Refactored project and category filtering logic for better independence and UI updates. Improved Gantt chart responsiveness by centralizing width adjustments and ensuring proper rendering on resize or data reload. Enhanced visuals and functionality with sorting, new CSS updates, and optimizations in inline scripts." />
+    <MESSAGE value="Refactor Gantt chart filtering and optimize timeline logic&#10;&#10;Separated client-side and server-side filtering for clarity and improved performance. Enhanced client-side filtering functionality to support more granular project and category filters. Fixed error handling" />
+    <MESSAGE value="Refactor Gantt chart filtering and optimize timeline logic&#10;&#10;Separated client-side and server-side filtering for clarity and improved performance. Enhanced client-side filtering functionality to support more granular project and category filters. Fixed error handling and optimized sequence processing, sorting, and cache management in the timeline and categorization workflows." />
+    <option name="LAST_COMMIT_MESSAGE" value="Refactor Gantt chart filtering and optimize timeline logic&#10;&#10;Separated client-side and server-side filtering for clarity and improved performance. Enhanced client-side filtering functionality to support more granular project and category filters. Fixed error handling and optimized sequence processing, sorting, and cache management in the timeline and categorization workflows." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

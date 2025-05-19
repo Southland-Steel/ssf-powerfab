@@ -19,19 +19,28 @@ GanttChart.Ajax = (function() {
             $('#itemCountBadge').text('0');
         }
 
-        // Determine the correct endpoint to use
-        const endpoint = GanttChart.Core.getConfig().dataEndpoint || 'ajax/get_timeline_data.php';
+        // If Custom module exists with loadProjectData function, use it
+        if (GanttChart.Custom && typeof GanttChart.Custom.loadProjectData === 'function') {
+            // Delegate to the project-specific data loader
+            GanttChart.Custom.loadProjectData(filter);
+        } else {
+            // Original implementation as fallback
+            console.log('Using standard data loader with filter:', filter);
 
-        // Perform AJAX request
-        $.ajax({
-            url: endpoint,
-            method: 'GET',
-            data: { filter: filter },
-            dataType: 'json',
-            cache: false,
-            success: handleDataSuccess,
-            error: handleDataError
-        });
+            // Determine the correct endpoint to use
+            const endpoint = GanttChart.Core.getConfig().dataEndpoint || 'ajax/get_timeline_data.php';
+
+            // Perform AJAX request
+            $.ajax({
+                url: endpoint,
+                method: 'GET',
+                data: { filter: filter },
+                dataType: 'json',
+                cache: false,
+                success: handleDataSuccess,
+                error: handleDataError
+            });
+        }
     }
 
     /**

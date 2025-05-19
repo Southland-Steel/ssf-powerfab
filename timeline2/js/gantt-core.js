@@ -31,9 +31,6 @@ GanttChart.Core = (function() {
         initialized: false
     };
 
-    /**
-     * Initialize the Gantt chart
-     */
     function initialize() {
         if (state.initialized) return;
 
@@ -42,7 +39,9 @@ GanttChart.Core = (function() {
             GanttChart.Ajax.loadData(config.currentFilter);
         });
 
-        // Set up filter dropdown
+        // DO NOT bind directly to dropdown items here
+        // Remove this code:
+        /*
         $(config.filterDropdown).on('click', function(e) {
             e.preventDefault();
             const filter = $(this).data('filter');
@@ -54,14 +53,12 @@ GanttChart.Core = (function() {
             // Load data with the selected filter
             GanttChart.Ajax.loadData(filter);
         });
+        */
 
         // Initialize help functionality
         if (typeof GanttChart.Help !== 'undefined') {
             GanttChart.Help.init();
         }
-
-        // Initial data load
-        GanttChart.Ajax.loadData(config.currentFilter);
 
         // Set up window resize handler
         $(window).on('resize', function() {
@@ -72,6 +69,26 @@ GanttChart.Core = (function() {
         setTimeout(adjustGanttWidth, 500);
 
         state.initialized = true;
+    }
+
+    function setupEventHandlers() {
+        // Set up refresh button
+        $(config.refreshButton).on('click', function() {
+            GanttChart.Ajax.loadData(config.currentFilter);
+        });
+
+        // Set up filter dropdown (consider moving this to Interactions module)
+        $(config.filterDropdown).on('click', function(e) {
+            e.preventDefault();
+            const filter = $(this).data('filter');
+            config.currentFilter = filter;
+
+            // Update button text
+            $(config.filterButton).text($(this).text());
+
+            // Load data with the selected filter
+            GanttChart.Ajax.loadData(filter);
+        });
     }
 
     /**

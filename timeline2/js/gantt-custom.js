@@ -15,11 +15,7 @@ GanttChart.Custom = (function() {
      * Initialize custom implementation
      */
     function initialize() {
-        // Override the default Ajax loadData method with our custom implementation
-        const originalLoadData = GanttChart.Ajax.loadData;
-        GanttChart.Ajax.loadData = function(filter) {
-            loadProjectData(filter);
-        };
+        // Don't override Ajax.loadData anymore - we're using delegation in the other direction
 
         // Override the Items.generate method to use our custom implementation
         const originalGenerate = GanttChart.Items.generate;
@@ -29,6 +25,123 @@ GanttChart.Custom = (function() {
 
         // Override the Ajax exportToCsv method with our custom implementation
         GanttChart.Ajax.exportToCsv = exportProjectData;
+    }
+
+    /**
+     * Load project data from server with proper filter parameters
+     * This is now a public method that can be called from GanttChart.Ajax.loadData
+     * @param {string} filter - Filter to apply
+     */
+    function loadProjectData(filter) {
+        // Show loading state
+        GanttChart.Core.showLoading();
+
+        // Reset the item count badge
+        if ($('#itemCountBadge').length) {
+            $('#itemCountBadge').text('0');
+        }
+
+        // Get endpoints from configuration
+        const config = GanttChart.Core.getConfig();
+        const mainEndpoint = config.dataEndpoint || 'ajax/get_timeline_data.php';
+        const workpackagesEndpoint = config.workpackagesEndpoint || 'ajax/get_workpackages.php';
+
+        // Build proper URLs with query parameters
+        const mainUrl = new URL(mainEndpoint, window.location.href);
+        if (filter && filter !== 'all') {
+            mainUrl.searchParams.append('filter', filter);
+        }
+
+        console.log('Loading data with filter:', filter);
+        console.log('Endpoint with filter:', mainUrl.toString());
+
+        // Load main project data and workpackages in parallel
+        Promise.all([
+            // Fetch main project data with filter
+            fetch(mainUrl.toString())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                }),
+
+            // Fetch workpackage data
+            fetch(workpackagesEndpoint)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+        ])
+            .then(([projectData, workpackageData]) => {
+                // Store workpackage data
+                workpackages = workpackageData;
+
+                // Process the data to add any client-side filtering
+                const processedData = processProjectData(projectData, filter);
+
+                // Update state with processed data
+                GanttChart.Core.setState({
+                    items: processedData.sequences,
+                    dateRange: processedData.dateRange
+                });
+
+                // Update project filters dropdown
+                updateProjectFilters(processedData.sequences);
+
+                if (processedData.sequences.length > 0) {
+                    // Update the item count badge
+                    if ($('#itemCountBadge').length) {
+                        updateItemCountBadge(processedData.sequences.length);
+                    }
+
+                    // Generate timeline
+                    GanttChart.Timeline.generate(
+                        processedData.dateRange.start,
+                        processedData.dateRange.end
+                    );
+
+                    // Generate project rows (custom implementation)
+                    generateProjectRows(
+                        processedData.sequences,
+                        processedData.dateRange.start,
+                        processedData.dateRange.end
+                    );
+
+                    // Initialize interactions
+                    GanttChart.Interactions.init();
+
+                    // Show chart
+                    GanttChart.Core.showChart();
+
+                    // Remove the categorization status loading
+                    // This line should be removed if you've taken out get_catstatus
+                    // loadCategorizationStatus(processedData.sequences);
+                } else {
+                    // Set the item count badge to 0
+                    if ($('#itemCountBadge').length) {
+                        $('#itemCountBadge').text('0').removeClass('bg-success bg-primary').addClass('bg-secondary');
+                    }
+
+                    // Show no items message
+                    GanttChart.Core.showNoItems();
+                }
+            })
+            .catch(error => {
+                console.error('Error loading data:', error);
+
+                // Set the item count badge to 0
+                if ($('#itemCountBadge').length) {
+                    $('#itemCountBadge').text('0').removeClass('bg-success bg-primary').addClass('bg-secondary');
+                }
+
+                GanttChart.Core.showNoItems();
+
+                // Show alert
+                alert('Error loading data: ' + error.message);
+            });
     }
 
     function updateProjectFilters(sequences) {
@@ -50,21 +163,9 @@ GanttChart.Custom = (function() {
             $dropdown.append(`<li><a class="dropdown-item" href="#" data-filter="${project}">${project}</a></li>`);
         });
 
-        // Explicitly bind click events to the newly added dropdown items
-        $('.dropdown-item[data-filter]').off('click').on('click', function(e) {
-            e.preventDefault();
-            const filter = $(this).data('filter');
-            console.log('Project filter selected:', filter);
-
-            // Update button text
-            $('#filterDropdownBtn').text($(this).text());
-
-            // Update current filter in config
-            GanttChart.Core.setConfig({ currentFilter: filter });
-
-            // Load data with the selected filter
-            GanttChart.Ajax.loadData(filter);
-        });
+        // DO NOT bind click events here - they'll be handled by delegation
+        // Remove any existing direct bindings that might have been added
+        $('.dropdown-item[data-filter]').off('click');
     }
 
     /**
@@ -1117,9 +1218,7 @@ GanttChart.Custom = (function() {
             GanttChart.Ajax.loadData = function(filter) {
                 console.log('Custom loadData called with filter:', filter);
                 // Ensure we only call our custom implementation when it's ready
-                setTimeout(function() {
-                    loadProjectData(filter);
-                }, 10);
+                loadProjectData(filter);
             };
 
             // Rest of your initialization code...
@@ -1130,33 +1229,8 @@ GanttChart.Custom = (function() {
             GanttChart.Ajax.loadData = GanttChart.Ajax.loadData || originalLoadData;
         }
 
-        $(document).on('click', '.dropdown-item[data-filter]', function(e) {
-            e.preventDefault();
-            const filter = $(this).data('filter');
-            console.log('Project filter selected:', filter);
-
-            // Store the current job filter globally
-            window.currentJobFilter = filter;
-
-            // Update dropdown button text
-            $('#filterDropdownBtn').html('<i class="bi bi-filter"></i> ' + $(this).text());
-
-            // Reset the category filter buttons to "All"
-            $('.gantt-filter-btn').removeClass('active');
-            $('.gantt-filter-btn[data-filter="all"]').addClass('active');
-
-            // Clear the categorization status cache when changing jobs
-            window.catStatusCache = {};
-
-            // Update current filter in config
-            GanttChart.Core.setConfig({ currentFilter: filter });
-
-            // Load data with the selected filter - this triggers a server request
-            GanttChart.Ajax.loadData(filter);
-        });
     });
 
-    // Public API
     return {
         initialize: initialize,
         loadProjectData: loadProjectData,

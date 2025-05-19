@@ -287,9 +287,6 @@ GanttChart.Interactions = (function() {
         $container.css('--zoom-level', level);
     }
 
-    /**
-     * Initialize filtering functionality
-     */
     function initializeFiltering() {
         // Track filters separately
         let currentFilters = {
@@ -297,11 +294,18 @@ GanttChart.Interactions = (function() {
             category: 'all'    // Category filter (all, in-progress, has-workpackage, etc.)
         };
 
+        // Clean up any existing handlers first
+        $(document).off('click', '.dropdown-item[data-filter]');
+        $('.gantt-filter-btn').off('click');
+
+        // Add debug logging
+        console.log('Setting up filter event handlers');
+
         // Project filter dropdown handler (using event delegation)
         $(document).on('click', '.dropdown-item[data-filter]', function(e) {
             e.preventDefault();
             const projectFilter = $(this).data('filter');
-            console.log('Project filter selected:', projectFilter);
+            console.log('Project filter clicked:', projectFilter);
 
             // Update project filter but keep category filter
             currentFilters.project = projectFilter;
@@ -355,6 +359,9 @@ GanttChart.Interactions = (function() {
 
             // Update config
             GanttChart.Core.setConfig({ currentFilter: combinedFilter });
+
+            // Add debug logging
+            console.log('Loading data with filter:', combinedFilter);
 
             // Load data with combined filter
             GanttChart.Ajax.loadData(combinedFilter);

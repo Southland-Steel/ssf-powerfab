@@ -199,9 +199,6 @@ $headerScripts = '
 <!-- Custom script for this specific implementation -->
 <script src="js/gantt-custom.js"></script>
 
-<!-- Add the client-side filtering script -->
-<script src="js/gantt-client-filtering.js"></script>
-
 <script>
     window.timelineData = null;        // Cached timeline data
     window.workpackagesData = null;    // Cached workpackages data
@@ -212,6 +209,48 @@ $headerScripts = '
     window.catStatusCache = {};        // Cache for categorization status
     window.catStatusXHR = null;        // Categorization status request object
 
+    // In gantt-core.js
+    function initialize() {
+        if (state.initialized) return;
+
+        // Set up UI event handlers
+        setupEventHandlers();
+
+        // Set up window resize handler
+        $(window).on('resize', function() {
+            adjustGanttWidth();
+        });
+
+        // Initial width adjustment
+        setTimeout(adjustGanttWidth, 500);
+
+        state.initialized = true;
+
+        // Trigger an event that initialization is complete
+        $(document).trigger('gantt:initialized');
+    }
+
+    function setupEventHandlers() {
+        // Set up refresh button
+        $(config.refreshButton).on('click', function() {
+            GanttChart.Ajax.loadData(config.currentFilter);
+        });
+
+        // Set up filter dropdown (consider moving this to Interactions module)
+        $(config.filterDropdown).on('click', function(e) {
+            e.preventDefault();
+            const filter = $(this).data('filter');
+            config.currentFilter = filter;
+
+            // Update button text
+            $(config.filterButton).text($(this).text());
+
+            // Load data with the selected filter
+            GanttChart.Ajax.loadData(filter);
+        });
+    }
+
+    // Then in index.php
     $(document).ready(function() {
         console.log('Document ready');
 
@@ -219,7 +258,7 @@ $headerScripts = '
         GanttChart.Core.setConfig({
             dataEndpoint: 'ajax/get_timeline_data.php',
             workpackagesEndpoint: 'ajax/get_workpackages.php',
-            catstatusEndpoint: 'ajax/get_catstatus.php',
+            // catstatusEndpoint: 'ajax/get_catstatus.php', // Remove if you've taken out catstatus
             helpDocPath: 'docs/gantt-help.md',
             // Add a retry option for data loading
             retryOnFailure: true,
@@ -231,32 +270,17 @@ $headerScripts = '
         GanttChart.Theme.init();
         console.log('Theme initialized');
 
-        // Initialize the core functionality but prevent automatic data loading
-        try {
-            // Backup original loadData
-            const originalLoadData = GanttChart.Ajax.loadData;
+        // Initialize the core functionality
+        // Core.init() no longer automatically loads data
+        GanttChart.Core.init();
+        console.log('Core initialized');
 
-            // Temporarily prevent auto-loading
-            GanttChart.Ajax.loadData = function() {
-                console.log('Auto-loading prevented in Core.init()');
-            };
-
-            // Initialize the core
-            GanttChart.Core.init();
-            console.log('Core initialized');
-
-            // Restore original loadData
-            GanttChart.Ajax.loadData = originalLoadData;
-
-            // Then, explicitly load the data after all modules are ready
-            console.log('Explicitly loading data...');
-            setTimeout(function() {
-                GanttChart.Ajax.loadData('all');
-            }, 100);
-        } catch (error) {
-            console.error('Error during initialization:', error);
-            alert('An error occurred during initialization. See console for details.');
-        }
+        // Then, explicitly load the data after all modules are ready
+        console.log('Explicitly loading data...');
+        setTimeout(function() {
+            // This will use the Custom module's loadProjectData if available
+            GanttChart.Ajax.loadData('all');
+        }, 100);
     });
 </script>
 </body>
