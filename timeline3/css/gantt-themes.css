@@ -21,6 +21,15 @@
     --theme-btn-default-border: #dee2e6;
     --theme-marker-line-color: rgba(0, 0, 0, 0.1);
 
+    /* Dropdown Colors - Light Theme */
+    --dropdown-bg: #ffffff;
+    --dropdown-text: #212529;
+    --dropdown-hover-bg: rgba(153, 51, 43, 0.1);
+    --dropdown-hover-text: #212529;
+    --dropdown-active-bg: var(--status-in-progress);
+    --dropdown-active-text: #ffffff;
+    --dropdown-divider: #e9ecef;
+
     /* Status Colors - Light Theme */
     --status-not-started: #0d6efd;
     --status-in-progress: #0a58ca;
@@ -46,6 +55,15 @@
     --theme-btn-default-text: #f8f9fa;
     --theme-btn-default-border: #495057;
     --theme-marker-line-color: rgba(255, 255, 255, 0.1);
+
+    /* Dropdown Colors - Dark Theme */
+    --dropdown-bg: #343a40;
+    --dropdown-text: #f8f9fa;
+    --dropdown-hover-bg: #2c3034;
+    --dropdown-hover-text: #ffffff;
+    --dropdown-active-bg: var(--status-in-progress);
+    --dropdown-active-text: #ffffff;
+    --dropdown-divider: #495057;
 
     /* Status Colors - Dark Theme */
     --status-not-started: #90bfff;
@@ -94,6 +112,52 @@ footer, .footer, .page-footer {
 
 footer *, .footer *, .page-footer * {
     color: var(--theme-text-color) !important;
+}
+
+/* ========== DROPDOWN STYLING ========== */
+/* Fix for dropdown styles in both themes */
+.dropdown-menu {
+    background-color: var(--dropdown-bg) !important;
+    border-color: var(--theme-border-color) !important;
+    color: var(--dropdown-text) !important;
+}
+
+.dropdown-item {
+    color: var(--dropdown-text) !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: var(--dropdown-hover-bg) !important;
+    color: var(--dropdown-hover-text) !important;
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+    background-color: var(--dropdown-active-bg) !important;
+    color: var(--dropdown-active-text) !important;
+}
+
+.dropdown-divider {
+    border-color: var(--dropdown-divider) !important;
+}
+
+/* Button with dropdown toggle styling */
+.btn-outline-secondary.dropdown-toggle {
+    background-color: var(--theme-btn-default-bg) !important;
+    color: var(--theme-btn-default-text) !important;
+    border-color: var(--theme-btn-default-border) !important;
+}
+
+.btn-outline-secondary.dropdown-toggle:hover,
+.btn-outline-secondary.dropdown-toggle:focus {
+    background-color: var(--theme-row-hover) !important;
+}
+
+.btn-outline-secondary.dropdown-toggle.show {
+    background-color: var(--dropdown-active-bg) !important;
+    color: var(--dropdown-active-text) !important;
+    border-color: var(--dropdown-active-bg) !important;
 }
 
 /* ========== GANTT LAYOUT ELEMENTS ========== */
