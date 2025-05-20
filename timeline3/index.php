@@ -156,31 +156,12 @@ $headerScripts = '
             </div>
             <div class="modal-body">
                 <div id="ganttHelpContent">
-                    <h3>Project Schedule Gantt Chart</h3>
-                    <p>This Gantt chart visualizes task schedules for projects. It displays breakdown elements and their associated tasks with timelines.</p>
-
-                    <h4>Data Source</h4>
-                    <p>The data is sourced from the <code>schedulebreakdownelements</code>, <code>scheduletasks</code>, and related tables in the database. It shows elements up to level 2 with completion less than 99%.</p>
-
-                    <h4>Color Legend</h4>
-                    <ul>
-                        <li><strong>Light Blue:</strong> Not Started tasks (0% complete)</li>
-                        <li><strong>Blue:</strong> In Progress tasks (1-99% complete)</li>
-                        <li><strong>Green:</strong> Completed tasks (100% complete)</li>
-                        <li><strong>Red:</strong> Late tasks (past due date)</li>
-                        <li><strong>Blue Line:</strong> Today's date</li>
-                    </ul>
-
-                    <h4>Navigation</h4>
-                    <p>Click on any task bar to view detailed information about that task. Use the filter dropdown to focus on specific projects, or the filter buttons to show tasks with specific statuses.</p>
-
-                    <h4>Controls</h4>
-                    <ul>
-                        <li><strong>Zoom:</strong> Use the zoom buttons to adjust the timeline view</li>
-                        <li><strong>Theme:</strong> Toggle between light and dark themes</li>
-                        <li><strong>Export:</strong> Download the data as a CSV file</li>
-                        <li><strong>Refresh:</strong> Update the chart with the latest data</li>
-                    </ul>
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading help content...</span>
+                        </div>
+                        <p class="mt-2">Loading help documentation...</p>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -221,6 +202,7 @@ $headerScripts = '
 <script src="js/gantt-interactions.js"></script>
 <script src="js/gantt-ajax.js"></script>
 <script src="js/gantt-theme.js"></script>
+<script src="js/gantt-help.js"></script>
 
 <script>
     $(document).ready(function() {
@@ -245,6 +227,7 @@ $headerScripts = '
         // Initialize modules
         GanttChart.Theme.init();
         GanttChart.Core.init();
+        GanttChart.Help.init();
 
         // Load data
         GanttChart.Ajax.loadData('all');

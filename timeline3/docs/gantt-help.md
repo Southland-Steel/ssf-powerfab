@@ -1,14 +1,4 @@
-## Pure Chronological Organization
-
-The Gantt chart is organized in a **strictly chronological order**:
-
-- Each task appears in the exact order it will occur in time
-- Tasks are sorted by start date, with earliest tasks at the top
-- When multiple tasks start on the same date, they are sorted by end date (shortest duration first)
-
-This means that tasks from different projects and elements will be mixed together based solely on their timing. You'll see the exact sequence of work over time, regardless of which project or element a task belongs to.
-
-For easier identification, each task shows its project code in a highlighted box.# Project Schedule Gantt Chart Help Guide
+# Project Schedule Gantt Chart Help Guide
 
 This Gantt chart provides a visual timeline of project breakdown elements and their fabrication tasks, helping you track progress and manage workflows efficiently.
 
@@ -21,11 +11,76 @@ The Gantt chart visualizes data from the following database tables:
 - `projects`: Contains project information
 - `resources`: Contains resource assignments
 
-The chart only displays tasks with:
-- Active projects (JobStatusID 1 or 6)
-- Fabrication resource assignments
-- Completion percentage less than 99%
-- Element levels less than 3
+## Data Filtering
+
+The chart only displays tasks with the following criteria:
+
+```
+WHERE  p.JobStatusID IN (1,6)
+       AND sbde.Level < 3
+       AND sts.PercentCompleted < 0.99
+       AND resources.Description = 'Fabrication'
+       AND sbdeval.Description IS NOT NULL
+       AND sts.ActualStartDate IS NOT NULL
+       AND sts.ActualEndDate IS NOT NULL
+```
+
+In more understandable terms:
+1. Only **active projects** (with job status 1 or 6)
+    - Status 1: Open status
+    - Status 6: TC open status
+2. Only showing **element levels 1 and 2** (excludes deeper nested elements)
+    - Level 1: Generally represents the sequence name
+    - Level 2: Generally represents the lot number
+3. Only tasks that are **less than 99% complete** (filters out finished tasks)
+4. Only tasks assigned to the **Fabrication** resource
+5. Only elements that have a valid description
+6. Only tasks that have both start and end dates defined
+
+## Why Some Tasks Might Not Appear
+
+A task might not appear in the Gantt chart even if it exists in the system for several reasons:
+
+1. **Missing Schedule Breakdown Element**: For a task to appear, it must be associated with a schedule breakdown element. If you've created a task and assigned a resource but haven't linked it to a breakdown element, it won't appear on this chart.
+
+2. **No Fabrication Resource**: Only tasks assigned to the "Fabrication" resource are shown. Tasks assigned to other resources won't appear.
+
+3. **Missing Dates**: Tasks must have both start and end dates defined. Tasks with undefined dates won't be displayed.
+
+4. **Completed Tasks**: Tasks that are 99% complete or higher are considered finished and are filtered out.
+
+5. **Deep Hierarchy**: If a task is assigned to a level 3 element or deeper, it won't appear on this chart.
+
+6. **Inactive Projects**: Tasks associated with projects that have status codes other than 1 or 6 won't be displayed.
+
+If you're expecting to see a task in the chart but it's not appearing, check that it meets all of the criteria listed above.
+
+## How Data Is Structured
+
+The chart uses a hierarchical breakdown of data:
+
+1. **Projects** (Level 0): The top level representing a job, identified by JobNumber
+2. **Sequence Breakdown** (Level 1): Main breakdown components of a project, typically representing sequence names
+3. **LotNumber Breakdown** (Level 2): Further divisions of main elements, typically representing lot numbers
+4. **Tasks**: Specific fabrication tasks assigned to elements
+
+The element path is constructed as follows:
+- For Level 1 elements: `JobNumber.ElementDescription`
+- For Level 2 elements: `JobNumber.ParentElementDescription.ElementDescription`
+
+This creates a unique identifier for each element in the chart, helping you track the relationship between tasks and their parent elements.
+
+## Pure Chronological Organization
+
+The Gantt chart is organized in a **strictly chronological order**:
+
+- Each task appears in the exact order it will occur in time
+- Tasks are sorted by start date, with earliest tasks at the top
+- When multiple tasks start on the same date, they are sorted by end date (shortest duration first)
+
+This means that tasks from different projects and elements will be mixed together based solely on their timing. You'll see the exact sequence of work over time, regardless of which project or element a task belongs to.
+
+For easier identification, each task shows its project code in a highlighted box.
 
 ## Legend
 
