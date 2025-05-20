@@ -499,3 +499,7 @@ input:checked + .theme-switch-slider:before {
     top: calc(10px * var(--zoom-level));
     font-size: calc(12px * var(--zoom-level));
 }
+
+#itemCountBadge {
+    color: white !important;
+}

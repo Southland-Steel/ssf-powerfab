@@ -135,7 +135,7 @@ GanttChart.Core = (function() {
         // Handle Date object
         if (dateString instanceof Date) {
             const d = new Date(dateString);
-            d.setUTCHours(0, 0, 0, 0);
+            d.setHours(0, 0, 0, 0);
             return d;
         }
 
@@ -178,7 +178,9 @@ GanttChart.Core = (function() {
      */
     function getToday() {
         const today = new Date();
-        return parseDate(today.toISOString().split('T')[0]);
+        // Use local time instead of UTC
+        today.setHours(0, 0, 0, 0);
+        return today;
     }
 
     /**

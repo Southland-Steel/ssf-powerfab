@@ -79,6 +79,8 @@ GanttChart.Ajax = (function() {
 
                 // Initialize interactions
                 GanttChart.Interactions.init();
+
+                // Make sure to update the item count badge
                 GanttChart.Interactions.updateItemCount();
 
                 // Show chart

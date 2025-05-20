@@ -4,8 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add Gantt endpoints and enhance filtering logic&#10;&#10;Introduced new endpoints for task details and Gantt timeline data to support detailed task management and project visualization. Improved hierarchical filtering and recursive SQL for breakdown elements, ensuring data consistency and efficient handling of Gantt chart operations.">
+    <list default="true" id="d597d2d7-1f3a-48bf-97c8-d1f9c50043b6" name="Changes" comment="Add dropdown styling and enhance Gantt filtering logic&#10;&#10;Introduced dropdown styling for both light and dark themes, ensuring consistent appearance for menus and buttons across the UI. Updated Gantt filtering logic and added new endpoints to improve task management and visualization. Enhancements include hierarchical filters, recursive SQL improvements, and better data handling for the Gantt module.">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/timeline3/css/gantt-themes.css" beforeDir="false" afterPath="$PROJECT_DIR$/timeline3/css/gantt-themes.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline3/css/gantt.css" beforeDir="false" afterPath="$PROJECT_DIR$/timeline3/css/gantt.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline3/index.php" beforeDir="false" afterPath="$PROJECT_DIR$/timeline3/index.php" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline3/js/gantt-ajax.js" beforeDir="false" afterPath="$PROJECT_DIR$/timeline3/js/gantt-ajax.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/timeline3/js/gantt-core.js" beforeDir="false" afterPath="$PROJECT_DIR$/timeline3/js/gantt-core.js" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -131,7 +136,7 @@
       <workItem from="1747315863259" duration="19814000" />
       <workItem from="1747412209846" duration="2339000" />
       <workItem from="1747663306648" duration="12197000" />
-      <workItem from="1747744477387" duration="8547000" />
+      <workItem from="1747744477387" duration="9484000" />
     </task>
     <task id="LOCAL-00001" summary="initial commit">
       <option name="closed" value="true" />
@@ -509,7 +514,15 @@
       <option name="project" value="LOCAL" />
       <updated>1747755478872</updated>
     </task>
-    <option name="localTasksCounter" value="48" />
+    <task id="LOCAL-00048" summary="Add dropdown styling and enhance Gantt filtering logic&#10;&#10;Introduced dropdown styling for both light and dark themes, ensuring consistent appearance for menus and buttons across the UI. Updated Gantt filtering logic and added new endpoints to improve task management and visualization. Enhancements include hierarchical filters, recursive SQL improvements, and better data handling for the Gantt module.">
+      <option name="closed" value="true" />
+      <created>1747755717685</created>
+      <option name="number" value="00048" />
+      <option name="presentableId" value="LOCAL-00048" />
+      <option name="project" value="LOCAL" />
+      <updated>1747755717685</updated>
+    </task>
+    <option name="localTasksCounter" value="49" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -556,7 +569,8 @@
     <MESSAGE value="Refactor Gantt chart filtering and enhance data handling&#10;&#10;Refactored Gantt chart filtering to improve modularity and performance by separating responsibilities between client-side and server-side. Enhanced data loading logic with better fallback mechanisms, improved logging, and error handling. Streamlined timeline and categorization utilities with optimized initialization and fallback date handling." />
     <MESSAGE value="Refactor Gantt filtering and implement hierarchical paths.&#10;&#10;Refactored filtering logic for modularity and performance by adding element path-based hierarchical matching. Enhanced timeline data retrieval with recursive SQL for breakdown paths and improved data integrity. Removed redundant filtering and optimized work package handling for clarity and efficiency." />
     <MESSAGE value="Add Gantt endpoints and enhance filtering logic&#10;&#10;Introduced new endpoints for task details and Gantt timeline data to support detailed task management and project visualization. Improved hierarchical filtering and recursive SQL for breakdown elements, ensuring data consistency and efficient handling of Gantt chart operations." />
-    <option name="LAST_COMMIT_MESSAGE" value="Add Gantt endpoints and enhance filtering logic&#10;&#10;Introduced new endpoints for task details and Gantt timeline data to support detailed task management and project visualization. Improved hierarchical filtering and recursive SQL for breakdown elements, ensuring data consistency and efficient handling of Gantt chart operations." />
+    <MESSAGE value="Add dropdown styling and enhance Gantt filtering logic&#10;&#10;Introduced dropdown styling for both light and dark themes, ensuring consistent appearance for menus and buttons across the UI. Updated Gantt filtering logic and added new endpoints to improve task management and visualization. Enhancements include hierarchical filters, recursive SQL improvements, and better data handling for the Gantt module." />
+    <option name="LAST_COMMIT_MESSAGE" value="Add dropdown styling and enhance Gantt filtering logic&#10;&#10;Introduced dropdown styling for both light and dark themes, ensuring consistent appearance for menus and buttons across the UI. Updated Gantt filtering logic and added new endpoints to improve task management and visualization. Enhancements include hierarchical filters, recursive SQL improvements, and better data handling for the Gantt module." />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

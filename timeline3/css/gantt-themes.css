@@ -304,6 +304,12 @@ footer *, .footer *, .page-footer * {
     border-color: var(--theme-btn-default-border);
     color: var(--theme-btn-default-text);
 }
+.gantt-filter-btn.active {
+    color: white !important;
+}
+.gantt-filter-btn.active:hover {
+    color: white var(--theme-row-hover) !important;
+}
 
 .gantt-filter-btn:hover {
     background-color: var(--theme-row-hover);

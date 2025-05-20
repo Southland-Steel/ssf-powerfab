@@ -248,6 +248,15 @@ $headerScripts = '
 
         // Load data
         GanttChart.Ajax.loadData('all');
+
+        // Ensure the item count is updated once everything is loaded
+        $(document).ajaxComplete(function(event, xhr, settings) {
+            if (settings.url.includes('get_timeline_data.php')) {
+                setTimeout(function() {
+                    GanttChart.Interactions.updateItemCount();
+                }, 100);
+            }
+        });
     });
 </script>
 </body>
