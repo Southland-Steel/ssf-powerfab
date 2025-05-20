@@ -20,6 +20,7 @@ WHERE  p.JobStatusID IN (1,6)
        AND sbde.Level < 3
        AND sts.PercentCompleted < 0.99
        AND resources.Description = 'Fabrication'
+       AND sd.Description = 'Fabrication'
        AND sbdeval.Description IS NOT NULL
        AND sts.ActualStartDate IS NOT NULL
        AND sts.ActualEndDate IS NOT NULL
@@ -34,8 +35,9 @@ In more understandable terms:
     - Level 2: Generally represents the lot number
 3. Only tasks that are **less than 99% complete** (filters out finished tasks)
 4. Only tasks assigned to the **Fabrication** resource
-5. Only elements that have a valid description
-6. Only tasks that have both start and end dates defined
+5. Only tasks that have **Fabrication** as the description
+6. Only elements that have a valid description
+7. Only tasks that have both start and end dates defined
 
 ## Why Some Tasks Might Not Appear
 

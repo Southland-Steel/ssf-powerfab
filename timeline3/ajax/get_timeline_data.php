@@ -61,6 +61,7 @@ WHERE
     AND sbde.Level < 3
     AND sts.PercentCompleted < 0.99
     AND resources.Description = 'Fabrication'
+    AND sd.Description = 'Fabrication'
     AND sbdeval.Description IS NOT NULL
     AND sts.ActualStartDate IS NOT NULL
     AND sts.ActualEndDate IS NOT NULL";
