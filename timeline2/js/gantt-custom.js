@@ -334,11 +334,27 @@ GanttChart.Custom = (function() {
     }
 
     /**
-     * Check if a sequence has workpackages
+     * Check if a sequence has workpackages by matching on element path if available
      * @param {Object} sequence - Project sequence
      * @return {boolean} True if sequence has workpackages
      */
     function hasWorkPackages(sequence) {
+        // If element path is available on both sides, use that for matching
+        if (sequence.elementPath) {
+            return workpackages.some(wp =>
+                wp.jobNumber === sequence.project &&
+                wp.elementPath &&
+                (
+                    // Match on exact path
+                    wp.elementPath === sequence.elementPath ||
+                    // Or check if one is a prefix/parent of the other (for hierarchical structures)
+                    wp.elementPath.startsWith(sequence.elementPath + '->') ||
+                    sequence.elementPath.startsWith(wp.elementPath + '->')
+                )
+            );
+        }
+
+        // Fall back to simple project/sequence matching if no path available
         return workpackages.some(wp =>
             wp.jobNumber === sequence.project &&
             wp.sequence === sequence.sequence
@@ -431,10 +447,22 @@ GanttChart.Custom = (function() {
         const rowClasses = `gantt-row project-row${hasWP ? ' has-wp' : ''}`;
 
         // Get sequence work packages
-        const sequenceWPs = workpackages.filter(wp =>
-            wp.jobNumber === sequence.project &&
-            wp.sequence === sequence.sequence
-        );
+        const sequenceWPs = workpackages.filter(wp => {
+            // If element path is available on both sides, use that for matching
+            if (sequence.elementPath && wp.elementPath) {
+                return wp.jobNumber === sequence.project &&
+                    (
+                        // Match on exact path
+                        wp.elementPath === sequence.elementPath ||
+                        // Or check if one is a prefix/parent of the other (for hierarchical structures)
+                        wp.elementPath.startsWith(sequence.elementPath + '->') ||
+                        sequence.elementPath.startsWith(wp.elementPath + '->')
+                    );
+            }
+
+            // Fall back to simple project/sequence matching if no path available
+            return wp.jobNumber === sequence.project && wp.sequence === sequence.sequence;
+        });
 
         // Create row element
         const $row = $('<div></div>')
@@ -588,8 +616,31 @@ GanttChart.Custom = (function() {
      * @param {Array} sequenceWPs - Workpackages for this sequence
      * @param {jQuery} $timeline - Timeline element
      */
-    function addWorkPackageMarkers(sequence, sequenceWPs, $timeline) {
-        // Add individual workpackage markers for each workpackage
+    /**
+     * Add workpackage markers to the timeline
+     * @param {Object} sequence - Project sequence
+     * @param {Array} sequenceWPs - Workpackages for this sequence
+     * @param {jQuery} $timeline - Timeline element
+     */
+    function addWorkPackageMarkers(sequence, $timeline) {
+        // Find all workpackages that match this sequence
+        const sequenceWPs = workpackages.filter(wp => {
+            // If element path is available on both sides, use that for matching
+            if (sequence.elementPath && wp.elementPath) {
+                return wp.jobNumber === sequence.project &&
+                    (
+                        // Match on exact path
+                        wp.elementPath === sequence.elementPath ||
+                        // Or check if one is a prefix/parent of the other (for hierarchical structures)
+                        wp.elementPath.startsWith(sequence.elementPath + '->') ||
+                        sequence.elementPath.startsWith(wp.elementPath + '->')
+                    );
+            }
+
+            // Fall back to simple project/sequence matching if no path available
+            return wp.jobNumber === sequence.project && wp.sequence === sequence.sequence;
+        });
+
         sequenceWPs.forEach(wp => {
             const wpDate = GanttChart.Core.parseDate(wp.completionwednesday);
             const position = GanttChart.TimeUtils.dateToPosition(wpDate);

@@ -3,6 +3,7 @@
  * File: ajax/get_timeline_data.php (Modified)
  * Endpoint for retrieving main Gantt chart data
  * Improved to ensure correct date range when filtering by job
+ * Added recursive path tracking for breakdown elements
  */
 require_once('../../config_ssf_db.php');
 header('Content-Type: application/json');
@@ -67,8 +68,35 @@ if (empty($row_group_ids)) {
     exit;
 }
 
-// Main query to get sequence data
-$sql = "SELECT 
+// Main query to get sequence data with recursive element paths
+$sql = "WITH RECURSIVE ElementHierarchy AS (
+    -- Base case: Start with elements we're interested in
+    SELECT 
+        sbde.ScheduleBreakdownElementID, 
+        sbde.ParentScheduleBreakdownElementID, 
+        sbdevalue.Description, 
+        0 AS Level, 
+        CAST(sbdevalue.Description AS CHAR(1000)) AS Path, 
+        sbde.ScheduleBreakdownElementID AS OriginalElementID
+    FROM schedulebreakdownelements AS sbde
+    INNER JOIN scheduledescriptions AS sbdevalue ON sbdevalue.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
+    
+    UNION ALL
+    
+    -- Recursive case: Find parent elements (climbing up the hierarchy)
+    SELECT 
+        parent.ScheduleBreakdownElementID, 
+        parent.ParentScheduleBreakdownElementID, 
+        parentvalue.Description, 
+        eh.Level + 1, 
+        CONCAT(parentvalue.Description, '->', eh.Path), 
+        eh.OriginalElementID
+    FROM schedulebreakdownelements AS parent
+    INNER JOIN scheduledescriptions AS parentvalue ON parentvalue.ScheduleDescriptionID = parent.ScheduleBreakdownValueID
+    INNER JOIN ElementHierarchy AS eh ON eh.ParentScheduleBreakdownElementID = parent.ScheduleBreakdownElementID
+    WHERE parent.ScheduleBreakdownElementID IS NOT NULL
+)
+SELECT 
    st.ScheduleTaskID,
    CASE 
     WHEN resources.Description = 'Procurement' 
@@ -99,10 +127,14 @@ $sql = "SELECT
    resources.Description as ResourceDescription,
    CASE 
        WHEN resources.Description = 'Document Control' AND sd.Description = 'Issued For Fabrication' THEN 'iff'
-       WHEN resources.Description = 'Procurement' AND sd.Description IN ('Material Purchased', 'Material Received') THEN 'nsi'
        WHEN resources.Description = 'CNC' AND sd.Description = 'Part Categorization' THEN 'categorize'
        ELSE 'fabrication'
-   END as TaskType
+   END as TaskType,
+   (SELECT eh.Path 
+    FROM ElementHierarchy eh 
+    WHERE eh.OriginalElementID = sbde.ScheduleBreakdownElementID 
+    ORDER BY eh.Level DESC 
+    LIMIT 1) as ElementPath
 FROM scheduletasks as st
 INNER JOIN scheduledescriptions as sd ON sd.ScheduleDescriptionID = st.ScheduleDescriptionID
 INNER JOIN projects as p on p.ProjectID = st.ProjectID
@@ -118,8 +150,6 @@ WHERE sb.IsCurrent = 1
    AND CONCAT(p.JobNumber, ':', sbdeval.Description) IN (" . implode(',', $row_group_ids) . ")
    AND (
        (resources.Description = 'Document Control' AND sd.Description = 'Issued For Fabrication')
-       OR (resources.Description = 'Procurement' AND sd.Description = 'Material Purchased')
-       OR (resources.Description = 'Procurement' AND sd.Description = 'Material Received')
        OR (resources.Description = 'CNC' AND sd.Description = 'Part Categorization')
        OR (resources.Description = 'Fabrication')
    )
@@ -135,13 +165,15 @@ $sequences = [];
 while ($row = $sql_results->fetch(PDO::FETCH_ASSOC)) {
     $sequenceKey = $row['ProjectNumber'] . ':' . $row['SequenceNumber'];
 
+    // Format the element path to ensure it shows as "EZ08->1" format
+    $elementPath = isset($row['ElementPath']) ? $row['ElementPath'] : '';
+
     if (!isset($sequences[$sequenceKey])) {
         $sequences[$sequenceKey] = [
             'project' => $row['ProjectNumber'],
             'sequence' => $row['SequenceNumber'],
             'pm' => $row['ProjectManager'],
             'iff' => ['start' => date('Y-m-d'), 'percentage' => -1],
-            'nsi' => ['start' => date('Y-m-d'), 'percentage' => -1],
             'categorize' => ['start' => date('Y-m-d'), 'percentage' => -1],
             'fabrication' => [
                 'start' => date('Y-m-d'),
@@ -153,7 +185,8 @@ while ($row = $sql_results->fetch(PDO::FETCH_ASSOC)) {
             ],
             'hasWorkPackage' => false,
             'hasWP' => $row['HasWP'],
-            'wp' => ['start' => date('Y-m-d'), 'end' => date('Y-m-d', strtotime('+30 days'))]
+            'wp' => ['start' => date('Y-m-d'), 'end' => date('Y-m-d', strtotime('+30 days'))],
+            'elementPath' => $elementPath
         ];
     }
 
@@ -173,6 +206,11 @@ while ($row = $sql_results->fetch(PDO::FETCH_ASSOC)) {
 
     // Track hasWP property
     $sequences[$sequenceKey]['hasWP'] = $row['HasWP'];
+
+    // Make sure we capture the element path even if we already have this sequence
+    if (!empty($elementPath) && (!isset($sequences[$sequenceKey]['elementPath']) || empty($sequences[$sequenceKey]['elementPath']))) {
+        $sequences[$sequenceKey]['elementPath'] = $elementPath;
+    }
 }
 
 $ganttData['sequences'] = array_values($sequences);
@@ -195,9 +233,6 @@ foreach ($ganttData['sequences'] as &$sequence) {
     // Add other milestone dates
     if ($sequence['iff']['percentage'] != -1 && $sequence['iff']['start']) {
         $dates[] = $sequence['iff']['start'];
-    }
-    if ($sequence['nsi']['percentage'] != -1 && $sequence['nsi']['start']) {
-        $dates[] = $sequence['nsi']['start'];
     }
     if ($sequence['categorize']['percentage'] != -1 && $sequence['categorize']['start']) {
         $dates[] = $sequence['categorize']['start'];
@@ -227,9 +262,6 @@ foreach ($ganttData['sequences'] as &$sequence) {
     // Set default values for any missing dates
     if ($sequence['iff']['percentage'] == -1) {
         $sequence['iff']['start'] = $sequence['fabrication']['start'] ?? date('Y-m-d');
-    }
-    if ($sequence['nsi']['percentage'] == -1) {
-        $sequence['nsi']['start'] = $sequence['fabrication']['start'] ?? date('Y-m-d');
     }
 }
 
