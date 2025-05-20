@@ -7,24 +7,41 @@
     font-size: 12px;
     color: #333;
     border-left: 3px solid #007bff;
-}.task-dates {
-     font-size: 10px;
-     color: #666;
-     margin-top: 2px;
-     font-family: monospace;
-     background-color: #f8f8f8;
-     padding: 1px 3px;
-     border-radius: 2px;
-     display: inline-block;
- }.task-description {
-      font-size: 11px;
-      color: #6c757d;
-      margin-top: 2px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 180px;
-  }/* Sort indicator */
+}
+
+.task-dates {
+    font-size: 10px;
+    color: #666;
+    margin-top: 2px;
+    font-family: monospace;
+    background-color: #f8f8f8;
+    padding: 1px 3px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+.task-description {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 180px;
+}
+
+/* Enhanced styles for additional metrics */
+.task-metrics {
+    font-size: 10px;
+    color: #495057;
+    margin-top: 2px;
+    background-color: #e9ecef;
+    padding: 1px 3px;
+    border-radius: 2px;
+    display: inline-block;
+}
+
+/* Sort indicator */
 .sort-indicator {
     margin-right: 10px;
 }
@@ -32,7 +49,9 @@
 .sort-indicator .badge {
     font-size: 12px;
     padding: 5px 8px;
-}/**
+}
+
+/**
  * File: css/gantt.css
  * Main stylesheet for the Gantt chart
  */
@@ -230,15 +249,6 @@
     background-color: var(--gantt-row-hover);
 }
 
-/* Row level styles - remove these */
-/* .task-row.level-1 {
-    font-weight: bold;
-}
-
-.task-row.level-2 {
-    font-weight: normal;
-} */
-
 /* Label column */
 .gantt-labels {
     width: 200px;
@@ -249,6 +259,10 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+}
+
+.gantt-labels.client-approval-complete {
+    border-right: 6px solid var(--status-completed);
 }
 
 .gantt-rowtitle {
@@ -294,7 +308,7 @@
     border-radius: 4px;
     padding: 5px 8px;
     font-size: 12px;
-    color: #212529;
+    color: white;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
@@ -312,6 +326,7 @@
 /* Status-based colors */
 .task-bar.status-not-started {
     background-color: var(--status-not-started);
+    color: #212529;
 }
 
 .task-bar.status-in-progress {
@@ -423,6 +438,34 @@
     background-color: var(--gantt-today-color);
     border-color: var(--gantt-today-color);
     color: white;
+}
+
+/* Add new styles for percentage badges */
+.percentage-badge {
+    display: inline-block;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-size: 10px;
+    margin-left: 4px;
+    color: white;
+}
+
+.percentage-badge.high {
+    background-color: var(--status-completed);
+}
+
+.percentage-badge.medium {
+    background-color: var(--status-in-progress);
+}
+
+.percentage-badge.low {
+    background-color: var(--status-not-started);
+}
+
+.element-name {
+    display: inline-block;
+    margin-right: 4px;
+    color: #495057;
 }
 
 /* Theme Switch Button */

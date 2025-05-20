@@ -106,6 +106,7 @@ $headerScripts = '
                                 <button class="gantt-filter-btn" data-filter="in-progress">In Progress</button>
                                 <button class="gantt-filter-btn" data-filter="not-started">Not Started</button>
                                 <button class="gantt-filter-btn" data-filter="late">Late</button>
+                                <button class="gantt-filter-btn" data-filter="client-approval-complete">Client Approved</button>
                             </div>
                             <div class="sort-indicator">
                                 <span class="badge bg-secondary">

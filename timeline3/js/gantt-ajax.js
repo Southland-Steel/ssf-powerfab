@@ -53,17 +53,40 @@ GanttChart.Ajax = (function() {
             const tasks = response.tasks;
             const dateRange = response.dateRange;
 
+            // Process tasks data to normalize property names if needed
+            // This ensures backwards compatibility with existing code
+            const processedTasks = tasks.map(task => {
+                // Ensure rowGroupId is consistent (handle both capitalization variants)
+                if (!task.rowGroupId && task.RowGroupID) {
+                    task.rowGroupId = task.RowGroupID;
+                }
+
+                // Set default values for project property if missing
+                if (!task.project && task.JobNumber) {
+                    task.project = task.JobNumber;
+                }
+
+                // Ensure description property is present
+                if (!task.description && task.taskDescription) {
+                    task.description = task.taskDescription;
+                } else if (!task.description && task.SequenceName) {
+                    task.description = task.SequenceName + (task.LotNumber ? ' - ' + task.LotNumber : '');
+                }
+
+                return task;
+            });
+
             // Update state with new data
             GanttChart.Core.setState({
-                tasks: tasks,
+                tasks: processedTasks,
                 dateRange: dateRange
             });
 
             // Update project filters based on tasks
-            const projects = GanttChart.Core.extractProjects(tasks);
+            const projects = GanttChart.Core.extractProjects(processedTasks);
             GanttChart.Core.updateProjectFilters(projects);
 
-            if (tasks.length > 0) {
+            if (processedTasks.length > 0) {
                 // Generate timeline
                 GanttChart.Timeline.generate(
                     dateRange.start,
@@ -72,13 +95,26 @@ GanttChart.Ajax = (function() {
 
                 // Generate task bars
                 GanttChart.Bars.generate(
-                    tasks,
+                    processedTasks,
                     dateRange.start,
                     dateRange.end
                 );
 
                 // Initialize interactions
                 GanttChart.Interactions.init();
+
+                GanttChart.Interactions.resetFilters();
+
+                if (GanttChart.Core.getState().currentStatusFilter !== 'all') {
+                    const previousFilter = GanttChart.Core.getState().currentStatusFilter;
+
+                    // Find and activate the corresponding filter button
+                    $('.gantt-filter-btn').removeClass('active');
+                    $(`.gantt-filter-btn[data-filter="${previousFilter}"]`).addClass('active');
+
+                    // Apply the filter
+                    GanttChart.Interactions.filterItems(previousFilter);
+                }
 
                 // Make sure to update the item count badge
                 GanttChart.Interactions.updateItemCount();
@@ -138,6 +174,21 @@ GanttChart.Ajax = (function() {
             'Hours'
         ];
 
+        // Add additional headers if enhanced data is present
+        if (tasks[0].PercentageIFF !== undefined || tasks[0].percentageIFF !== undefined) {
+            headers.push('IFF %', 'IFA %');
+
+            // If client approval data is present
+            if (tasks[0].ClientApprovalPercentComplete !== undefined) {
+                headers.push('Client Approval %');
+            }
+
+            // If detailing IFF data is present
+            if (tasks[0].DetailingIFFPercentComplete !== undefined) {
+                headers.push('Detailing IFF %');
+            }
+        }
+
         // Prepare CSV rows
         const csvRows = [
             headers.join(',')
@@ -145,20 +196,48 @@ GanttChart.Ajax = (function() {
 
         // Add data rows
         tasks.forEach(task => {
-            const projectParts = task.rowGroupId.split('.');
+            // Get project and element parts
+            let projectParts = [];
+            if (task.rowGroupId) {
+                projectParts = task.rowGroupId.split('.');
+            } else if (task.RowGroupID) {
+                projectParts = task.RowGroupID.split('.');
+            } else {
+                projectParts = [task.project || task.JobNumber || 'Unknown', task.SequenceName || task.description || 'Unknown'];
+            }
+
             const project = projectParts[0];
             const element = projectParts.slice(1).join('.');
 
+            // Create base row data
             const row = [
                 csvEscapeValue(project),
                 csvEscapeValue(element),
-                csvEscapeValue(task.taskDescription || task.description),
-                csvEscapeValue(task.status),
+                csvEscapeValue(task.taskDescription || task.TaskDescription || task.description || ''),
+                csvEscapeValue(task.status || ''),
                 task.percentage + '%',
                 task.startDate ? GanttChart.Core.formatDate(task.startDate) : '',
                 task.endDate ? GanttChart.Core.formatDate(task.endDate) : '',
                 task.hours || ''
             ];
+
+            // Add enhanced data if available
+            if (headers.length > 8) {
+                row.push(
+                    (task.PercentageIFF !== undefined ? task.PercentageIFF : (task.percentageIFF !== undefined ? task.percentageIFF : 0)) + '%',
+                    (task.PercentageIFA !== undefined ? task.PercentageIFA : (task.percentageIFA !== undefined ? task.percentageIFA : 0)) + '%'
+                );
+
+                // Add client approval if in headers
+                if (headers.includes('Client Approval %')) {
+                    row.push((task.ClientApprovalPercentComplete || 0) + '%');
+                }
+
+                // Add detailing IFF if in headers
+                if (headers.includes('Detailing IFF %')) {
+                    row.push((task.DetailingIFFPercentComplete || 0) + '%');
+                }
+            }
 
             csvRows.push(row.join(','));
         });

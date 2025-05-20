@@ -56,13 +56,21 @@ GanttChart.Bars = (function() {
             .attr('data-task-id', task.id)
             .attr('data-project', task.project)
             .attr('data-start-date', task.startDate)
-            .attr('data-end-date', task.endDate);
+            .attr('data-end-date', task.endDate)
+            .attr('data-level', task.level);  // Add level attribute for filtering
 
         // Create labels section
         const $labels = $('<div class="gantt-labels"></div>');
 
+        // Check for client approval complete and add special class
+        const clientApproval = task.ClientApprovalPercentComplete || 0;
+        $row.attr('data-client-approval', clientApproval);
+        if (clientApproval >= 99) {
+            $labels.addClass('client-approval-complete');
+        }
+
         // Extract project and element from rowGroupId
-        let parts = task.rowGroupId.split('.');
+        let parts = task.RowGroupId ? task.RowGroupId.split('.') : (task.rowGroupId ? task.rowGroupId.split('.') : [task.project, task.description]);
         const project = parts.shift(); // First part is project
         const element = parts.join('.'); // Rest is element path
 
@@ -70,20 +78,37 @@ GanttChart.Bars = (function() {
         const startFormatted = GanttChart.Core.formatDate(task.startDate);
         const endFormatted = GanttChart.Core.formatDate(task.endDate);
 
-        // Parse dates using GanttChart.Core.parseDate for display
-        const parsedStart = GanttChart.Core.parseDate(task.startDate);
-        const parsedEnd = GanttChart.Core.parseDate(task.endDate);
+        // Prepare additional metrics if they exist
+        let additionalMetrics = '';
 
-        $labels.append(`
+        // Check if this is the enhanced data format by checking for new fields
+        if (task.PercentageIFF !== undefined || task.HasPCI !== undefined) {
+            const percentageIFF = typeof task.PercentageIFF !== 'undefined' ? task.PercentageIFF : (typeof task.percentageIFF !== 'undefined' ? task.percentageIFF : 0);
+            const percentageIFA = typeof task.PercentageIFA !== 'undefined' ? task.PercentageIFA : (typeof task.percentageIFA !== 'undefined' ? task.percentageIFA : 0);
+
+            if (percentageIFF > 0 || percentageIFA > 0) {
+                additionalMetrics = `<div class="task-metrics">IFF: ${percentageIFF}% | IFA: ${percentageIFA}%</div>`;
+            }
+        }
+
+        // Get sequence and lot info
+        const sequenceName = task.SequenceName || task.sequenceName || element;
+        const lotNumber = task.LotNumber || task.lotNumber || null;
+
+        // Build label content
+        let labelContent = `
             <div class="gantt-rowtitle">
-                <strong class="project-code">${project}:</strong>
-                <span class="element-name">${element}</span>
+                <strong class="project-code">${project}</strong>
+                <span class="element-name">${sequenceName}${lotNumber ? ' - ' + lotNumber : ''}</span>
                 <div class="task-description">${task.taskDescription || task.description || ''}</div>
                 <div class="task-dates" title="Dates used for sorting">
                     ${startFormatted} → ${endFormatted}
                 </div>
+                ${additionalMetrics}
             </div>
-        `);
+        `;
+
+        $labels.html(labelContent);
 
         // Append labels to row
         $row.append($labels);
@@ -161,14 +186,30 @@ GanttChart.Bars = (function() {
             })
             .attr('data-task-id', task.id);
 
-        // Create tooltip content
-        const tooltipContent = `
+        // Create tooltip content - include new metrics if available
+        let tooltipContent = `
             ${task.taskDescription || task.description}
             Start: ${GanttChart.Core.formatDate(task.startDate)}
             End: ${GanttChart.Core.formatDate(task.endDate)}
             Progress: ${task.percentage}%
             ${task.hours ? 'Hours: ' + Math.round(task.hours,0) : ''}
         `;
+
+        // Add any enhanced data to tooltip if available
+        if (task.PercentageIFF !== undefined || task.percentageIFF !== undefined) {
+            const percentageIFF = task.PercentageIFF !== undefined ? task.PercentageIFF : task.percentageIFF;
+            const percentageIFA = task.PercentageIFA !== undefined ? task.PercentageIFA : task.percentageIFA;
+
+            tooltipContent += `\nIFF: ${percentageIFF}%\nIFA: ${percentageIFA}%`;
+
+            if (task.ClientApprovalPercentComplete) {
+                tooltipContent += `\nClient Approval: ${task.ClientApprovalPercentComplete}%`;
+            }
+
+            if (task.DetailingIFFPercentComplete) {
+                tooltipContent += `\nDetailing IFF: ${task.DetailingIFFPercentComplete}%`;
+            }
+        }
 
         $bar.attr('title', tooltipContent);
 

@@ -99,9 +99,24 @@ GanttChart.Interactions = (function() {
      * @param {string} filter - Filter identifier
      */
     function filterItems(filter) {
-        // If filter is 'all', show all rows
+        // Get the current project filter from config
+        const config = GanttChart.Core.getConfig();
+        const currentProjectFilter = config.currentFilter;
+
+        // Update state to track the current status filter
+        GanttChart.Core.getState().currentStatusFilter = filter;
+
+        // If filter is 'all', show all rows (respecting current project filter)
         if (filter === 'all') {
-            $('.task-row').show();
+            if (currentProjectFilter && currentProjectFilter !== 'all' &&
+                currentProjectFilter.match(/^[A-Z0-9-]+$/)) {
+                // If a project filter is active, only show rows for that project
+                $('.task-row').hide();
+                $(`.task-row[data-project="${currentProjectFilter}"]`).show();
+            } else {
+                // Otherwise show all rows
+                $('.task-row').show();
+            }
             updateItemCount();
             return;
         }
@@ -109,35 +124,67 @@ GanttChart.Interactions = (function() {
         // Hide all rows first
         $('.task-row').hide();
 
-        // Show rows based on filter
+        // Build a selector based on the status filter
+        let selector;
         switch (filter) {
             case 'in-progress':
-                $('.task-bar.status-in-progress').closest('.task-row').show();
+                selector = '.task-bar.status-in-progress';
                 break;
             case 'not-started':
-                $('.task-bar.status-not-started').closest('.task-row').show();
+                selector = '.task-bar.status-not-started';
                 break;
             case 'completed':
-                $('.task-bar.status-completed').closest('.task-row').show();
+                selector = '.task-bar.status-completed';
                 break;
             case 'late':
-                $('.task-bar.status-late').closest('.task-row').show();
+                selector = '.task-bar.status-late';
                 break;
             case 'level-1':
-                $('.task-row[data-level="1"]').show();
+                selector = '[data-level="1"]';
                 break;
             case 'level-2':
-                $('.task-row[data-level="2"]').show();
+                selector = '[data-level="2"]';
+                break;
+            case 'client-approval-complete':
+                // Special case, handled separately below
                 break;
             default:
-                // If filter is a project ID, show rows matching that project
-                if (filter.match(/^[A-Z0-9-]+$/)) {
-                    $(`.task-row[data-group-id^="${filter}."]`).show();
+                // Default to showing all (respecting current project filter)
+                if (currentProjectFilter && currentProjectFilter !== 'all' &&
+                    currentProjectFilter.match(/^[A-Z0-9-]+$/)) {
+                    $(`.task-row[data-project="${currentProjectFilter}"]`).show();
                 } else {
-                    // Default to showing all
                     $('.task-row').show();
                 }
-                break;
+                updateItemCount();
+                return;
+        }
+
+        // Handle the client approval filter separately (it uses a function filter)
+        if (filter === 'client-approval-complete') {
+            let $rows = $('.task-row');
+
+            // Apply project filter if one is active
+            if (currentProjectFilter && currentProjectFilter !== 'all' &&
+                currentProjectFilter.match(/^[A-Z0-9-]+$/)) {
+                $rows = $rows.filter(`[data-project="${currentProjectFilter}"]`);
+            }
+
+            // Filter by client approval percentage
+            $rows.filter(function() {
+                const approvalValue = parseFloat($(this).attr('data-client-approval') || 0);
+                return approvalValue >= 99;
+            }).show();
+        } else if (selector) {
+            // Apply both the status filter and the project filter if one is active
+            let $rows = $(selector).closest('.task-row');
+
+            if (currentProjectFilter && currentProjectFilter !== 'all' &&
+                currentProjectFilter.match(/^[A-Z0-9-]+$/)) {
+                $rows = $rows.filter(`[data-project="${currentProjectFilter}"]`);
+            }
+
+            $rows.show();
         }
 
         // Update the item count badge
@@ -151,6 +198,36 @@ GanttChart.Interactions = (function() {
             $(GanttChart.Core.getConfig().noItemsMessage).hide();
             $(GanttChart.Core.getConfig().container).show();
         }
+    }
+
+    /**
+     * Reset filters to show all tasks (respecting current project filter)
+     */
+    function resetFilters() {
+        // Get the current project filter
+        const config = GanttChart.Core.getConfig();
+        const currentProjectFilter = config.currentFilter;
+
+        // Reset status filter state
+        GanttChart.Core.getState().currentStatusFilter = 'all';
+
+        // Remove 'active' class from all filter buttons
+        $('.gantt-filter-btn').removeClass('active');
+
+        // Add 'active' class to the 'All Tasks' button
+        $('.gantt-filter-btn[data-filter="all"]').addClass('active');
+
+        // Show all rows (respecting current project filter)
+        if (currentProjectFilter && currentProjectFilter !== 'all' &&
+            currentProjectFilter.match(/^[A-Z0-9-]+$/)) {
+            $('.task-row').hide();
+            $(`.task-row[data-project="${currentProjectFilter}"]`).show();
+        } else {
+            $('.task-row').show();
+        }
+
+        // Update the item count
+        updateItemCount();
     }
 
     /**
@@ -184,6 +261,7 @@ GanttChart.Interactions = (function() {
         init: initialize,
         refresh: refresh,
         filterItems: filterItems,
-        updateItemCount: updateItemCount
+        updateItemCount: updateItemCount,
+        resetFilters: resetFilters
     };
 })();

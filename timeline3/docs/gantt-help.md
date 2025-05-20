@@ -10,6 +10,12 @@ The Gantt chart visualizes data from the following database tables:
 - `scheduledescriptions`: Contains descriptions for tasks and elements
 - `projects`: Contains project information
 - `resources`: Contains resource assignments
+- `productioncontrolsequences`: Contains sequence information
+- `productioncontrolitemsequences`: Links sequences to assemblies
+- `productioncontrolassemblies`: Contains assembly information
+- `productioncontrolitems`: Contains individual items
+- `approvalstatuses`: Contains approval status codes and descriptions
+- `workpackages`: Contains workpackage information
 
 ## Data Filtering
 
@@ -28,16 +34,29 @@ WHERE  p.JobStatusID IN (1,6)
 
 In more understandable terms:
 1. Only **active projects** (with job status 1 or 6)
-    - Status 1: Open status
-    - Status 6: TC open status
+   - Status 1: Open status
+   - Status 6: TC open status
 2. Only showing **element levels 1 and 2** (excludes deeper nested elements)
-    - Level 1: Generally represents the sequence name
-    - Level 2: Generally represents the lot number
+   - Level 1: Generally represents the sequence name
+   - Level 2: Generally represents the lot number
 3. Only tasks that are **less than 99% complete** (filters out finished tasks)
 4. Only tasks assigned to the **Fabrication** resource
 5. Only tasks that have **Fabrication** as the description
 6. Only elements that have a valid description
 7. Only tasks that have both start and end dates defined
+
+## Additional Data Points
+
+The chart now includes additional metrics for each element:
+
+- **Percentage IFF**: Percentage of items in the element marked as "Issued For Fabrication"
+- **Percentage IFA**: Percentage of items in the element marked as "Issued For Approval"
+- **Percentage Categorized**: Percentage of items that have been assigned to a category
+- **Client Approval**: Percentage complete of "Client Approval" tasks
+- **IFC Drawings Received**: Percentage complete of "IFC Drawings Received" tasks
+- **Detailing IFF**: Percentage complete of "Issued For Fabrication" tasks assigned to Detailing resource
+
+These metrics provide additional context to the timeline view, helping you understand where each element stands in the overall workflow.
 
 ## Why Some Tasks Might Not Appear
 
@@ -123,6 +142,8 @@ Each bar displays:
 - Progress indicator showing completion percentage
 - Warning icon for late tasks
 
+Additional metrics like IFF and IFA percentages are displayed in the labels section.
+
 ## Getting Started
 
 1. Use the filters to find relevant projects or tasks
@@ -144,3 +165,4 @@ When you click on a task bar, a modal opens showing:
 - Elements are organized hierarchically, with level 1 elements shown in bold
 - Tasks are automatically color-coded based on status
 - The chart updates when you refresh the page or click the refresh button
+- Look for the IFF and IFA percentages to quickly gauge the approval status of each element

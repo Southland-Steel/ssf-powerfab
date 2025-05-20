@@ -30,7 +30,8 @@ GanttChart.Core = (function() {
         tasks: [],
         dateRange: null,
         initialized: false,
-        projects: []
+        projects: [],
+        currentStatusFilter: 'all'
     };
 
     /**
@@ -62,6 +63,9 @@ GanttChart.Core = (function() {
 
             // Update button text
             $(config.filterButton).text($(this).text());
+
+            // Store current status filter before loading new data
+            state.currentStatusFilter = $('.gantt-filter-btn.active').data('filter') || 'all';
 
             // Load data with the selected filter
             GanttChart.Ajax.loadData(filter);
