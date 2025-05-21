@@ -31,8 +31,8 @@
     --dropdown-divider: #e9ecef;
 
     /* Status Colors - Light Theme */
-    --status-not-started: #0d6efd;
-    --status-in-progress: #0a58ca;
+    --status-not-started: #c1d7fb;
+    --status-in-progress: #4253ff;
     --status-completed: #198754;
     --status-late: #dc3545;
     --status-on-hold: #6c757d;
@@ -67,7 +67,7 @@
 
     /* Status Colors - Dark Theme */
     --status-not-started: #90bfff;
-    --status-in-progress: #3d8bfd;
+    --status-in-progress: #0d21fd;
     --status-completed: #0a7040;
     --status-late: #b02a37;
     --status-on-hold: #adb5bd;

@@ -66,8 +66,8 @@
     --gantt-marker-size: 10px;
 
     /* Status colors */
-    --status-not-started: #8bb9fe;
-    --status-in-progress: #0d6efd;
+    --status-not-started: #a3c6fd;
+    --status-in-progress: #0d21fd;
     --status-completed: #198754;
     --status-late: #dc3545;
     --status-on-hold: #6c757d;
