@@ -95,108 +95,126 @@ GanttChart.Interactions = (function() {
     }
 
     /**
-     * Filter items based on criteria
+     * Filter items based on criteria - with container visibility fix
      * @param {string} filter - Filter identifier
      */
     function filterItems(filter) {
-        // Get the current project filter from config
+        console.log("Filtering with:", filter);
+
+        // Get references to key elements
+        const $container = $(GanttChart.Core.getConfig().container);
+        const $noItemsMessage = $(GanttChart.Core.getConfig().noItemsMessage);
+
+        // IMPORTANT FIX: Show container and hide the "no items" message immediately
+        // This ensures we're starting with a visible container regardless of previous state
+        $container.show();
+        $noItemsMessage.hide();
+
+        // Get the current project filter
         const config = GanttChart.Core.getConfig();
-        const currentProjectFilter = config.currentFilter;
+        const projectFilter = config.currentFilter;
 
         // Update state to track the current status filter
         GanttChart.Core.getState().currentStatusFilter = filter;
 
-        // If filter is 'all', show all rows (respecting current project filter)
+        // Reset all rows to be visible
+        $('.task-row').show();
+
+        // Step 1: Apply project filter
+        if (projectFilter && projectFilter !== 'all') {
+            $('.task-row').not(`[data-project="${projectFilter}"]`).hide();
+        }
+
+        // If filter is 'all', we're done
         if (filter === 'all') {
-            if (currentProjectFilter && currentProjectFilter !== 'all' &&
-                currentProjectFilter.match(/^[A-Z0-9-]+$/)) {
-                // If a project filter is active, only show rows for that project
-                $('.task-row').hide();
-                $(`.task-row[data-project="${currentProjectFilter}"]`).show();
-            } else {
-                // Otherwise show all rows
-                $('.task-row').show();
-            }
             updateItemCount();
             return;
         }
 
-        // Hide all rows first
-        $('.task-row').hide();
+        // Step 2: Apply status filter to the visible rows
+        const $visibleRows = $('.task-row:visible');
 
-        // Build a selector based on the status filter
-        let selector;
         switch (filter) {
             case 'in-progress':
-                selector = '.task-bar.status-in-progress';
+                $visibleRows.each(function() {
+                    if ($(this).find('.task-bar.status-in-progress').length === 0) {
+                        $(this).hide();
+                    }
+                });
                 break;
+
             case 'not-started':
-                selector = '.task-bar.status-not-started';
+                $visibleRows.each(function() {
+                    if ($(this).find('.task-bar.status-not-started').length === 0) {
+                        $(this).hide();
+                    }
+                });
                 break;
+
             case 'completed':
-                selector = '.task-bar.status-completed';
+                $visibleRows.each(function() {
+                    if ($(this).find('.task-bar.status-completed').length === 0) {
+                        $(this).hide();
+                    }
+                });
                 break;
+
             case 'late':
-                selector = '.task-bar.status-late';
+                $visibleRows.each(function() {
+                    if ($(this).find('.task-bar.status-late').length === 0) {
+                        $(this).hide();
+                    }
+                });
                 break;
+
             case 'level-1':
-                selector = '[data-level="1"]';
+                $visibleRows.each(function() {
+                    if ($(this).attr('data-level') !== '1') {
+                        $(this).hide();
+                    }
+                });
                 break;
+
             case 'level-2':
-                selector = '[data-level="2"]';
+                $visibleRows.each(function() {
+                    if ($(this).attr('data-level') !== '2') {
+                        $(this).hide();
+                    }
+                });
                 break;
+
             case 'client-approval-complete':
-                // Special case, handled separately below
+                $visibleRows.each(function() {
+                    const approvalValue = parseFloat($(this).attr('data-client-approval') || 0);
+                    if (approvalValue < 99) {
+                        $(this).hide();
+                    }
+                });
                 break;
-            default:
-                // Default to showing all (respecting current project filter)
-                if (currentProjectFilter && currentProjectFilter !== 'all' &&
-                    currentProjectFilter.match(/^[A-Z0-9-]+$/)) {
-                    $(`.task-row[data-project="${currentProjectFilter}"]`).show();
-                } else {
-                    $('.task-row').show();
-                }
-                updateItemCount();
-                return;
-        }
-
-        // Handle the client approval filter separately (it uses a function filter)
-        if (filter === 'client-approval-complete') {
-            let $rows = $('.task-row');
-
-            // Apply project filter if one is active
-            if (currentProjectFilter && currentProjectFilter !== 'all' &&
-                currentProjectFilter.match(/^[A-Z0-9-]+$/)) {
-                $rows = $rows.filter(`[data-project="${currentProjectFilter}"]`);
-            }
-
-            // Filter by client approval percentage
-            $rows.filter(function() {
-                const approvalValue = parseFloat($(this).attr('data-client-approval') || 0);
-                return approvalValue >= 99;
-            }).show();
-        } else if (selector) {
-            // Apply both the status filter and the project filter if one is active
-            let $rows = $(selector).closest('.task-row');
-
-            if (currentProjectFilter && currentProjectFilter !== 'all' &&
-                currentProjectFilter.match(/^[A-Z0-9-]+$/)) {
-                $rows = $rows.filter(`[data-project="${currentProjectFilter}"]`);
-            }
-
-            $rows.show();
         }
 
         // Update the item count badge
         updateItemCount();
 
         // Show "no items" message if no rows are visible
-        if ($('.task-row:visible').length === 0) {
-            $(GanttChart.Core.getConfig().noItemsMessage).show();
-            $(GanttChart.Core.getConfig().container).hide();
+        const visibleCount = $('.task-row:visible').length;
+        if (visibleCount === 0) {
+            // Add debug logging to verify
+            console.log("No visible rows after filtering - showing 'no items' message");
+            $noItemsMessage.show();
+            $container.hide();
         } else {
-            $(GanttChart.Core.getConfig().noItemsMessage).hide();
-            $(GanttChart.Core.getConfig().container).show();
+            // Add debug logging to verify
+            console.log(`Found ${visibleCount} visible rows - showing container`);
+            $noItemsMessage.hide();
+            $container.show();
+        }
+
+        // Force container to be visible if we have items (as a failsafe)
+        if (visibleCount > 0 && $container.is(':hidden')) {
+            console.warn("Container was hidden despite having visible rows - forcing display");
+            $container.show();
+            $noItemsMessage.hide();
         }
     }
 

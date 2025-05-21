@@ -71,14 +71,6 @@ GanttChart.Core = (function() {
             GanttChart.Ajax.loadData(filter);
         });
 
-        // Set up filter buttons
-        $(document).on('click', '.gantt-filter-btn', function() {
-            $('.gantt-filter-btn').removeClass('active');
-            $(this).addClass('active');
-
-            const filter = $(this).data('filter');
-            GanttChart.Interactions.filterItems(filter);
-        });
 
         // Set up window resize handler
         $(window).on('resize', function() {
