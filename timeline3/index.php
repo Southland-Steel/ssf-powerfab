@@ -53,7 +53,7 @@ $headerScripts = '
                                 <span class="theme-switch-slider"></span>
                             </label>
                         </span>
-
+                        <?php if(false): ?>
                         <button id="ganttZoomOut" class="btn btn-sm btn-outline-secondary" title="Zoom Out">
                             <i class="bi bi-zoom-out"></i>
                         </button>
@@ -63,6 +63,7 @@ $headerScripts = '
                         <button id="ganttZoomIn" class="btn btn-sm btn-outline-secondary" title="Zoom In">
                             <i class="bi bi-zoom-in"></i>
                         </button>
+                        <?php endif; ?>
 
                         <button id="refreshGantt" class="btn btn-sm btn-outline-primary ms-2" title="Refresh Data">
                             <i class="bi bi-arrow-clockwise"></i> Refresh
@@ -77,11 +78,11 @@ $headerScripts = '
                                 <!-- Project filters will be added dynamically -->
                             </ul>
                         </div>
-
+                        <?php if(false): ?>
                         <button id="exportGantt" class="btn btn-sm btn-outline-secondary ms-2" title="Export to CSV">
                             <i class="bi bi-download"></i> Export
                         </button>
-
+                        <?php endif; ?>
                         <button id="ganttHelpBtn" class="btn btn-sm btn-outline-info ms-2" title="Gantt Chart Help">
                             <i class="bi bi-question-circle"></i> Help
                         </button>
