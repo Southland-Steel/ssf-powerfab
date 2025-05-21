@@ -1,6 +1,7 @@
 /**
  * File: js/gantt-bars.js
  * Handles rendering task bars for the Gantt chart
+ * Refactored to add percentage badges
  */
 GanttChart.Bars = (function() {
     'use strict';
@@ -12,7 +13,6 @@ GanttChart.Bars = (function() {
      * @param {string} maxDate - End date for timeline
      */
     function generateBars(tasks, minDate, maxDate) {
-
         const $itemRowsContainer = $(GanttChart.Core.getConfig().itemRows);
         $itemRowsContainer.empty();
 
@@ -35,7 +35,6 @@ GanttChart.Bars = (function() {
             const bEnd = GanttChart.Core.parseDate(b.endDate);
             return aEnd.getTime() - bEnd.getTime();
         });
-
 
         // Create a row for each task in the sorted array
         tasksCopy.forEach(task => {
@@ -65,9 +64,18 @@ GanttChart.Bars = (function() {
         // Check for client approval complete and add special class
         const clientApproval = task.ClientApprovalPercentComplete || 0;
         $row.attr('data-client-approval', clientApproval);
-        if (clientApproval >= 99) {
-            $labels.addClass('client-approval-complete');
-        }
+
+        // Add client approval badge to labels section
+
+            const clientApprovalBadge = createPercentageBadge(clientApproval, 'client-approval-badge', 'Client Approval')
+                .css({
+                    'position': 'absolute',
+                    'bottom': '5px',
+                    'right': '5px',
+                    'transform': 'none' // Override the translateX(-50%)
+                });
+            $labels.append(clientApprovalBadge);
+
 
         // Extract project and element from rowGroupId
         let parts = task.RowGroupId ? task.RowGroupId.split('.') : (task.rowGroupId ? task.rowGroupId.split('.') : [task.project, task.description]);
@@ -101,14 +109,10 @@ GanttChart.Bars = (function() {
                 <strong class="project-code">${project}</strong>
                 <span class="element-name">${sequenceName}${lotNumber ? ' - ' + lotNumber : ''}</span>
                 <div class="task-description">${task.taskDescription || task.description || ''}</div>
-                <div class="task-dates" title="Dates used for sorting">
-                    ${startFormatted} → ${endFormatted}
-                </div>
-                ${additionalMetrics}
             </div>
         `;
 
-        $labels.html(labelContent);
+        $labels.prepend(labelContent);
 
         // Append labels to row
         $row.append($labels);
@@ -126,6 +130,34 @@ GanttChart.Bars = (function() {
         $row.append($timeline);
 
         return $row;
+    }
+
+    /**
+     * Create a percentage badge with appropriate color coding
+     * @param {number} percentage - Percentage value
+     * @param {string} badgeClass - Additional CSS class for the badge
+     * @param {string} tooltipText - Text to show in tooltip
+     * @return {jQuery} Badge element
+     */
+    function createPercentageBadge(percentage, badgeClass, tooltipText) {
+        // Round to 1 decimal place
+        const roundedPercentage = Math.round(percentage * 10) / 10;
+
+        // Determine color class based on percentage
+        let colorClass = 'badge-danger';  // Red < 5%
+        if (roundedPercentage > 99) {
+            colorClass = 'badge-success';  // Green > 99%
+        } else if (roundedPercentage >= 5) {
+            colorClass = 'badge-warning';  // Yellow 5% - 99%
+        }
+
+        // Create badge element
+        const $badge = $(`<span class="percentage-badge ${badgeClass} ${colorClass}" 
+                            title="${tooltipText}: ${roundedPercentage}%">
+                            ${roundedPercentage}%
+                          </span>`);
+
+        return $badge;
     }
 
     /**
@@ -200,7 +232,7 @@ GanttChart.Bars = (function() {
             const percentageIFF = task.PercentageIFF !== undefined ? task.PercentageIFF : task.percentageIFF;
             const percentageIFA = task.PercentageIFA !== undefined ? task.PercentageIFA : task.percentageIFA;
 
-            tooltipContent += `\nIFF: ${percentageIFF}%\nIFA: ${percentageIFA}%`;
+            tooltipContent += `\nIFF from Tekla PieceMarks: ${percentageIFF}%\nIFA from Tekla PieceMarks: ${percentageIFA}%`;
 
             if (task.ClientApprovalPercentComplete) {
                 tooltipContent += `\nClient Approval: ${task.ClientApprovalPercentComplete}%`;
@@ -232,6 +264,45 @@ GanttChart.Bars = (function() {
 
         // Add the bar to the timeline
         $timeline.append($bar);
+
+        // Extract percentage values
+        const percentageIFF = typeof task.PercentageIFF !== 'undefined' ? task.PercentageIFF : (typeof task.percentageIFF !== 'undefined' ? task.percentageIFF : 0);
+        const percentageIFA = typeof task.PercentageIFA !== 'undefined' ? task.PercentageIFA : (typeof task.percentageIFA !== 'undefined' ? task.percentageIFA : 0);
+        const percentageCategorized = typeof task.PercentageCategorized !== 'undefined' ? task.PercentageCategorized : 0;
+        const detailingIFFPercentComplete = typeof task.DetailingIFFPercentComplete !== 'undefined' ? task.DetailingIFFPercentComplete : 0;
+
+        // Create badges and position them in the timeline (not inside the bar)
+        // Calculate badge positions based on the bar's position
+        const barOffset = parseFloat($bar.css('left'));
+        const barWidth = parseFloat($bar.css('width'));
+
+        // Create and add badges
+        const $topLeftBadge = createPercentageBadge(detailingIFFPercentComplete, 'badge-top-left', 'Detailing IFF')
+            .css({
+                'left': `20px`,
+                'top': '5px'
+            });
+
+        const $bottomLeftBadge = createPercentageBadge(percentageCategorized, 'badge-bottom-left', 'Categorized')
+            .css({
+                'left': `20px`,
+                'bottom': '5px'
+            });
+
+        const $topRightBadge = createPercentageBadge(percentageIFA, 'badge-top-right', 'IFA from Tekla PieceMarks')
+            .css({
+                'right': `20px`,
+                'top': '5px'
+            });
+
+        const $bottomRightBadge = createPercentageBadge(percentageIFF, 'badge-bottom-right', 'IFF from Tekla PieceMarks')
+            .css({
+                'right': `20px`,
+                'bottom': '5px'
+            });
+
+        // Add badges directly to timeline
+        $timeline.append($topLeftBadge, $bottomLeftBadge, $topRightBadge, $bottomRightBadge);
 
         // Check if task is late
         const today = GanttChart.Core.getToday();
