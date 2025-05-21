@@ -220,12 +220,12 @@ GanttChart.Bars = (function() {
 
         // Create tooltip content - include new metrics if available
         let tooltipContent = `
-            ${task.taskDescription || task.description}
-            Start: ${GanttChart.Core.formatDate(task.startDate)}
-            End: ${GanttChart.Core.formatDate(task.endDate)}
-            Progress: ${task.percentage}%
-            ${task.hours ? 'Hours: ' + Math.round(task.hours,0) : ''}
-        `;
+        ${task.taskDescription || task.description}
+        Start: ${GanttChart.Core.formatDate(task.startDate)}
+        End: ${GanttChart.Core.formatDate(task.endDate)}
+        Progress: ${task.percentage}%
+        ${task.hours ? 'Hours: ' + Math.round(task.hours,0) : ''}
+    `;
 
         // Add any enhanced data to tooltip if available
         if (task.PercentageIFF !== undefined || task.percentageIFF !== undefined) {
@@ -257,9 +257,22 @@ GanttChart.Bars = (function() {
             .text(task.taskDescription || task.description || 'Task');
         $bar.append($taskLabel);
 
-        // Add click event to show details
+        // MODIFIED: Change click event to navigate to sequence_detail.php instead of showing modal
         $bar.on('click', function() {
-            showTaskDetails(task.id);
+            // Extract jobNumber from project attribute
+            const jobNumber = task.project;
+
+            // Extract sequenceName and lotNumber
+            const sequenceName = task.SequenceName || '';
+            const lotNumber = task.LotNumber || '';
+
+            // Navigate to sequence_detail.php with parameters
+            const url = `sequence_detail.php?jobNumber=${encodeURIComponent(jobNumber)}&sequenceName=${encodeURIComponent(sequenceName)}`;
+
+            // Add lotNumber parameter only if it exists
+            const finalUrl = lotNumber ? `${url}&lotNumber=${encodeURIComponent(lotNumber)}` : url;
+
+            window.location.href = finalUrl;
         });
 
         // Add the bar to the timeline
@@ -315,154 +328,8 @@ GanttChart.Bars = (function() {
         }
     }
 
-    /**
-     * Show task details in a modal
-     * @param {number|string} taskId - Task ID
-     */
-    function showTaskDetails(taskId) {
-        // Show modal
-        const $modal = $('#taskDetailModal');
-        const $content = $('#taskDetailContent');
-
-        // Show loading state
-        $content.html(`
-            <div class="text-center">
-                <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-            </div>
-        `);
-
-        $modal.modal('show');
-
-        // Get task details from server
-        const config = GanttChart.Core.getConfig();
-        $.ajax({
-            url: config.taskDetailsEndpoint,
-            data: { id: taskId },
-            method: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (response.error) {
-                    $content.html(`<div class="alert alert-danger">${response.error}</div>`);
-                    return;
-                }
-
-                const task = response.task;
-                const relatedTasks = response.relatedTasks || [];
-
-                // Format dates
-                const startDate = GanttChart.Core.formatDate(task.ActualStartDate);
-                const endDate = GanttChart.Core.formatDate(task.ActualEndDate);
-
-                // Update modal title
-                $('#taskDetailModalLabel').text(`${task.JobNumber}: ${task.ElementName} - ${task.TaskDescription}`);
-
-                // Build content
-                let html = `
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <h6>Task Information</h6>
-                            <dl class="row">
-                                <dt class="col-sm-4">Project:</dt>
-                                <dd class="col-sm-8">${task.JobNumber}</dd>
-                                
-                                <dt class="col-sm-4">Element:</dt>
-                                <dd class="col-sm-8">${task.ElementName}</dd>
-                                
-                                <dt class="col-sm-4">Description:</dt>
-                                <dd class="col-sm-8">${task.TaskDescription}</dd>
-                                
-                                <dt class="col-sm-4">Resource:</dt>
-                                <dd class="col-sm-8">${task.ResourceName || 'Not assigned'}</dd>
-                            </dl>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Schedule Information</h6>
-                            <dl class="row">
-                                <dt class="col-sm-4">Start Date:</dt>
-                                <dd class="col-sm-8">${startDate}</dd>
-                                
-                                <dt class="col-sm-4">End Date:</dt>
-                                <dd class="col-sm-8">${endDate}</dd>
-                                
-                                <dt class="col-sm-4">Progress:</dt>
-                                <dd class="col-sm-8">
-                                    <div class="progress" style="height: 20px;">
-                                        <div class="progress-bar" role="progressbar" style="width: ${task.PercentComplete}%;" 
-                                            aria-valuenow="${task.PercentComplete}" aria-valuemin="0" aria-valuemax="100">
-                                            ${task.PercentComplete}%
-                                        </div>
-                                    </div>
-                                </dd>
-                                
-                                <dt class="col-sm-4">Hours:</dt>
-                                <dd class="col-sm-8">${task.EstimatedHours || 0} (Estimated) / ${task.ActualHoursComplete || 0} (Actual)</dd>
-                            </dl>
-                        </div>
-                    </div>
-                `;
-
-                // Add related tasks if available
-                if (relatedTasks.length > 0) {
-                    html += `
-                        <div class="row">
-                            <div class="col-12">
-                                <h6>Related Tasks</h6>
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Description</th>
-                                                <th>Resource</th>
-                                                <th>Start Date</th>
-                                                <th>End Date</th>
-                                                <th>Progress</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                    `;
-
-                    relatedTasks.forEach(relatedTask => {
-                        html += `
-                            <tr>
-                                <td>${relatedTask.TaskDescription}</td>
-                                <td>${relatedTask.ResourceName || 'Not assigned'}</td>
-                                <td>${GanttChart.Core.formatDate(relatedTask.ActualStartDate)}</td>
-                                <td>${GanttChart.Core.formatDate(relatedTask.ActualEndDate)}</td>
-                                <td>
-                                    <div class="progress" style="height: 18px;">
-                                        <div class="progress-bar" role="progressbar" style="width: ${relatedTask.PercentComplete}%;" 
-                                            aria-valuenow="${relatedTask.PercentComplete}" aria-valuemin="0" aria-valuemax="100">
-                                            ${relatedTask.PercentComplete}%
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        `;
-                    });
-
-                    html += `
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // Update modal content
-                $content.html(html);
-            },
-            error: function() {
-                $content.html('<div class="alert alert-danger">Failed to load task details.</div>');
-            }
-        });
-    }
-
     // Public API
     return {
-        generate: generateBars,
-        showTaskDetails: showTaskDetails
+        generate: generateBars
     };
 })();

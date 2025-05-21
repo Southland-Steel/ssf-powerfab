@@ -1,8 +1,17 @@
+<?php
+$pageTitle = 'Sequence Detail';
+// Add custom CSS
+$additionalCss = '<link rel="stylesheet" href="css/sequence_detail.css">';
+?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sequence Detail</title>
-    <link rel="stylesheet" href="sequence_detail.css">
+    <title><?php echo $pageTitle; ?></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <?php echo $additionalCss; ?>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body>
 <?php
@@ -14,18 +23,134 @@ $titleText = "Production Detail for Job $jobNumber - Sequence $sequenceName";
 if (!empty($lotNumber)) {
     $titleText .= " - Lot $lotNumber";
 }
+
+// Include database config to fetch additional task info
+require_once('../includes/db_connection.php');
+
+// Fetch additional task information based on job number and sequence
+$taskInfoHtml = '';
+try {
+    if (!empty($jobNumber) && !empty($sequenceName)) {
+        $sql = "SELECT 
+                p.JobNumber,
+                p.JobDescription,
+                p.GroupName as ProjectManager,
+                sts.ActualStartDate,
+                sts.ActualEndDate, 
+                ROUND(sts.PercentCompleted * 100, 2) as PercentComplete,
+                sts.OriginalEstimate as EstimatedHours,
+                resources.Description as ResourceName,
+                sd.Description as TaskDescription
+            FROM 
+                scheduletasks sts
+                INNER JOIN schedulebreakdownelements sbde ON sbde.ScheduleBreakdownElementID = sts.ScheduleBreakdownElementID
+                INNER JOIN scheduledescriptions sbd ON sbd.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
+                INNER JOIN projects p ON p.ProjectID = sts.ProjectID
+                INNER JOIN scheduledescriptions sd ON sd.ScheduleDescriptionID = sts.ScheduleDescriptionID
+                INNER JOIN resources ON resources.ResourceID = sts.ResourceID
+            WHERE 
+                p.JobNumber = :jobNumber
+                AND sbd.Description = :sequenceName
+                AND resources.Description = 'Fabrication'
+            ORDER BY sts.ActualStartDate DESC
+            LIMIT 1";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            'jobNumber' => $jobNumber,
+            'sequenceName' => $sequenceName
+        ]);
+
+        $taskInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($taskInfo) {
+            // Format dates
+            $startDate = !empty($taskInfo['ActualStartDate']) ? date('M j, Y', strtotime($taskInfo['ActualStartDate'])) : 'N/A';
+            $endDate = !empty($taskInfo['ActualEndDate']) ? date('M j, Y', strtotime($taskInfo['ActualEndDate'])) : 'N/A';
+
+            // Build task info panel
+            $taskInfoHtml = <<<HTML
+            <div class="task-info-panel">
+                <div class="task-info-grid">
+                    <div class="info-group">
+                        <h4>Project Information</h4>
+                        <div class="info-item">
+                            <span class="info-label">Job Number:</span>
+                            <span class="info-value">{$taskInfo['JobNumber']}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Description:</span>
+                            <span class="info-value">{$taskInfo['JobDescription']}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Project Manager:</span>
+                            <span class="info-value">{$taskInfo['ProjectManager']}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-group">
+                        <h4>Schedule Information</h4>
+                        <div class="info-item">
+                            <span class="info-label">Start Date:</span>
+                            <span class="info-value">{$startDate}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">End Date:</span>
+                            <span class="info-value">{$endDate}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Estimated Hours:</span>
+                            <span class="info-value">{$taskInfo['EstimatedHours']}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-group">
+                        <h4>Task Details</h4>
+                        <div class="info-item">
+                            <span class="info-label">Task:</span>
+                            <span class="info-value">{$taskInfo['TaskDescription']}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Resource:</span>
+                            <span class="info-value">{$taskInfo['ResourceName']}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Progress:</span>
+                            <span class="info-value">
+                                <div class="progress">
+                                    <div class="progress-bar" style="width: {$taskInfo['PercentComplete']}%">
+                                        {$taskInfo['PercentComplete']}%
+                                    </div>
+                                </div>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            HTML;
+        }
+    }
+} catch (Exception $e) {
+    $taskInfoHtml = '<div class="error">Error loading task information: ' . $e->getMessage() . '</div>';
+}
 ?>
+
 <div class="header">
     <h2><?= $titleText ?></h2>
     <p class="subtitle">Detailed breakdown of assembly status and metrics</p>
+    <button id="back-button" class="back-button" onclick="history.back()">← Back to Gantt Chart</button>
 </div>
+
+<?php if (!empty($taskInfoHtml)): ?>
+    <!-- Task Information Panel -->
+    <?= $taskInfoHtml ?>
+<?php endif; ?>
 
 <div class="controls">
     <div class="filter-buttons" id="filter-container">
         <!-- Filter buttons will be added here -->
     </div>
     <button id="toggle-complete" class="toggle-button">Show/Hide Completed</button>
-    <button id="back-button" class="back-button" onclick="history.back()">← Back to List</button>
 </div>
 
 <div id="summary-section">
@@ -96,7 +221,7 @@ if (!empty($lotNumber)) {
             if (!aComplete && bComplete) return -1;
 
             // Define station order for comparison
-            const stationOrder = ['SHIPPING', 'FINAL QC', 'WELD', 'FIT', 'CUT', 'NESTED'];
+            const stationOrder = ['SHIPPING', 'FINAL QC', 'WELD', 'FIT', 'CUT'];
 
             // Compare each station in order
             for (const station of stationOrder) {
@@ -144,13 +269,11 @@ if (!empty($lotNumber)) {
             totalWeight += parseFloat(assembly.GrossAssemblyWeightEach) || 0;
 
             // Categorize assembly completion status
-            const nestedProgress = assembly.Stations['NESTED']?.Completed / assembly.Stations['NESTED']?.Total || 0;
+
             const shippingProgress = assembly.Stations['SHIPPING']?.Completed / assembly.Stations['SHIPPING']?.Total || 0;
 
             if (shippingProgress >= 0.98) {
                 completedAssemblies++;
-            } else if (nestedProgress > 0) {
-                inProgressAssemblies++;
             } else {
                 notStartedAssemblies++;
             }
@@ -230,7 +353,7 @@ if (!empty($lotNumber)) {
 
     // Render station progress charts
     function renderStationProgress(data) {
-        const stations = ['NESTED', 'CUT', 'FIT', 'WELD', 'FINAL QC', 'SHIPPING'];
+        const stations = ['CUT', 'FIT', 'WELD', 'FINAL QC', 'SHIPPING'];
         const stationTotals = {};
 
         // Initialize station totals
@@ -303,8 +426,7 @@ if (!empty($lotNumber)) {
                         <th>Main Mark</th>
                         <th>Work Package</th>
                         <th>Weight (lbs)</th>
-                        <th>Nested</th>
-                        <th>Cut</th>
+                        <th>MainPiece Cut</th>
                         <th>Fit</th>
                         <th>Weld</th>
                         <th>Final QC</th>
@@ -321,7 +443,7 @@ if (!empty($lotNumber)) {
             );
 
             // Determine overall status
-            const stationStatuses = ['NESTED', 'CUT', 'FIT', 'WELD', 'FINAL QC', 'SHIPPING'].map(station => {
+            const stationStatuses = ['CUT', 'FIT', 'WELD', 'FINAL QC', 'SHIPPING'].map(station => {
                 if (!assembly.Stations[station]) return 0;
                 return assembly.Stations[station].Completed / assembly.Stations[station].Total;
             });
@@ -344,9 +466,6 @@ if (!empty($lotNumber)) {
             } else if (stationStatuses[1] >= 0.98) { // Cut
                 overallStatus = 'Cut';
                 statusClass = 'partial';
-            } else if (stationStatuses[0] >= 0.98) { // Nested
-                overallStatus = 'Nested';
-                statusClass = 'partial';
             } else if (stationStatuses[0] > 0) {
                 overallStatus = 'In Progress';
                 statusClass = 'incomplete';
@@ -364,7 +483,7 @@ if (!empty($lotNumber)) {
             `;
 
             // Add each station cell
-            ['NESTED', 'CUT', 'FIT', 'WELD', 'FINAL QC', 'SHIPPING'].forEach(station => {
+            ['CUT', 'FIT', 'WELD', 'FINAL QC', 'SHIPPING'].forEach(station => {
                 if (assembly.Stations[station]) {
                     const percent = (assembly.Stations[station].Completed / assembly.Stations[station].Total) * 100;
                     const cellClass = percent >= 90 ? 'complete' :

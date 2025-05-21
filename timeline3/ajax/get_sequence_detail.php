@@ -35,14 +35,11 @@ $sql = "SELECT
    stations.Description as StationName,
    pciss.TotalQuantity,
    pciss.QuantityCompleted,
-   pcidest.QuantityShipped,
    pciseq.ProductionControlItemSequenceID,
    pcat.Description as Category,
    psubcat.Description as SubCategory,
    pca.GrossAssemblyWeightEach,
-   pca.DrawingNumber,
-   pca.ReportNumber,
-   pcia.MaterialGrade,
+   pcia.DrawingNumber,
    pcia.ApprovalStatusID,
    appstat.ApprovalStatus
 FROM productioncontroljobs pcj 
@@ -54,13 +51,10 @@ INNER JOIN productioncontrolitems pcia ON pcia.ProductionControlItemID = pca.Mai
 LEFT JOIN productioncontrolcategories AS pcat ON pcat.CategoryID = pcia.CategoryID
 LEFT JOIN productioncontrolsubcategories AS psubcat ON psubcat.SubCategoryID = pcia.SubCategoryID
 LEFT JOIN approvalstatuses AS appstat ON appstat.ApprovalStatusID = pcia.ApprovalStatusID
-INNER JOIN productioncontrolitemdestinations pcidest ON pcidest.SequenceID = pcseq.SequenceID 
-    AND pcidest.ProductionControlItemID = pca.MainPieceProductionControlItemID 
-    AND pcidest.PositionInRoute = 2
 LEFT JOIN (
    productioncontrolitemstationsummary pciss 
    INNER JOIN stations ON stations.StationID = pciss.StationID
-   AND stations.Description IN ('NESTED','CUT','FIT','WELD','FINAL QC')
+   AND stations.Description IN ('CUT','FIT','WELD','FINAL QC')
 ) ON pciss.ProductionControlItemID = pca.MainPieceProductionControlItemID AND pcseq.SequenceID
 WHERE pcj.JobNumber = :jobNumber 
 AND pcseq.AssemblyQuantity > 0
@@ -96,11 +90,8 @@ while ($row = $stmt->fetch()) {
             'LotNumber' => $row['LotNumber'],
             'WorkPackageNumber' => $row['WorkPackageNumber'],
             'MainMark' => $row['MainMark'],
-            'QuantityShipped' => $row['QuantityShipped'],
             'GrossAssemblyWeightEach' => Round($row['GrossAssemblyWeightEach'] * 2.20462, 1), // Convert to lbs
             'DrawingNumber' => $row['DrawingNumber'],
-            'ReportNumber' => $row['ReportNumber'],
-            'MaterialGrade' => $row['MaterialGrade'],
             'ApprovalStatusID' => $row['ApprovalStatusID'],
             'ApprovalStatus' => $row['ApprovalStatus'],
             'Stations' => []
@@ -113,23 +104,6 @@ while ($row = $stmt->fetch()) {
             'Total' => $row['TotalQuantity']
         ];
     }
-}
-
-// Add shipping station to each assembly
-foreach ($assemblies as &$assembly) {
-    if (isset($assembly['Stations']['FINAL QC'])) {
-        $assembly['Stations']['SHIPPING'] = [
-            'Completed' => $assembly['QuantityShipped'],
-            'Total' => $assembly['Stations']['FINAL QC']['Total']
-        ];
-    } else {
-        // If there's no Final QC data, create a placeholder with zeros
-        $assembly['Stations']['SHIPPING'] = [
-            'Completed' => $assembly['QuantityShipped'],
-            'Total' => 0
-        ];
-    }
-    unset($assembly['QuantityShipped']);
 }
 
 // Return the results
