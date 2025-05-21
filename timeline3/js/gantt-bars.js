@@ -67,7 +67,7 @@ GanttChart.Bars = (function() {
 
         // Add client approval badge to labels section
 
-            const clientApprovalBadge = createPercentageBadge(clientApproval, 'client-approval-badge', 'Client Approval')
+            const clientApprovalBadge = createPercentageBadge(clientApproval, 'client-approval-badge', 'Client Approval (manual entry in project management)')
                 .css({
                     'position': 'absolute',
                     'bottom': '5px',
@@ -232,14 +232,14 @@ GanttChart.Bars = (function() {
             const percentageIFF = task.PercentageIFF !== undefined ? task.PercentageIFF : task.percentageIFF;
             const percentageIFA = task.PercentageIFA !== undefined ? task.PercentageIFA : task.percentageIFA;
 
-            tooltipContent += `\nIFF from Tekla PieceMarks: ${percentageIFF}%\nIFA from Tekla PieceMarks: ${percentageIFA}%`;
+            tooltipContent += `\nIFF from Tekla Production Control PieceMarks: ${percentageIFF}%\nIFA from Tekla Production Control PieceMarks: ${percentageIFA}%`;
 
             if (task.ClientApprovalPercentComplete) {
                 tooltipContent += `\nClient Approval: ${task.ClientApprovalPercentComplete}%`;
             }
 
             if (task.DetailingIFFPercentComplete) {
-                tooltipContent += `\nDetailing IFF: ${task.DetailingIFFPercentComplete}%`;
+                tooltipContent += `\nDetailing IFF (from status update): ${task.DetailingIFFPercentComplete}%`;
             }
         }
 
@@ -290,25 +290,25 @@ GanttChart.Bars = (function() {
         const barWidth = parseFloat($bar.css('width'));
 
         // Create and add badges
-        const $topLeftBadge = createPercentageBadge(detailingIFFPercentComplete, 'badge-top-left', 'Detailing IFF')
+        const $topLeftBadge = createPercentageBadge(detailingIFFPercentComplete, 'badge-top-left', 'Detailing IFF (from status update)')
             .css({
                 'left': `20px`,
                 'top': '5px'
             });
 
-        const $bottomLeftBadge = createPercentageBadge(percentageCategorized, 'badge-bottom-left', 'Categorized')
+        const $bottomLeftBadge = createPercentageBadge(percentageCategorized, 'badge-bottom-left', 'Categorized (from Piecemarks that have categoryID in production control)')
             .css({
                 'left': `20px`,
                 'bottom': '5px'
             });
 
-        const $topRightBadge = createPercentageBadge(percentageIFA, 'badge-top-right', 'IFA from Tekla PieceMarks')
+        const $topRightBadge = createPercentageBadge(percentageIFA, 'badge-top-right', 'IFA from Tekla Production Control PieceMarks')
             .css({
                 'right': `20px`,
                 'top': '5px'
             });
 
-        const $bottomRightBadge = createPercentageBadge(percentageIFF, 'badge-bottom-right', 'IFF from Tekla PieceMarks')
+        const $bottomRightBadge = createPercentageBadge(percentageIFF, 'badge-bottom-right', 'IFF from Tekla Production Control PieceMarks')
             .css({
                 'right': `20px`,
                 'bottom': '5px'
