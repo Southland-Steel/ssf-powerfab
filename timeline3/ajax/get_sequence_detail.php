@@ -51,6 +51,7 @@ INNER JOIN productioncontrolitems pcia ON pcia.ProductionControlItemID = pca.Mai
 LEFT JOIN productioncontrolcategories AS pcat ON pcat.CategoryID = pcia.CategoryID
 LEFT JOIN productioncontrolsubcategories AS psubcat ON psubcat.SubCategoryID = pcia.SubCategoryID
 LEFT JOIN approvalstatuses AS appstat ON appstat.ApprovalStatusID = pcia.ApprovalStatusID
+LEFT join productioncontrolitemdestinations pcidest on pcidest.SequenceID = pcseq.SequenceID and pcidest.ProductionControlItemID = pca.MainPieceProductionControlItemID and pcidest.PositionInRoute = 2
 LEFT JOIN (
    productioncontrolitemstationsummary pciss 
    INNER JOIN stations ON stations.StationID = pciss.StationID

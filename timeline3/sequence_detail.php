@@ -67,13 +67,14 @@ try {
             // Format dates
             $startDate = !empty($taskInfo['ActualStartDate']) ? date('M j, Y', strtotime($taskInfo['ActualStartDate'])) : 'N/A';
             $endDate = !empty($taskInfo['ActualEndDate']) ? date('M j, Y', strtotime($taskInfo['ActualEndDate'])) : 'N/A';
+            $estimatedHours = round($taskInfo['EstimatedHours'], 1);
 
             // Build task info panel
             $taskInfoHtml = <<<HTML
             <div class="task-info-panel">
                 <div class="task-info-grid">
                     <div class="info-group">
-                        <h4>Project Information</h4>
+                        <h4>Sequence (Lot) Information</h4>
                         <div class="info-item">
                             <span class="info-label">Job Number:</span>
                             <span class="info-value">{$taskInfo['JobNumber']}</span>
@@ -100,7 +101,7 @@ try {
                         </div>
                         <div class="info-item">
                             <span class="info-label">Estimated Hours:</span>
-                            <span class="info-value">{$taskInfo['EstimatedHours']}</span>
+                            <span class="info-value">{$estimatedHours}</span>
                         </div>
                     </div>
                     
@@ -151,21 +152,6 @@ try {
         <!-- Filter buttons will be added here -->
     </div>
     <button id="toggle-complete" class="toggle-button">Show/Hide Completed</button>
-</div>
-
-<div id="summary-section">
-    <div class="panel">
-        <h3>Sequence Summary</h3>
-        <div id="sequence-summary" class="summary-content">
-            <div class="loading">Loading...</div>
-        </div>
-    </div>
-    <div class="panel">
-        <h3>Progress by Station</h3>
-        <div id="station-progress" class="summary-content">
-            <div class="loading">Loading...</div>
-        </div>
-    </div>
 </div>
 
 <div id="detail-table-container">
@@ -237,11 +223,6 @@ try {
             return 0;
         });
 
-        // Generate and render summary data
-        renderSummary(data);
-
-        // Generate and render station progress
-        renderStationProgress(data);
 
         // Build category filter buttons
         renderFilterButtons(data);
@@ -253,154 +234,6 @@ try {
         setupEventListeners();
     }
 
-    // Render sequence summary metrics
-    function renderSummary(data) {
-        let totalWeight = 0;
-        let totalAssemblies = data.length;
-        let completedAssemblies = 0;
-        let inProgressAssemblies = 0;
-        let notStartedAssemblies = 0;
-
-        // Category totals
-        const categoryTotals = {};
-
-        data.forEach(assembly => {
-            // Add to total weight
-            totalWeight += parseFloat(assembly.GrossAssemblyWeightEach) || 0;
-
-            // Categorize assembly completion status
-
-            const shippingProgress = assembly.Stations['SHIPPING']?.Completed / assembly.Stations['SHIPPING']?.Total || 0;
-
-            if (shippingProgress >= 0.98) {
-                completedAssemblies++;
-            } else {
-                notStartedAssemblies++;
-            }
-
-            // Count by category
-            const category = assembly.Category || 'Uncategorized';
-            if (!categoryTotals[category]) {
-                categoryTotals[category] = {
-                    count: 0,
-                    weight: 0
-                };
-            }
-            categoryTotals[category].count++;
-            categoryTotals[category].weight += parseFloat(assembly.GrossAssemblyWeightEach) || 0;
-        });
-
-        // Create summary HTML
-        let summaryHtml = `
-            <div class="summary-metrics">
-                <div class="metric">
-                    <span class="metric-value">${totalAssemblies}</span>
-                    <span class="metric-label">Total Assemblies</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-value">${totalWeight.toFixed(1)}</span>
-                    <span class="metric-label">Total Weight (lbs)</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-value">${completedAssemblies}</span>
-                    <span class="metric-label">Completed</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-value">${inProgressAssemblies}</span>
-                    <span class="metric-label">In Progress</span>
-                </div>
-                <div class="metric">
-                    <span class="metric-value">${notStartedAssemblies}</span>
-                    <span class="metric-label">Not Started</span>
-                </div>
-            </div>
-
-            <div class="category-breakdown">
-                <h4>Distribution by Category</h4>
-                <table class="summary-table">
-                    <thead>
-                        <tr>
-                            <th>Category</th>
-                            <th>Count</th>
-                            <th>Weight</th>
-                            <th>% of Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-
-        // Add category rows
-        Object.keys(categoryTotals).sort().forEach(category => {
-            const percentOfTotal = (categoryTotals[category].count / totalAssemblies * 100).toFixed(1);
-            summaryHtml += `
-                <tr>
-                    <td>${category}</td>
-                    <td>${categoryTotals[category].count}</td>
-                    <td>${categoryTotals[category].weight.toFixed(1)} lbs</td>
-                    <td>${percentOfTotal}%</td>
-                </tr>
-            `;
-        });
-
-        summaryHtml += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-
-        document.getElementById('sequence-summary').innerHTML = summaryHtml;
-    }
-
-    // Render station progress charts
-    function renderStationProgress(data) {
-        const stations = ['CUT', 'FIT', 'WELD', 'FINAL QC', 'SHIPPING'];
-        const stationTotals = {};
-
-        // Initialize station totals
-        stations.forEach(station => {
-            stationTotals[station] = {
-                total: 0,
-                completed: 0
-            };
-        });
-
-        // Calculate totals for each station
-        data.forEach(assembly => {
-            stations.forEach(station => {
-                if (assembly.Stations[station]) {
-                    stationTotals[station].total += assembly.Stations[station].Total;
-                    stationTotals[station].completed += assembly.Stations[station].Completed;
-                }
-            });
-        });
-
-        // Create station progress HTML
-        let progressHtml = `
-            <div class="station-progress-bars">
-        `;
-
-        stations.forEach(station => {
-            if (stationTotals[station].total > 0) {
-                const percent = (stationTotals[station].completed / stationTotals[station].total * 100).toFixed(1);
-                const statusClass = percent >= 90 ? 'complete' :
-                    percent >= 50 ? 'partial' :
-                        'incomplete';
-
-                progressHtml += `
-                    <div class="progress-item">
-                        <div class="progress-label">${station}</div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar ${statusClass}" style="width: ${percent}%"></div>
-                            <div class="progress-text">${stationTotals[station].completed} / ${stationTotals[station].total} (${percent}%)</div>
-                        </div>
-                    </div>
-                `;
-            }
-        });
-
-        progressHtml += `</div>`;
-        document.getElementById('station-progress').innerHTML = progressHtml;
-    }
 
     // Render filter buttons
     function renderFilterButtons(data) {
