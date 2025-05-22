@@ -1,20 +1,17 @@
 <?php
 /**
- * SQL Server Database Connection Class
- *
- * This class provides a connection to Microsoft SQL Server database
- * using PDO with ODBC or sqlsrv driver
+ * SQL Server Database Connection Class for AMPPS
+ * Uses ODBC which is available in your PHP installation
  */
 class Database {
     private $host = '192.168.81.85';
     private $port = '1433';
     private $username = 'sp.reporter';
-    private $password = 'Steelfr139!';
-    private $database = 'PLMSOUTHLAND'; // Update this with your actual database name
+    private $password = 'Steelfr139!'; // *** UPDATE THIS WITH YOUR ACTUAL PASSWORD ***
+    private $database = 'PLMSOUTHLAND'; // Update if different
     private $connection = null;
-    private $stmt = null;
     private $error = '';
-    private $driver = 'odbc'; // Options: 'odbc', 'sqlsrv', 'dblib'
+    private $connected = false;
 
     /**
      * Constructor - Initialize database connection
@@ -24,84 +21,87 @@ class Database {
     }
 
     /**
-     * Establish connection to SQL Server
+     * Establish connection to SQL Server using ODBC
      */
     private function connect() {
-        try {
-            // Try different connection methods based on available drivers
-            if ($this->driver === 'sqlsrv' && extension_loaded('pdo_sqlsrv')) {
-                // Method 1: Using PDO_SQLSRV (if installed)
-                $dsn = "sqlsrv:Server={$this->host},{$this->port};Database={$this->database}";
-                $options = array(
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::SQLSRV_ATTR_QUERY_TIMEOUT => 30,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-                );
-            } elseif ($this->driver === 'dblib' && extension_loaded('pdo_dblib')) {
-                // Method 2: Using PDO_DBLIB (common on Linux)
-                $dsn = "dblib:host={$this->host}:{$this->port};dbname={$this->database}";
-                $options = array(
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-                );
-            } else {
-                // Method 3: Using ODBC (most compatible, usually available on Windows)
-                $dsn = "odbc:Driver={SQL Server};Server={$this->host},{$this->port};Database={$this->database}";
-                // Alternative ODBC drivers to try:
-                // $dsn = "odbc:Driver={ODBC Driver 17 for SQL Server};Server={$this->host},{$this->port};Database={$this->database}";
-                // $dsn = "odbc:Driver={SQL Server Native Client 11.0};Server={$this->host},{$this->port};Database={$this->database}";
+        if (!function_exists('odbc_connect')) {
+            $this->error = "ODBC functions not available in PHP";
+            return false;
+        }
 
-                $options = array(
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-                );
+        // Try different ODBC driver names
+        $drivers = [
+            'SQL Server',  // This is what you have installed
+            'ODBC Driver 18 for SQL Server',
+            'ODBC Driver 17 for SQL Server',
+            'SQL Server Native Client 11.0',
+            'SQL Server Native Client 10.0'
+        ];
+
+        foreach ($drivers as $driver) {
+            // Build connection string
+            // For ODBC Driver 18, we need TrustServerCertificate=yes
+            $connectionString = "Driver={{$driver}};Server={$this->host},{$this->port};Database={$this->database}";
+
+            // Add trust certificate for newer drivers
+            if (strpos($driver, '17') !== false || strpos($driver, '18') !== false) {
+                $connectionString .= ";TrustServerCertificate=yes;Encrypt=no";
             }
 
-            $this->connection = new PDO($dsn, $this->username, $this->password, $options);
+            // Attempt connection with timeout
+            $this->connection = @odbc_connect($connectionString, $this->username, $this->password);
 
-        } catch (PDOException $e) {
-            $this->error = $e->getMessage();
-
-            // Try alternative ODBC connection string if first attempt fails
-            if (strpos($this->error, 'could not find driver') !== false ||
-                strpos($this->error, 'Data source name not found') !== false) {
-                try {
-                    // Try with different ODBC driver name
-                    $dsn = "odbc:Driver={ODBC Driver 17 for SQL Server};Server={$this->host},{$this->port};Database={$this->database}";
-                    $this->connection = new PDO($dsn, $this->username, $this->password, $options);
-                    $this->error = ''; // Clear error if successful
-                } catch (PDOException $e2) {
-                    $this->error = "Connection failed: " . $e2->getMessage() .
-                        "\n\nAvailable PDO drivers: " . implode(', ', PDO::getAvailableDrivers());
-                }
+            if ($this->connection) {
+                $this->connected = true;
+                $this->error = '';
+                break; // Success!
             }
+        }
 
-            if ($this->error) {
-                die("Database connection error: " . $this->error);
-            }
+        if (!$this->connected) {
+            $lastError = odbc_errormsg();
+            $this->error = "Failed to connect to SQL Server. Last error: " . $lastError;
+            $this->error .= "\nMake sure to: 1) Update the password, 2) Install ODBC Driver, 3) Check server accessibility";
         }
     }
 
     /**
-     * Execute SELECT query
-     *
-     * @param string $sql SQL query string
-     * @param array $params Parameters for prepared statement
-     * @return array|false Query results or false on error
+     * Execute SELECT query and return all results
      */
     public function query($sql, $params = array()) {
-        try {
-            $this->stmt = $this->connection->prepare($sql);
+        if (!$this->connected) {
+            $this->error = "Not connected to database";
+            return false;
+        }
 
-            if (empty($params)) {
-                $this->stmt->execute();
-            } else {
-                $this->stmt->execute($params);
+        try {
+            // For ODBC, we need to handle parameters differently
+            if (!empty($params)) {
+                $sql = $this->prepareQuery($sql, $params);
             }
 
-            return $this->stmt->fetchAll(PDO::FETCH_ASSOC);
+            $result = @odbc_exec($this->connection, $sql);
 
-        } catch (PDOException $e) {
+            if (!$result) {
+                $this->error = odbc_errormsg($this->connection);
+                return false;
+            }
+
+            $rows = array();
+            while ($row = odbc_fetch_array($result)) {
+                // Handle datetime objects
+                foreach ($row as $key => $value) {
+                    if ($value instanceof DateTime) {
+                        $row[$key] = $value->format('Y-m-d H:i:s');
+                    }
+                }
+                $rows[] = $row;
+            }
+
+            odbc_free_result($result);
+            return $rows;
+
+        } catch (Exception $e) {
             $this->error = $e->getMessage();
             return false;
         }
@@ -109,22 +109,28 @@ class Database {
 
     /**
      * Execute INSERT, UPDATE, DELETE queries
-     *
-     * @param string $sql SQL query string
-     * @param array $params Parameters for prepared statement
-     * @return bool True on success, false on error
      */
     public function execute($sql, $params = array()) {
-        try {
-            $this->stmt = $this->connection->prepare($sql);
+        if (!$this->connected) {
+            $this->error = "Not connected to database";
+            return false;
+        }
 
-            if (empty($params)) {
-                return $this->stmt->execute();
-            } else {
-                return $this->stmt->execute($params);
+        try {
+            if (!empty($params)) {
+                $sql = $this->prepareQuery($sql, $params);
             }
 
-        } catch (PDOException $e) {
+            $result = @odbc_exec($this->connection, $sql);
+
+            if (!$result) {
+                $this->error = odbc_errormsg($this->connection);
+                return false;
+            }
+
+            return true;
+
+        } catch (Exception $e) {
             $this->error = $e->getMessage();
             return false;
         }
@@ -132,96 +138,51 @@ class Database {
 
     /**
      * Get single row from query
-     *
-     * @param string $sql SQL query string
-     * @param array $params Parameters for prepared statement
-     * @return array|false Single row or false on error
      */
     public function queryRow($sql, $params = array()) {
-        try {
-            $this->stmt = $this->connection->prepare($sql);
-
-            if (empty($params)) {
-                $this->stmt->execute();
-            } else {
-                $this->stmt->execute($params);
-            }
-
-            return $this->stmt->fetch(PDO::FETCH_ASSOC);
-
-        } catch (PDOException $e) {
-            $this->error = $e->getMessage();
-            return false;
-        }
-    }
-
-    /**
-     * Get single value from query
-     *
-     * @param string $sql SQL query string
-     * @param array $params Parameters for prepared statement
-     * @return mixed Single value or false on error
-     */
-    public function queryValue($sql, $params = array()) {
-        $row = $this->queryRow($sql, $params);
-        if ($row && count($row) > 0) {
-            return reset($row); // Return first value
+        $results = $this->query($sql, $params);
+        if ($results && count($results) > 0) {
+            return $results[0];
         }
         return false;
     }
 
     /**
-     * Get number of affected rows
-     *
-     * @return int Number of affected rows
+     * Get single value from query
      */
-    public function affectedRows() {
-        if ($this->stmt) {
-            return $this->stmt->rowCount();
+    public function queryValue($sql, $params = array()) {
+        $row = $this->queryRow($sql, $params);
+        if ($row && count($row) > 0) {
+            return reset($row);
         }
-        return 0;
+        return false;
     }
 
     /**
-     * Get last insert ID
-     *
-     * @return string Last insert ID
+     * Basic parameter substitution for ODBC
      */
-    public function lastInsertId() {
-        return $this->connection->lastInsertId();
-    }
-
-    /**
-     * Begin transaction
-     *
-     * @return bool
-     */
-    public function beginTransaction() {
-        return $this->connection->beginTransaction();
-    }
-
-    /**
-     * Commit transaction
-     *
-     * @return bool
-     */
-    public function commit() {
-        return $this->connection->commit();
-    }
-
-    /**
-     * Rollback transaction
-     *
-     * @return bool
-     */
-    public function rollback() {
-        return $this->connection->rollBack();
+    private function prepareQuery($sql, $params) {
+        foreach ($params as $param) {
+            $pos = strpos($sql, '?');
+            if ($pos !== false) {
+                if (is_null($param)) {
+                    $value = 'NULL';
+                } elseif (is_numeric($param)) {
+                    $value = $param;
+                } elseif (is_bool($param)) {
+                    $value = $param ? 1 : 0;
+                } else {
+                    // Escape single quotes by doubling them
+                    $value = "'" . str_replace("'", "''", $param) . "'";
+                }
+                $sql = substr_replace($sql, $value, $pos, 1);
+            }
+        }
+        return $sql;
     }
 
     /**
      * Get last error message
-     *
-     * @return string Error message
      */
     public function getError() {
         return $this->error;
@@ -229,19 +190,30 @@ class Database {
 
     /**
      * Check if connected
-     *
-     * @return bool
      */
     public function isConnected() {
-        return $this->connection !== null;
+        return $this->connected;
+    }
+
+    /**
+     * Get number of affected rows
+     */
+    public function affectedRows() {
+        if ($this->connection) {
+            return odbc_num_rows($this->connection);
+        }
+        return 0;
     }
 
     /**
      * Close connection
      */
     public function close() {
-        $this->stmt = null;
-        $this->connection = null;
+        if ($this->connection) {
+            odbc_close($this->connection);
+            $this->connection = null;
+            $this->connected = false;
+        }
     }
 
     /**
@@ -252,68 +224,28 @@ class Database {
     }
 
     /**
-     * Escape string for SQL (basic protection)
-     * Note: Prepared statements are preferred
-     *
-     * @param string $string String to escape
-     * @return string Escaped string
-     */
-    public function escape($string) {
-        // For prepared statements, escaping is not necessary
-        // This is here for compatibility only
-        return $this->connection->quote($string);
-    }
-
-    /**
-     * Get available PDO drivers
-     *
-     * @return array Available drivers
-     */
-    public function getAvailableDrivers() {
-        return PDO::getAvailableDrivers();
-    }
-
-    /**
-     * Get server info
-     *
-     * @return string Server information
-     */
-    public function getServerInfo() {
-        if ($this->connection) {
-            return $this->connection->getAttribute(PDO::ATTR_SERVER_VERSION);
-        }
-        return false;
-    }
-
-    /**
-     * Test connection and show diagnostic info
-     *
-     * @return array Diagnostic information
+     * Test connection and return diagnostic info
      */
     public function testConnection() {
         $info = array(
-            'connected' => $this->isConnected(),
+            'connected' => $this->connected,
             'error' => $this->error,
-            'pdo_drivers' => PDO::getAvailableDrivers(),
-            'php_version' => PHP_VERSION,
-            'os' => PHP_OS
+            'host' => $this->host . ':' . $this->port,
+            'database' => $this->database,
+            'username' => $this->username
         );
 
-        if ($this->isConnected()) {
-            try {
-                $info['server_version'] = $this->getServerInfo();
-                $info['database'] = $this->database;
+        if ($this->connected) {
+            // Try to get SQL Server version
+            $version = $this->queryValue("SELECT @@VERSION");
+            if ($version) {
+                $info['sql_server_version'] = substr($version, 0, 100) . '...';
+            }
 
-                // Try a simple query
-                $result = $this->queryValue("SELECT @@VERSION");
-                $info['sql_server_version'] = $result;
-
-                // Test the specific table
-                $count = $this->queryValue("SELECT COUNT(*) FROM FEEDBACK_FBK_RAW");
+            // Try to count records in the feedback table
+            $count = $this->queryValue("SELECT COUNT(*) AS cnt FROM FEEDBACK_FBK_RAW");
+            if ($count !== false) {
                 $info['feedback_table_rows'] = $count;
-
-            } catch (Exception $e) {
-                $info['test_error'] = $e->getMessage();
             }
         }
 
@@ -321,19 +253,32 @@ class Database {
     }
 }
 
-// Diagnostic script - uncomment to test connection
+// Example usage and connection test:
 /*
 $db = new Database();
-$info = $db->testConnection();
-echo "<pre>";
-print_r($info);
-echo "</pre>";
 
-if (!$db->isConnected()) {
-    echo "\n\nTo fix this issue, you need to:\n";
-    echo "1. Install SQL Server ODBC driver or PDO_SQLSRV extension\n";
-    echo "2. Update the password in the Database class\n";
-    echo "3. Ensure SQL Server allows remote connections\n";
+if ($db->isConnected()) {
+    echo "✓ Connected to SQL Server successfully!\n\n";
+
+    // Test query
+    $machines = $db->query("
+        SELECT TOP 5
+            FFR_CNC AS Machine,
+            FFR_NEST AS Nest,
+            DATM AS LastUpdate
+        FROM FEEDBACK_FBK_RAW
+        WHERE FFR_CNC IS NOT NULL
+        ORDER BY DATM DESC
+    ");
+
+    if ($machines) {
+        echo "Recent machine activity:\n";
+        foreach ($machines as $machine) {
+            echo "- {$machine['Machine']} | Nest: {$machine['Nest']} | Updated: {$machine['LastUpdate']}\n";
+        }
+    }
+} else {
+    echo "✗ Connection failed: " . $db->getError() . "\n";
 }
 */
 ?>
