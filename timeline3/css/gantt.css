@@ -585,3 +585,103 @@ input:checked + .theme-switch-slider:before {
 #itemCountBadge {
     color: white !important;
 }
+
+/* Workweek visualization styles */
+.workweek-container {
+    position: relative;
+    height: 20px;
+    margin-top: 5px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+}
+
+.workweek-dots {
+    display: flex;
+    flex-grow: 1;
+    justify-content: space-between;
+    padding: 0 5px;
+    position: relative;
+}
+
+.workweek-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin: 0 3px;
+    position: relative;
+    cursor: help;
+}
+
+/* Status colors for dots */
+.workweek-dot.status-released {
+    background-color: #28a745; /* Green */
+}
+
+.workweek-dot.status-onhold {
+    background-color: #dc3545; /* Red */
+}
+
+.workweek-dot.status-pending {
+    background-color: #ffc107; /* Yellow/Amber */
+}
+
+/* Bracket styles */
+.workweek-bracket {
+    width: 5px;
+    height: 16px;
+    background-color: #6c757d; /* Gray */
+    position: relative;
+}
+
+.workweek-bracket-start {
+    border-radius: 3px 0 0 3px;
+    border-left: 2px solid #6c757d;
+    border-top: 2px solid #6c757d;
+    border-bottom: 2px solid #6c757d;
+}
+
+.workweek-bracket-end {
+    border-radius: 0 3px 3px 0;
+    border-right: 2px solid #6c757d;
+    border-top: 2px solid #6c757d;
+    border-bottom: 2px solid #6c757d;
+}
+
+/* Tooltip styling */
+.workweek-tooltip {
+    position: absolute;
+    background-color: #343a40;
+    color: white;
+    padding: 5px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    width: max-content;
+    max-width: 250px;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-bottom: 5px;
+    pointer-events: none;
+}
+
+.workweek-dot:hover .workweek-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Add a small triangle at the bottom of the tooltip */
+.workweek-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #343a40 transparent transparent transparent;
+}

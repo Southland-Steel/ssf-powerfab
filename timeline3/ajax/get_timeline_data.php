@@ -2,6 +2,7 @@
 /**
  * File: ajax/get_timeline_data.php
  * Enhanced endpoint for retrieving Gantt chart data with resource/task percentages
+ * and workweek information for visualization as dots
  */
 require_once('../../config_ssf_db.php');
 header('Content-Type: application/json');
@@ -268,6 +269,53 @@ LotLevelSummary AS (
         afp.RowGroupID
 ),
 
+-- Add workweek information CTE
+WorkWeekInfo AS (
+    SELECT 
+        CASE 
+            WHEN REPLACE(pcseq.LotNumber, CHAR(1), '') = '' THEN 
+                CONCAT(p.JobNumber, '.', REPLACE(pcseq.Description, CHAR(1), ''))
+            ELSE 
+                CONCAT(p.JobNumber, '.', REPLACE(pcseq.Description, CHAR(1), ''), '.', REPLACE(pcseq.LotNumber, CHAR(1), ''))
+        END AS RowGroupID,
+        wp.WorkPackageNumber,
+        wp.Group2 AS WorkWeek,
+        wp.ReleasedToFab,
+        wp.OnHold,
+        STR_TO_DATE(
+            CONCAT(
+                '20', -- For years 2000-2099
+                SUBSTRING(wp.Group2, 1, 2), -- Year
+                SUBSTRING(wp.Group2, 3, 2), -- Week
+                '1' -- First day of week (Monday)
+            ), 
+            '%Y%U%w'
+        ) AS WeekMonday,
+        
+        -- Calculate Friday date for the work week (Monday + 4 days)
+        DATE_ADD(
+            STR_TO_DATE(
+                CONCAT(
+                    '20', -- For years 2000-2099
+                    SUBSTRING(wp.Group2, 1, 2), -- Year
+                    SUBSTRING(wp.Group2, 3, 2), -- Week
+                    '1' -- First day of week (Monday)
+                ), 
+                '%Y%U%w'
+            ),
+            INTERVAL 4 DAY
+        ) AS WeekFriday
+    FROM productioncontrolsequences AS pcseq
+    INNER JOIN productioncontroljobs AS pcj ON pcj.ProductionControlID = pcseq.ProductionControlID
+    INNER JOIN projects AS p ON p.ProjectID = pcj.ProjectID
+    INNER JOIN workpackages AS wp ON wp.WorkPackageID = pcseq.WorkPackageID
+    WHERE 
+        pcseq.AssemblyQuantity > 0
+        AND wp.Completed = 0  -- Exclude completed workweeks as specified
+        AND wp.Group2 IS NOT NULL
+        AND wp.WorkshopID = 1
+),
+
 -- Final combined results
 CombinedResults AS (
     SELECT 
@@ -294,7 +342,62 @@ CombinedResults AS (
         COALESCE(s.HasPCI, 0) AS HasPCI,
         MAX(CASE WHEN rtp.OutputColumnName = 'ClientApproval' THEN rtp.PercentageComplete ELSE 0 END) AS ClientApprovalPercentComplete,
         MAX(CASE WHEN rtp.OutputColumnName = 'IFCDrawingsReceived' THEN rtp.PercentageComplete ELSE 0 END) AS IFCDrawingsReceivedPercentComplete,
-        MAX(CASE WHEN rtp.OutputColumnName = 'DetailingIFF' THEN rtp.PercentageComplete ELSE 0 END) AS DetailingIFFPercentComplete
+        MAX(CASE WHEN rtp.OutputColumnName = 'DetailingIFF' THEN rtp.PercentageComplete ELSE 0 END) AS DetailingIFFPercentComplete,
+        
+        -- Add workweek counts and GROUP_CONCAT fields
+        COUNT(DISTINCT wwi.WorkWeek) AS WorkWeekCount,
+        
+        -- Create comma-separated lists for workweeks
+        GROUP_CONCAT(DISTINCT wwi.WorkWeek ORDER BY wwi.WorkWeek SEPARATOR ',') AS WorkWeeks,
+        
+        -- Create comma-separated lists for workpackage numbers
+        GROUP_CONCAT(DISTINCT 
+            wwi.WorkPackageNumber 
+            ORDER BY wwi.WorkWeek 
+            SEPARATOR ','
+        ) AS WorkPackageNumbers,
+        
+        -- Create comma-separated lists for statuses (format: WorkWeek|ReleasedToFab|OnHold)
+        GROUP_CONCAT(DISTINCT 
+            CONCAT(wwi.WorkWeek, '|', IFNULL(wwi.ReleasedToFab, 0), '|', IFNULL(wwi.OnHold, 0)) 
+            ORDER BY wwi.WorkWeek 
+            SEPARATOR ','
+        ) AS WorkWeekStatuses,
+        
+        -- Create formatted date ranges for display
+        GROUP_CONCAT(DISTINCT 
+            CONCAT('WW', wwi.WorkWeek, ' (', 
+                DATE_FORMAT(wwi.WeekMonday, '%m/%d'), '-', 
+                DATE_FORMAT(wwi.WeekFriday, '%m/%d'), ')'
+            )
+            ORDER BY wwi.WorkWeek 
+            SEPARATOR ', '
+        ) AS WorkWeekFormatted,
+        
+        -- Create a JSON-formatted string for easy parsing in JavaScript
+        -- Corrected JSON construction with proper quote escaping
+        IFNULL(
+            CONCAT(
+                '[',
+                GROUP_CONCAT(
+                    JSON_OBJECT(
+                        'ww', wwi.WorkWeek,
+                        'wpn', wwi.WorkPackageNumber,
+                        'released', IF(wwi.ReleasedToFab IS NULL, 0, wwi.ReleasedToFab),
+                        'onhold', IF(wwi.OnHold IS NULL, 0, wwi.OnHold),
+                        'start', DATE_FORMAT(wwi.WeekMonday, '%Y-%m-%d'),
+                        'end', DATE_FORMAT(wwi.WeekFriday, '%Y-%m-%d'),
+                        'display', CONCAT('WW', wwi.WorkWeek, ' (', 
+                            DATE_FORMAT(wwi.WeekMonday, '%m/%d'), '-', 
+                            DATE_FORMAT(wwi.WeekFriday, '%m/%d'), ')')
+                    )
+                    SEPARATOR ','
+                ),
+                ']'
+            ),
+            '[]'
+        ) AS WorkWeekJSON
+        
     FROM ActiveFabricationProjects afp
     LEFT JOIN (
         SELECT * FROM SequenceLevelSummary
@@ -302,6 +405,7 @@ CombinedResults AS (
         SELECT * FROM LotLevelSummary
     ) s ON afp.RowGroupID = s.RowGroupID
     LEFT JOIN ResourceTaskPercentages rtp ON afp.RowGroupID = rtp.RowGroupID
+    LEFT JOIN WorkWeekInfo wwi ON afp.RowGroupID = wwi.RowGroupID
     GROUP BY
         afp.JobNumber,
         afp.SequenceName,
@@ -353,6 +457,15 @@ SELECT
     ROUND(ClientApprovalPercentComplete, 2) as ClientApprovalPercentComplete,
     ROUND(IFCDrawingsReceivedPercentComplete, 2) as IFCDrawingsReceivedPercentComplete,
     ROUND(DetailingIFFPercentComplete, 2) as DetailingIFFPercentComplete,
+    
+    -- Add workweek information fields
+    WorkWeekCount,
+    WorkWeeks,
+    WorkPackageNumbers,
+    WorkWeekStatuses,
+    WorkWeekFormatted,
+    WorkWeekJSON,
+    
     CASE 
         WHEN PercentCompleted > 0 AND PercentCompleted < 100 THEN 'in-progress'
         WHEN PercentCompleted >= 100 THEN 'completed'
@@ -410,6 +523,12 @@ function processQueryResults($rows) {
 
         if ($latestDate === null || strtotime($endDate) > strtotime($latestDate)) {
             $latestDate = $endDate;
+        }
+
+        // If WorkWeekJSON is empty or null, provide an empty array
+        if (empty($row['WorkWeekJSON']) || $row['WorkWeekJSON'] == '[]') {
+            $row['WorkWeekJSON'] = '[]';
+            $row['WorkWeekCount'] = 0;
         }
 
         // Add the row directly to tasks - it already has all the fields we need
