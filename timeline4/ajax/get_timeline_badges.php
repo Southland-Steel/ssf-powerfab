@@ -1,40 +1,13 @@
 <?php
 /**
  * File: ajax/get_timeline_badges.php
- * Endpoint for retrieving badge data for specific RowGroupIDs
+ * Endpoint for retrieving badge data using the same filter approach as timeline
  */
 require_once('../../config_ssf_db.php');
 header('Content-Type: application/json');
 
-// Get parameters from request
-$rowGroupIdsJson = isset($_POST['rowGroupIds']) ? $_POST['rowGroupIds'] : (isset($_GET['rowGroupIds']) ? $_GET['rowGroupIds'] : null);
+// Get filter from request - same as timeline endpoint
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
-
-// Validate input
-if (empty($rowGroupIdsJson)) {
-    echo json_encode(['error' => 'rowGroupIds parameter is required']);
-    exit;
-}
-
-// Parse the RowGroupIDs
-$rowGroupIds = json_decode($rowGroupIdsJson, true);
-if (!is_array($rowGroupIds) || empty($rowGroupIds)) {
-    echo json_encode(['error' => 'Invalid rowGroupIds format']);
-    exit;
-}
-
-// Sanitize RowGroupIDs for SQL (basic validation)
-$sanitizedIds = [];
-foreach ($rowGroupIds as $id) {
-    if (is_string($id) && preg_match('/^[A-Za-z0-9\.\-_]+$/', $id)) {
-        $sanitizedIds[] = $id;
-    }
-}
-
-if (empty($sanitizedIds)) {
-    echo json_encode(['error' => 'No valid rowGroupIds provided']);
-    exit;
-}
 
 // Parse filter to extract project filter
 $projectFilter = null;
@@ -56,17 +29,15 @@ foreach ($resourceTaskCombinations as $i => $combination) {
     $resourceTaskSql .= "SELECT '{$combination[0]}' AS ResourceName, '{$combination[1]}' AS TaskDescription, '{$combination[2]}' AS OutputColumnName";
 }
 
-// Create placeholders for the IN clause
-$placeholders = str_repeat('?,', count($sanitizedIds) - 1) . '?';
-
-// Build the query
+// Build the query - same base CTE as timeline, then add badge calculations
 $sql = "
-WITH TargetRowGroups AS (
+WITH ActiveFabricationProjects AS (
     SELECT DISTINCT 
         p.JobNumber,
         CASE 
-            WHEN sbde.Level = 1 THEN sbdeval.Description
+            WHEN sbde.Level = 1 THEN sbdeval.Description -- Level 1: Description is SequenceName
             WHEN sbde.Level = 2 THEN 
+                -- Level 2: Extract parent description as SequenceName
                 (SELECT parent_desc.Description 
                  FROM fabrication.schedulebreakdownelements parent
                  INNER JOIN scheduledescriptions parent_desc 
@@ -74,10 +45,11 @@ WITH TargetRowGroups AS (
                  WHERE parent.ScheduleBreakdownElementID = sbde.ParentScheduleBreakdownElementID)
         END AS SequenceName,
         CASE 
-            WHEN sbde.Level = 1 THEN NULL
-            WHEN sbde.Level = 2 THEN sbdeval.Description
+            WHEN sbde.Level = 1 THEN NULL -- Level 1: No LotNumber
+            WHEN sbde.Level = 2 THEN sbdeval.Description -- Level 2: Current description is LotNumber
         END AS LotNumber,
-        sbde.Level,
+        sbde.Level, -- Include level to distinguish between level 1 and level 2 records
+        -- Include RowGroupID as it appears in your original query
         CASE 
             WHEN sbde.Level = 1 THEN CONCAT(p.JobNumber,'.',sbdeval.Description)
             WHEN sbde.Level = 2 THEN 
@@ -108,7 +80,17 @@ WITH TargetRowGroups AS (
         AND sts.ActualStartDate IS NOT NULL
         AND sts.ActualEndDate IS NOT NULL
         " . ($projectFilter !== null ? "AND p.JobNumber = ?" : "") . "
-        AND CASE 
+),
+
+-- Define all resource/task combinations we want to track
+ResourceTaskCombinations AS (
+    $resourceTaskSql
+),
+
+-- Resource/task percentages
+ResourceTaskPercentages AS (
+    SELECT 
+        CASE 
             WHEN sbde.Level = 1 THEN CONCAT(p.JobNumber,'.',sbdeval.Description)
             WHEN sbde.Level = 2 THEN 
                 CONCAT(p.JobNumber,'.',
@@ -120,26 +102,10 @@ WITH TargetRowGroups AS (
                     sbdeval.Description
                 )
             ELSE sbdeval.Description
-        END IN ($placeholders)
-),
-
--- Define all resource/task combinations we want to track
-ResourceTaskCombinations AS (
-    $resourceTaskSql
-),
-
--- Resource/task percentages for target rows only
-ResourceTaskPercentages AS (
-    SELECT 
-        trg.RowGroupID,
+        END AS RowGroupID,
         rtc.OutputColumnName,
         AVG(sts.PercentCompleted) * 100 AS PercentageComplete
-    FROM TargetRowGroups trg
-    INNER JOIN fabrication.schedulebreakdownelements AS sbde ON 
-        CASE 
-            WHEN trg.Level = 1 THEN CONCAT(trg.JobNumber,'.',trg.SequenceName)
-            WHEN trg.Level = 2 THEN CONCAT(trg.JobNumber,'.',trg.SequenceName,'.',trg.LotNumber)
-        END = trg.RowGroupID
+    FROM fabrication.schedulebreakdownelements AS sbde
     INNER JOIN schedulebaselines as sbl ON sbl.ScheduleBaselineID = sbde.ScheduleBaselineID AND sbl.IsCurrent = 1
     INNER JOIN scheduledescriptions AS sbdeval ON sbdeval.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
     INNER JOIN scheduletasks as sts ON sts.ScheduleBreakdownElementID = sbde.ScheduleBreakdownElementID
@@ -153,27 +119,39 @@ ResourceTaskPercentages AS (
         p.JobStatusID IN (1,6)
         AND sbde.Level < 3
         AND sbdeval.Description IS NOT NULL
+        " . ($projectFilter !== null ? "AND p.JobNumber = ?" : "") . "
     GROUP BY 
-        trg.RowGroupID,
+        CASE 
+            WHEN sbde.Level = 1 THEN CONCAT(p.JobNumber,'.',sbdeval.Description)
+            WHEN sbde.Level = 2 THEN 
+                CONCAT(p.JobNumber,'.',
+                    (SELECT parent_desc.Description 
+                     FROM fabrication.schedulebreakdownelements parent
+                     INNER JOIN scheduledescriptions parent_desc ON parent_desc.ScheduleDescriptionID = parent.ScheduleBreakdownValueID
+                     WHERE parent.ScheduleBreakdownElementID = sbde.ParentScheduleBreakdownElementID),
+                    '.',
+                    sbdeval.Description
+                )
+            ELSE sbdeval.Description
+        END,
         rtc.OutputColumnName
 ),
 
--- Production control summary for target rows
-ProductionControlSummary AS (
+-- Production control summary
+SequenceLevelSummary AS (
     SELECT 
-        trg.RowGroupID,
+        afp.RowGroupID,
         ROUND(SUM(CASE WHEN aps.ApprovalStatus = 'IFF' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS PercentageIFF,
         ROUND(SUM(CASE WHEN aps.ApprovalStatus = 'IFA' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS PercentageIFA,
         ROUND(SUM(CASE WHEN pci.CategoryID IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS PercentageCategorized,
         CASE WHEN MAX(CASE WHEN pcseq.WorkPackageID IS NOT NULL THEN 1 ELSE 0 END) = 1 THEN 'Yes' ELSE 'No' END AS HasWorkpackages,
         COUNT(*) AS TotalItems,
         CASE WHEN COUNT(pci.ProductionControlItemID) > 0 THEN 1 ELSE 0 END AS HasPCI
-    FROM TargetRowGroups trg
+    FROM ActiveFabricationProjects afp
     LEFT JOIN productioncontrolsequences AS pcseq 
-        ON REPLACE(pcseq.Description, CHAR(1), '') = trg.SequenceName
+        ON REPLACE(pcseq.Description, CHAR(1), '') = afp.SequenceName
     LEFT JOIN productioncontrolitemsequences as pciseq 
-        ON pciseq.SequenceID = pcseq.SequenceID AND 
-           (trg.LotNumber IS NULL OR REPLACE(pcseq.LotNumber, CHAR(1), '') = trg.LotNumber)
+        ON pciseq.SequenceID = pcseq.SequenceID
     LEFT JOIN productioncontrolassemblies as pca 
         ON pca.ProductionControlAssemblyID = pciseq.ProductionControlAssemblyID
     LEFT JOIN productioncontrolitems as pci 
@@ -181,48 +159,87 @@ ProductionControlSummary AS (
     LEFT JOIN productioncontroljobs as pcj 
         ON pcj.ProductionControlID = pcseq.ProductionControlID
     LEFT JOIN projects as p 
-        ON p.ProjectID = pcj.ProjectID AND p.JobNumber = trg.JobNumber
+        ON p.ProjectID = pcj.ProjectID AND p.JobNumber = afp.JobNumber
     LEFT JOIN approvalstatuses as aps 
         ON aps.ApprovalStatusID = pci.ApprovalStatusID
     LEFT JOIN workpackages as wp 
         ON wp.WorkPackageID = pcseq.WorkPackageID
+    WHERE 
+        afp.Level = 1
     GROUP BY 
-        trg.RowGroupID
+        afp.RowGroupID
+),
+
+LotLevelSummary AS (
+    SELECT 
+        afp.RowGroupID,
+        ROUND(SUM(CASE WHEN aps.ApprovalStatus = 'IFF' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS PercentageIFF,
+        ROUND(SUM(CASE WHEN aps.ApprovalStatus = 'IFA' THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS PercentageIFA,
+        ROUND(SUM(CASE WHEN pci.CategoryID IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(*), 0), 2) AS PercentageCategorized,
+        CASE WHEN MAX(CASE WHEN pcseq.WorkPackageID IS NOT NULL THEN 1 ELSE 0 END) = 1 THEN 'Yes' ELSE 'No' END AS HasWorkpackages,
+        COUNT(*) AS TotalItems,
+        CASE WHEN COUNT(pci.ProductionControlItemID) > 0 THEN 1 ELSE 0 END AS HasPCI
+    FROM ActiveFabricationProjects afp
+    LEFT JOIN productioncontrolsequences AS pcseq 
+        ON REPLACE(pcseq.Description, CHAR(1), '') = afp.SequenceName
+    LEFT JOIN productioncontrolitemsequences as pciseq 
+        ON pciseq.SequenceID = pcseq.SequenceID AND 
+           (afp.LotNumber IS NULL OR REPLACE(pcseq.LotNumber, CHAR(1), '') = afp.LotNumber)
+    LEFT JOIN productioncontrolassemblies as pca 
+        ON pca.ProductionControlAssemblyID = pciseq.ProductionControlAssemblyID
+    LEFT JOIN productioncontrolitems as pci 
+        ON pci.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
+    LEFT JOIN productioncontroljobs as pcj 
+        ON pcj.ProductionControlID = pcseq.ProductionControlID
+    LEFT JOIN projects as p 
+        ON p.ProjectID = pcj.ProjectID AND p.JobNumber = afp.JobNumber
+    LEFT JOIN approvalstatuses as aps 
+        ON aps.ApprovalStatusID = pci.ApprovalStatusID
+    LEFT JOIN workpackages as wp 
+        ON wp.WorkPackageID = pcseq.WorkPackageID
+    WHERE 
+        afp.Level = 2
+    GROUP BY 
+        afp.RowGroupID
 )
 
 -- Final results
 SELECT 
-    trg.RowGroupID,
-    COALESCE(pcs.PercentageIFF, 0) AS PercentageIFF,
-    COALESCE(pcs.PercentageIFA, 0) AS PercentageIFA,
-    COALESCE(pcs.PercentageCategorized, 0) AS PercentageCategorized,
-    COALESCE(pcs.HasWorkpackages, 'No') AS HasWorkpackages,
-    COALESCE(pcs.TotalItems, 0) AS TotalItems,
-    COALESCE(pcs.HasPCI, 0) AS HasPCI,
+    afp.RowGroupID,
+    COALESCE(s.PercentageIFF, 0) AS PercentageIFF,
+    COALESCE(s.PercentageIFA, 0) AS PercentageIFA,
+    COALESCE(s.PercentageCategorized, 0) AS PercentageCategorized,
+    COALESCE(s.HasWorkpackages, 'No') AS HasWorkpackages,
+    COALESCE(s.TotalItems, 0) AS TotalItems,
+    COALESCE(s.HasPCI, 0) AS HasPCI,
     ROUND(MAX(CASE WHEN rtp.OutputColumnName = 'ClientApproval' THEN rtp.PercentageComplete ELSE 0 END), 2) AS ClientApprovalPercentComplete,
     ROUND(MAX(CASE WHEN rtp.OutputColumnName = 'IFCDrawingsReceived' THEN rtp.PercentageComplete ELSE 0 END), 2) AS IFCDrawingsReceivedPercentComplete,
     ROUND(MAX(CASE WHEN rtp.OutputColumnName = 'DetailingIFF' THEN rtp.PercentageComplete ELSE 0 END), 2) AS DetailingIFFPercentComplete
-FROM TargetRowGroups trg
-LEFT JOIN ProductionControlSummary pcs ON trg.RowGroupID = pcs.RowGroupID
-LEFT JOIN ResourceTaskPercentages rtp ON trg.RowGroupID = rtp.RowGroupID
+FROM ActiveFabricationProjects afp
+LEFT JOIN (
+    SELECT * FROM SequenceLevelSummary
+    UNION ALL
+    SELECT * FROM LotLevelSummary
+) s ON afp.RowGroupID = s.RowGroupID
+LEFT JOIN ResourceTaskPercentages rtp ON afp.RowGroupID = rtp.RowGroupID
 GROUP BY
-    trg.RowGroupID,
-    pcs.PercentageIFF,
-    pcs.PercentageIFA,
-    pcs.PercentageCategorized,
-    pcs.HasWorkpackages,
-    pcs.TotalItems,
-    pcs.HasPCI
-ORDER BY trg.RowGroupID
+    afp.RowGroupID,
+    COALESCE(s.PercentageIFF, 0),
+    COALESCE(s.PercentageIFA, 0),
+    COALESCE(s.PercentageCategorized, 0),
+    COALESCE(s.HasWorkpackages, 'No'),
+    COALESCE(s.TotalItems, 0),
+    COALESCE(s.HasPCI, 0)
+ORDER BY afp.RowGroupID
 ";
 
-// Prepare parameter array
+// Prepare parameter array - much simpler now
 $params = [];
 if ($projectFilter !== null) {
-    $params[] = $projectFilter;
+    // Add the parameter three times since it's used in three CTEs
+    $params[] = $projectFilter; // ActiveFabricationProjects
+    $params[] = $projectFilter; // ResourceTaskPercentages
 }
-// Add the RowGroupIDs to parameters
-$params = array_merge($params, $sanitizedIds);
 
 try {
     // Prepare and execute query
@@ -230,7 +247,7 @@ try {
     $stmt->execute($params);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Format response
+    // Format response as key-value pairs keyed by RowGroupID
     $badgeData = [];
     foreach ($rows as $row) {
         $badgeData[$row['RowGroupID']] = [
@@ -250,6 +267,6 @@ try {
 
 } catch (Exception $e) {
     error_log('Badge data query error: ' . $e->getMessage());
-    echo json_encode(['error' => 'Database error occurred']);
+    echo json_encode(['error' => 'Database error occurred: ' . $e->getMessage()]);
 }
 ?>

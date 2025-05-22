@@ -296,6 +296,17 @@
     pointer-events: none; /* Allows clicking through the line */
 }
 
+.planning-horizon-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    height: 100%;
+    background-color: #dc3545; /* Red color */
+    z-index: 1;
+    pointer-events: none; /* Allows clicking through the line */
+}
+
 /* Task bars */
 .task-bar {
     position: absolute;
@@ -613,40 +624,6 @@ input:checked + .theme-switch-slider:before {
     cursor: help;
 }
 
-/* Status colors for dots */
-.workweek-dot.status-released {
-    background-color: #28a745; /* Green */
-}
-
-.workweek-dot.status-onhold {
-    background-color: #dc3545; /* Red */
-}
-
-.workweek-dot.status-pending {
-    background-color: #ffc107; /* Yellow/Amber */
-}
-
-/* Bracket styles */
-.workweek-bracket {
-    width: 5px;
-    height: 16px;
-    background-color: #6c757d; /* Gray */
-    position: relative;
-}
-
-.workweek-bracket-start {
-    border-radius: 3px 0 0 3px;
-    border-left: 2px solid #6c757d;
-    border-top: 2px solid #6c757d;
-    border-bottom: 2px solid #6c757d;
-}
-
-.workweek-bracket-end {
-    border-radius: 0 3px 3px 0;
-    border-right: 2px solid #6c757d;
-    border-top: 2px solid #6c757d;
-    border-bottom: 2px solid #6c757d;
-}
 
 /* Tooltip styling */
 .workweek-tooltip {
@@ -684,4 +661,59 @@ input:checked + .theme-switch-slider:before {
     border-width: 5px;
     border-style: solid;
     border-color: #343a40 transparent transparent transparent;
+}
+/* Workweek visualization styles - add to gantt.css */
+.workweek-bracket {
+    position: absolute;
+    top: 12px;
+    width: 5px;
+    height: 35px;
+    z-index: 1001;
+}
+
+.workweek-bracket-start {
+    border-left: 2px solid #6c757d;
+    border-top: 2px solid #6c757d;
+    border-bottom: 2px solid #6c757d;
+    border-radius: 2px 0 0 2px;
+}
+
+.workweek-bracket-end {
+    border-right: 2px solid #6c757d;
+    border-top: 2px solid #6c757d;
+    border-bottom: 2px solid #6c757d;
+    border-radius: 0 2px 2px 0;
+}
+
+.workweek-dot {
+    position: absolute;
+    top: 25px;
+    width: 9px;
+    height: 9px;
+    height: 9px;
+    border-radius: 50%;
+    z-index: 1002;
+    cursor: help;
+    transition: transform 0.2s ease;
+    transform: translateX(-50%); /* Center the dot on its position */
+}
+
+.workweek-dot:hover {
+    transform: translateX(-50%) scale(1.3);
+}
+
+/* Status colors for workweek dots */
+.workweek-dot.status-released {
+    background-color: #28a745; /* Green for released */
+    border: 1px solid #1e7e34;
+}
+
+.workweek-dot.status-onhold {
+    background-color: #dc3545; /* Red for on hold */
+    border: 1px solid #bd2130;
+}
+
+.workweek-dot.status-pending {
+    background-color: #ffc107; /* Yellow for pending */
+    border: 1px solid #e0a800;
 }

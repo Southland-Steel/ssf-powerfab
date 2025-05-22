@@ -1,7 +1,6 @@
 /**
  * File: js/gantt-bars.js
- * Handles rendering task bars for the Gantt chart
- * Refactored to add percentage badges
+ * Handles rendering task bars for the Gantt chart with progressive enhancement
  */
 GanttChart.Bars = (function() {
     'use strict';
@@ -56,48 +55,16 @@ GanttChart.Bars = (function() {
             .attr('data-project', task.project)
             .attr('data-start-date', task.startDate)
             .attr('data-end-date', task.endDate)
-            .attr('data-level', task.level);  // Add level attribute for filtering
+            .attr('data-level', task.level)
+            .attr('data-row-group-id', task.RowGroupID || task.rowGroupId);
 
         // Create labels section
         const $labels = $('<div class="gantt-labels"></div>');
 
-        // Check for client approval complete and add special class
-        const clientApproval = task.ClientApprovalPercentComplete || 0;
-        $row.attr('data-client-approval', clientApproval);
-
-        // Add client approval badge to labels section
-
-            const clientApprovalBadge = createPercentageBadge(clientApproval, 'client-approval-badge', 'Client Approval (manual entry in project management)')
-                .css({
-                    'position': 'absolute',
-                    'bottom': '5px',
-                    'right': '5px',
-                    'transform': 'none' // Override the translateX(-50%)
-                });
-            $labels.append(clientApprovalBadge);
-
-
         // Extract project and element from rowGroupId
-        let parts = task.RowGroupId ? task.RowGroupId.split('.') : (task.rowGroupId ? task.rowGroupId.split('.') : [task.project, task.description]);
+        let parts = task.RowGroupID ? task.RowGroupID.split('.') : (task.rowGroupId ? task.rowGroupId.split('.') : [task.project, task.description]);
         const project = parts.shift(); // First part is project
         const element = parts.join('.'); // Rest is element path
-
-        // Format dates using GanttChart.Core.formatDate for consistency
-        const startFormatted = GanttChart.Core.formatDate(task.startDate);
-        const endFormatted = GanttChart.Core.formatDate(task.endDate);
-
-        // Prepare additional metrics if they exist
-        let additionalMetrics = '';
-
-        // Check if this is the enhanced data format by checking for new fields
-        if (task.PercentageIFF !== undefined || task.HasPCI !== undefined) {
-            const percentageIFF = typeof task.PercentageIFF !== 'undefined' ? task.PercentageIFF : (typeof task.percentageIFF !== 'undefined' ? task.percentageIFF : 0);
-            const percentageIFA = typeof task.PercentageIFA !== 'undefined' ? task.PercentageIFA : (typeof task.percentageIFA !== 'undefined' ? task.percentageIFA : 0);
-
-            if (percentageIFF > 0 || percentageIFA > 0) {
-                additionalMetrics = `<div class="task-metrics">IFF: ${percentageIFF}% | IFA: ${percentageIFA}%</div>`;
-            }
-        }
 
         // Get sequence and lot info
         const sequenceName = task.SequenceName || task.sequenceName || element;
@@ -112,7 +79,7 @@ GanttChart.Bars = (function() {
             </div>
         `;
 
-        $labels.prepend(labelContent);
+        $labels.html(labelContent);
 
         // Append labels to row
         $row.append($labels);
@@ -130,6 +97,82 @@ GanttChart.Bars = (function() {
         $row.append($timeline);
 
         return $row;
+    }
+
+    /**
+     * Apply badge data to an existing task row
+     * @param {jQuery} $row - The task row element
+     * @param {Object} badges - Badge data object
+     */
+    function applyBadges($row, badges) {
+        const $timeline = $row.find('.gantt-timeline');
+
+        if (!$timeline.length) {
+            return;
+        }
+
+        // Store badge data as attributes for filtering
+        $row.attr('data-client-approval', badges.ClientApprovalPercentComplete || 0);
+
+        // Client approval badge in labels section
+        const $labels = $row.find('.gantt-labels');
+        const clientApprovalBadge = createPercentageBadge(
+            badges.ClientApprovalPercentComplete || 0,
+            'client-approval-badge',
+            'Client Approval (manual entry in project management)'
+        ).css({
+            'position': 'absolute',
+            'bottom': '5px',
+            'right': '5px',
+            'transform': 'none' // Override the translateX(-50%)
+        });
+        $labels.append(clientApprovalBadge);
+
+        // Extract percentage values
+        const percentageIFF = badges.PercentageIFF || 0;
+        const percentageIFA = badges.PercentageIFA || 0;
+        const percentageCategorized = badges.PercentageCategorized || 0;
+        const detailingIFFPercentComplete = badges.DetailingIFFPercentComplete || 0;
+
+        // Create and add badges to timeline
+        const $topLeftBadge = createPercentageBadge(
+            detailingIFFPercentComplete,
+            'badge-top-left',
+            'Detailing IFF (from status update)'
+        ).css({
+            'left': '20px',
+            'top': '5px'
+        });
+
+        const $bottomLeftBadge = createPercentageBadge(
+            percentageCategorized,
+            'badge-bottom-left',
+            'Categorized (from Piecemarks that have categoryID in production control)'
+        ).css({
+            'left': '20px',
+            'bottom': '5px'
+        });
+
+        const $topRightBadge = createPercentageBadge(
+            percentageIFA,
+            'badge-top-right',
+            'IFA from Tekla Production Control PieceMarks'
+        ).css({
+            'right': '20px',
+            'top': '5px'
+        });
+
+        const $bottomRightBadge = createPercentageBadge(
+            percentageIFF,
+            'badge-bottom-right',
+            'IFF from Tekla Production Control PieceMarks'
+        ).css({
+            'right': '20px',
+            'bottom': '5px'
+        });
+
+        // Add badges to timeline
+        $timeline.append($topLeftBadge, $bottomLeftBadge, $topRightBadge, $bottomRightBadge);
     }
 
     /**
@@ -179,6 +222,21 @@ GanttChart.Bars = (function() {
 
             $timeline.append($todayLine);
         }
+
+        // Add planning horizon line (8 weeks from today)
+        const planningHorizonDate = new Date(today);
+        planningHorizonDate.setDate(planningHorizonDate.getDate() + (8 * 7)); // 8 weeks = 56 days
+
+        const planningHorizonPos = GanttChart.TimeUtils.dateToPosition(planningHorizonDate);
+
+        if (planningHorizonPos >= 0 && planningHorizonPos <= 100) {
+            // Create planning horizon line
+            const $planningLine = $('<div class="planning-horizon-line"></div>')
+                .css('left', planningHorizonPos + '%')
+                .attr('title', 'Planning Horizon (8 weeks): ' + GanttChart.Core.formatDate(planningHorizonDate));
+
+            $timeline.append($planningLine);
+        }
     }
 
     /**
@@ -216,32 +274,17 @@ GanttChart.Bars = (function() {
                 'left': startPos + '%',
                 'width': width + '%'
             })
-            .attr('data-task-id', task.id);
+            .attr('data-task-id', task.id)
+            .attr('data-row-group-id', task.RowGroupID || task.rowGroupId);
 
-        // Create tooltip content - include new metrics if available
+        // Create tooltip content
         let tooltipContent = `
         ${task.taskDescription || task.description}
         Start: ${GanttChart.Core.formatDate(task.startDate)}
         End: ${GanttChart.Core.formatDate(task.endDate)}
         Progress: ${task.percentage}%
-        ${task.hours ? 'Hours: ' + Math.round(task.hours,0) : ''}
-    `;
-
-        // Add any enhanced data to tooltip if available
-        if (task.PercentageIFF !== undefined || task.percentageIFF !== undefined) {
-            const percentageIFF = task.PercentageIFF !== undefined ? task.PercentageIFF : task.percentageIFF;
-            const percentageIFA = task.PercentageIFA !== undefined ? task.PercentageIFA : task.percentageIFA;
-
-            tooltipContent += `\nIFF from Tekla Production Control PieceMarks: ${percentageIFF}%\nIFA from Tekla Production Control PieceMarks: ${percentageIFA}%`;
-
-            if (task.ClientApprovalPercentComplete) {
-                tooltipContent += `\nClient Approval: ${task.ClientApprovalPercentComplete}%`;
-            }
-
-            if (task.DetailingIFFPercentComplete) {
-                tooltipContent += `\nDetailing IFF (from status update): ${task.DetailingIFFPercentComplete}%`;
-            }
-        }
+        ${task.hours ? 'Hours: ' + Math.round(task.hours, 0) : ''}
+        `;
 
         $bar.attr('title', tooltipContent);
 
@@ -257,7 +300,7 @@ GanttChart.Bars = (function() {
             .text(task.taskDescription || task.description || 'Task');
         $bar.append($taskLabel);
 
-        // MODIFIED: Change click event to navigate to sequence_detail.php instead of showing modal
+        // Add click event to navigate to sequence_detail.php
         $bar.on('click', function() {
             // Extract jobNumber from project attribute
             const jobNumber = task.project;
@@ -278,45 +321,6 @@ GanttChart.Bars = (function() {
         // Add the bar to the timeline
         $timeline.append($bar);
 
-        // Extract percentage values
-        const percentageIFF = typeof task.PercentageIFF !== 'undefined' ? task.PercentageIFF : (typeof task.percentageIFF !== 'undefined' ? task.percentageIFF : 0);
-        const percentageIFA = typeof task.PercentageIFA !== 'undefined' ? task.PercentageIFA : (typeof task.percentageIFA !== 'undefined' ? task.percentageIFA : 0);
-        const percentageCategorized = typeof task.PercentageCategorized !== 'undefined' ? task.PercentageCategorized : 0;
-        const detailingIFFPercentComplete = typeof task.DetailingIFFPercentComplete !== 'undefined' ? task.DetailingIFFPercentComplete : 0;
-
-        // Create badges and position them in the timeline (not inside the bar)
-        // Calculate badge positions based on the bar's position
-        const barOffset = parseFloat($bar.css('left'));
-        const barWidth = parseFloat($bar.css('width'));
-
-        // Create and add badges
-        const $topLeftBadge = createPercentageBadge(detailingIFFPercentComplete, 'badge-top-left', 'Detailing IFF (from status update)')
-            .css({
-                'left': `20px`,
-                'top': '5px'
-            });
-
-        const $bottomLeftBadge = createPercentageBadge(percentageCategorized, 'badge-bottom-left', 'Categorized (from Piecemarks that have categoryID in production control)')
-            .css({
-                'left': `20px`,
-                'bottom': '5px'
-            });
-
-        const $topRightBadge = createPercentageBadge(percentageIFA, 'badge-top-right', 'IFA from Tekla Production Control PieceMarks')
-            .css({
-                'right': `20px`,
-                'top': '5px'
-            });
-
-        const $bottomRightBadge = createPercentageBadge(percentageIFF, 'badge-bottom-right', 'IFF from Tekla Production Control PieceMarks')
-            .css({
-                'right': `20px`,
-                'bottom': '5px'
-            });
-
-        // Add badges directly to timeline
-        $timeline.append($topLeftBadge, $bottomLeftBadge, $topRightBadge, $bottomRightBadge);
-
         // Check if task is late
         const today = GanttChart.Core.getToday();
         if (parsedEndDate < today && task.percentage < 100) {
@@ -328,8 +332,82 @@ GanttChart.Bars = (function() {
         }
     }
 
+    /**
+     * Add workweek dots to the timeline
+     * @param {jQuery} $timeline - Timeline element
+     * @param {Array} workweeks - Array of workweek objects
+     */
+    function addWorkweekDots($timeline, workweeks) {
+        if (!workweeks || workweeks.length === 0) {
+            return;
+        }
+
+        // Calculate the earliest and latest workweek dates for bracket positioning
+        const firstWorkweek = workweeks[0];
+        const lastWorkweek = workweeks[workweeks.length - 1];
+
+        // Parse the start and end dates
+        const startDate = GanttChart.Core.parseDate(firstWorkweek.start);
+        const endDate = GanttChart.Core.parseDate(lastWorkweek.end);
+
+        if (!startDate || !endDate) {
+            console.error('Invalid workweek dates');
+            return;
+        }
+
+        // Calculate positions using TimeUtils
+        const startPos = GanttChart.TimeUtils.dateToPosition(startDate);
+        const endPos = GanttChart.TimeUtils.dateToPosition(endDate);
+
+        // Add start bracket
+        const $startBracket = $('<div class="workweek-bracket workweek-bracket-start"></div>')
+            .css('left', startPos + '%')
+            .attr('title', `First workweek starts: ${firstWorkweek.start}`);
+        $timeline.append($startBracket);
+
+        // Add end bracket
+        const $endBracket = $('<div class="workweek-bracket workweek-bracket-end"></div>')
+            .css('left', endPos + '%')
+            .attr('title', `Last workweek ends: ${lastWorkweek.end}`);
+        $timeline.append($endBracket);
+
+        // Add dots for each workweek
+        workweeks.forEach(workweek => {
+            // Use Wednesday date for positioning the dot (center of workweek)
+            const workweekWednesdayDate = GanttChart.Core.parseDate(workweek.wednesday);
+            if (!workweekWednesdayDate) {
+                return;
+            }
+
+            const dotPos = GanttChart.TimeUtils.dateToPosition(workweekWednesdayDate);
+
+            // Create dot element
+            const $dot = $('<div class="workweek-dot"></div>')
+                .css('left', dotPos + '%');
+
+            // Set status class
+            if (parseInt(workweek.onhold) === 1) {
+                $dot.addClass('status-onhold');
+            } else if (parseInt(workweek.released) === 1) {
+                $dot.addClass('status-released');
+            } else {
+                $dot.addClass('status-pending');
+            }
+
+            // Create tooltip content
+            const tooltipText = `${workweek.display}\nWork Package: ${workweek.wpn || 'N/A'}\nStatus: ${parseInt(workweek.released) === 1 ? 'Released' : (parseInt(workweek.onhold) === 1 ? 'On Hold' : 'Pending')}`;
+            $dot.attr('title', tooltipText);
+
+            $timeline.append($dot);
+        });
+    }
+
     // Public API
     return {
-        generate: generateBars
+        generate: generateBars,
+        createSingleTaskRow: createSingleTaskRow,
+        applyBadges: applyBadges,
+        createPercentageBadge: createPercentageBadge,
+        addWorkweekDots: addWorkweekDots
     };
 })();

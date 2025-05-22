@@ -1,40 +1,13 @@
 <?php
 /**
  * File: ajax/get_timeline_workweeks.php
- * Endpoint for retrieving workweek data for specific RowGroupIDs
+ * Endpoint for retrieving workweek data using the same filter approach as timeline
  */
 require_once('../../config_ssf_db.php');
 header('Content-Type: application/json');
 
-// Get parameters from request
-$rowGroupIdsJson = isset($_POST['rowGroupIds']) ? $_POST['rowGroupIds'] : (isset($_GET['rowGroupIds']) ? $_GET['rowGroupIds'] : null);
+// Get filter from request - same as timeline endpoint
 $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
-
-// Validate input
-if (empty($rowGroupIdsJson)) {
-    echo json_encode(['error' => 'rowGroupIds parameter is required']);
-    exit;
-}
-
-// Parse the RowGroupIDs
-$rowGroupIds = json_decode($rowGroupIdsJson, true);
-if (!is_array($rowGroupIds) || empty($rowGroupIds)) {
-    echo json_encode(['error' => 'Invalid rowGroupIds format']);
-    exit;
-}
-
-// Sanitize RowGroupIDs for SQL (basic validation)
-$sanitizedIds = [];
-foreach ($rowGroupIds as $id) {
-    if (is_string($id) && preg_match('/^[A-Za-z0-9\.\-_]+$/', $id)) {
-        $sanitizedIds[] = $id;
-    }
-}
-
-if (empty($sanitizedIds)) {
-    echo json_encode(['error' => 'No valid rowGroupIds provided']);
-    exit;
-}
 
 // Parse filter to extract project filter
 $projectFilter = null;
@@ -42,18 +15,61 @@ if ($filter !== 'all' && preg_match('/^[A-Za-z0-9\-]+$/', $filter)) {
     $projectFilter = $filter;
 }
 
-// Create placeholders for the IN clause
-$placeholders = str_repeat('?,', count($sanitizedIds) - 1) . '?';
-
-// Build the workweek query
+// Build the workweek query - using the same CTE as timeline for consistent RowGroupIDs
 $sql = "
+WITH ActiveFabricationProjects AS (
+    SELECT DISTINCT 
+        p.JobNumber,
+        CASE 
+            WHEN sbde.Level = 1 THEN sbdeval.Description -- Level 1: Description is SequenceName
+            WHEN sbde.Level = 2 THEN 
+                -- Level 2: Extract parent description as SequenceName
+                (SELECT parent_desc.Description 
+                 FROM fabrication.schedulebreakdownelements parent
+                 INNER JOIN scheduledescriptions parent_desc 
+                     ON parent_desc.ScheduleDescriptionID = parent.ScheduleBreakdownValueID
+                 WHERE parent.ScheduleBreakdownElementID = sbde.ParentScheduleBreakdownElementID)
+        END AS SequenceName,
+        CASE 
+            WHEN sbde.Level = 1 THEN NULL -- Level 1: No LotNumber
+            WHEN sbde.Level = 2 THEN sbdeval.Description -- Level 2: Current description is LotNumber
+        END AS LotNumber,
+        sbde.Level,
+        -- Include RowGroupID as it appears in your original query
+        CASE 
+            WHEN sbde.Level = 1 THEN CONCAT(p.JobNumber,'.',sbdeval.Description)
+            WHEN sbde.Level = 2 THEN 
+                CONCAT(p.JobNumber,'.',
+                    (SELECT parent_desc.Description 
+                     FROM fabrication.schedulebreakdownelements parent
+                     INNER JOIN scheduledescriptions parent_desc ON parent_desc.ScheduleDescriptionID = parent.ScheduleBreakdownValueID
+                     WHERE parent.ScheduleBreakdownElementID = sbde.ParentScheduleBreakdownElementID),
+                    '.',
+                    sbdeval.Description
+                )
+            ELSE sbdeval.Description
+        END AS RowGroupID
+    FROM fabrication.schedulebreakdownelements AS sbde
+    INNER JOIN schedulebaselines as sbl ON sbl.ScheduleBaselineID = sbde.ScheduleBaselineID AND sbl.IsCurrent = 1
+    INNER JOIN scheduledescriptions AS sbdeval ON sbdeval.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
+    INNER JOIN scheduletasks as sts ON sts.ScheduleBreakdownElementID = sbde.ScheduleBreakdownElementID
+    INNER JOIN resources ON resources.ResourceID = sts.ResourceID
+    INNER JOIN projects as p ON p.ProjectID = sts.ProjectID
+    INNER JOIN scheduledescriptions as sd ON sd.ScheduleDescriptionID = sts.ScheduleDescriptionID
+    WHERE 
+        p.JobStatusID IN (1,6)
+        AND sbde.Level < 3
+        AND sts.PercentCompleted < 0.99
+        AND resources.Description = 'Fabrication'
+        AND sd.Description = 'Fabrication'
+        AND sbdeval.Description IS NOT NULL
+        AND sts.ActualStartDate IS NOT NULL
+        AND sts.ActualEndDate IS NOT NULL
+        " . ($projectFilter !== null ? "AND p.JobNumber = ?" : "") . "
+)
+
 SELECT 
-    CASE 
-        WHEN REPLACE(pcseq.LotNumber, CHAR(1), '') = '' OR REPLACE(pcseq.LotNumber, CHAR(1), '') IS NULL THEN 
-            CONCAT(p.JobNumber, '.', REPLACE(pcseq.Description, CHAR(1), ''))
-        ELSE 
-            CONCAT(p.JobNumber, '.', REPLACE(pcseq.Description, CHAR(1), ''), '.', REPLACE(pcseq.LotNumber, CHAR(1), ''))
-    END AS RowGroupID,
+    afp.RowGroupID,
     COUNT(DISTINCT wp.Group2) AS WorkWeekCount,
     GROUP_CONCAT(DISTINCT wp.Group2 ORDER BY wp.Group2 SEPARATOR ',') AS WorkWeeks,
     GROUP_CONCAT(DISTINCT 
@@ -127,6 +143,20 @@ SELECT
                         INTERVAL 4 DAY
                     ), '%Y-%m-%d'
                 ), ''), '\",',
+                '\"wednesday\":\"', IFNULL(DATE_FORMAT(
+                    DATE_ADD(
+                        STR_TO_DATE(
+                            CONCAT(
+                                '20', -- For years 2000-2099
+                                SUBSTRING(wp.Group2, 1, 2), -- Year
+                                SUBSTRING(wp.Group2, 3, 2), -- Week
+                                '1' -- First day of week (Monday)
+                            ), 
+                            '%Y%U%w'
+                        ),
+                        INTERVAL 2 DAY
+                    ), '%Y-%m-%d'
+                ), ''), '\",',
                 '\"display\":\"WW', IFNULL(wp.Group2, ''), ' (', 
                 IFNULL(DATE_FORMAT(
                     STR_TO_DATE(
@@ -160,39 +190,28 @@ SELECT
         ),
     ']') AS WorkWeekJSON
     
-FROM productioncontrolsequences AS pcseq
+FROM ActiveFabricationProjects afp
+INNER JOIN productioncontrolsequences AS pcseq 
+    ON REPLACE(pcseq.Description, CHAR(1), '') = afp.SequenceName
+    AND (afp.LotNumber IS NULL OR REPLACE(pcseq.LotNumber, CHAR(1), '') = afp.LotNumber)
 INNER JOIN productioncontroljobs AS pcj ON pcj.ProductionControlID = pcseq.ProductionControlID
-INNER JOIN projects AS p ON p.ProjectID = pcj.ProjectID
+INNER JOIN projects AS p ON p.ProjectID = pcj.ProjectID AND p.JobNumber = afp.JobNumber
 INNER JOIN workpackages AS wp ON wp.WorkPackageID = pcseq.WorkPackageID
 WHERE 
     pcseq.AssemblyQuantity > 0
     AND wp.Completed = 0  -- Exclude completed workweeks as specified
     AND wp.Group2 IS NOT NULL
     AND wp.WorkshopID = 1
-    " . ($projectFilter !== null ? "AND p.JobNumber = ?" : "") . "
-    AND CASE 
-        WHEN REPLACE(pcseq.LotNumber, CHAR(1), '') = '' OR REPLACE(pcseq.LotNumber, CHAR(1), '') IS NULL THEN 
-            CONCAT(p.JobNumber, '.', REPLACE(pcseq.Description, CHAR(1), ''))
-        ELSE 
-            CONCAT(p.JobNumber, '.', REPLACE(pcseq.Description, CHAR(1), ''), '.', REPLACE(pcseq.LotNumber, CHAR(1), ''))
-    END IN ($placeholders)
 GROUP BY 
-    CASE 
-        WHEN REPLACE(pcseq.LotNumber, CHAR(1), '') = '' OR REPLACE(pcseq.LotNumber, CHAR(1), '') IS NULL THEN 
-            CONCAT(p.JobNumber, '.', REPLACE(pcseq.Description, CHAR(1), ''))
-        ELSE 
-            CONCAT(p.JobNumber, '.', REPLACE(pcseq.Description, CHAR(1), ''), '.', REPLACE(pcseq.LotNumber, CHAR(1), ''))
-    END
-ORDER BY RowGroupID
+    afp.RowGroupID
+ORDER BY afp.RowGroupID
 ";
 
-// Prepare parameter array
+// Prepare parameter array - much simpler now
 $params = [];
 if ($projectFilter !== null) {
     $params[] = $projectFilter;
 }
-// Add the RowGroupIDs to parameters
-$params = array_merge($params, $sanitizedIds);
 
 try {
     // Prepare and execute query
@@ -200,7 +219,7 @@ try {
     $stmt->execute($params);
     $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Format response
+    // Format response as key-value pairs keyed by RowGroupID
     $workweekData = [];
     foreach ($rows as $row) {
         // Ensure JSON is valid - if empty, set to empty array
@@ -222,6 +241,6 @@ try {
 
 } catch (Exception $e) {
     error_log('Workweek data query error: ' . $e->getMessage());
-    echo json_encode(['error' => 'Database error occurred']);
+    echo json_encode(['error' => 'Database error occurred: ' . $e->getMessage()]);
 }
 ?>
