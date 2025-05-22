@@ -13,7 +13,7 @@ The Gantt chart visualizes data from the following database tables:
 - `productioncontrolsequences`: Contains sequence information
 - `productioncontrolitemsequences`: Links sequences to assemblies
 - `productioncontrolassemblies`: Contains assembly information
-- `productioncontrolitems`: Contains individual items
+- `productioncontrolitems`: Contains individual information for the mainpiece item (this does not drill down to piecemarks)
 - `approvalstatuses`: Contains approval status codes and descriptions
 - `workpackages`: Contains workpackage information
 
