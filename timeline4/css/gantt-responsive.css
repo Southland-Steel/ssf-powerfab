@@ -1,0 +1,136 @@
+/**
+ * File: css/gantt-responsive.css
+ * Responsive styles for the Gantt chart
+ */
+
+/* Medium screens */
+@media (max-width: 992px) {
+    /* Smaller font size for task bars */
+    .task-bar {
+        font-size: 11px;
+    }
+
+    /* Reduce padding */
+    .timeline-week,
+    .timeline-month,
+    .timeline-quarter {
+        padding: 2px 3px;
+    }
+
+    /* Smaller day markers */
+    .timeline-day-marker {
+        --gantt-marker-size: 8px;
+    }
+
+    /* Adjust task detail modal */
+    .modal-body .row {
+        flex-direction: column;
+    }
+
+    .modal-body .col-md-6 {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+}
+
+/* Small screens */
+@media (max-width: 768px) {
+    /* Smaller font size */
+    .task-bar {
+        font-size: 10px;
+        padding: 5px;
+    }
+
+    /* Condensed timeline */
+    .timeline-week .week-range,
+    .timeline-month .days-count {
+        font-size: 9px;
+    }
+
+    /* Hide day labels on smaller screens */
+    .timeline-day-label {
+        display: none;
+    }
+
+    /* Compact filter buttons */
+    .gantt-filter-btn {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    /* Adjust label width */
+    .gantt-labels,
+    .timeline-label-space {
+        width: 150px;
+    }
+
+    .gantt-timeline {
+        width: calc(100% - 150px);
+    }
+}
+
+/* Extra small screens */
+@media (max-width: 576px) {
+    /* Further reduce sizes */
+    .gantt-timeline-header {
+        height: 40px;
+    }
+
+    .gantt-row {
+        height: 40px;
+    }
+
+    .task-bar {
+        height: 25px;
+        top: 8px;
+        padding: 4px;
+        font-size: 9px;
+    }
+
+    /* Hide less important elements */
+    .timeline-week .week-range,
+    .timeline-month .days-count,
+    .timeline-quarter .quarter-label {
+        display: none;
+    }
+
+    .timeline-day-marker {
+        display: none;
+    }
+
+    /* Make warning indicators smaller */
+    .task-warning-icon {
+        width: 12px;
+        height: 12px;
+        font-size: 8px;
+        top: 3px;
+        right: 3px;
+    }
+
+    /* Vertical filter container */
+    .gantt-filter-container {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    /* Make filter buttons full width */
+    .gantt-filter-btn {
+        width: 100%;
+        text-align: left;
+    }
+
+    /* Adjust label width */
+    .gantt-labels,
+    .timeline-label-space {
+        width: 120px;
+    }
+
+    .gantt-timeline {
+        width: calc(100% - 120px);
+    }
+
+    /* Simplify labels */
+    .gantt-rowtitle {
+        font-size: 11px;
+    }
+}

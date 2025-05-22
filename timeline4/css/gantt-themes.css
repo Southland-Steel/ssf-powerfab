@@ -1,0 +1,358 @@
+/**
+ * File: css/gantt-themes.css
+ * Theme support for Gantt chart
+ */
+
+/* ========== THEME VARIABLES ========== */
+:root {
+    /* Light Theme Colors (Default) */
+    --theme-bg-color: #ffffff;
+    --theme-text-color: #212529;
+    --theme-border-color: #dee2e6;
+    --theme-header-bg: #f8f9fa;
+    --theme-row-hover: #f0f0f0;
+    --theme-card-bg: #ffffff;
+    --theme-card-border: #dee2e6;
+    --theme-modal-bg: #ffffff;
+    --theme-tooltip-bg: rgba(0, 0, 0, 0.8);
+    --theme-tooltip-color: #ffffff;
+    --theme-btn-default-bg: #f8f9fa;
+    --theme-btn-default-text: #212529;
+    --theme-btn-default-border: #dee2e6;
+    --theme-marker-line-color: rgba(0, 0, 0, 0.1);
+
+    /* Dropdown Colors - Light Theme */
+    --dropdown-bg: #ffffff;
+    --dropdown-text: #212529;
+    --dropdown-hover-bg: rgba(153, 51, 43, 0.1);
+    --dropdown-hover-text: #212529;
+    --dropdown-active-bg: var(--status-in-progress);
+    --dropdown-active-text: #ffffff;
+    --dropdown-divider: #e9ecef;
+
+    /* Status Colors - Light Theme */
+    --status-not-started: #c1d7fb;
+    --status-in-progress: #4253ff;
+    --status-completed: #198754;
+    --status-late: #dc3545;
+    --status-on-hold: #6c757d;
+}
+
+/* Dark Theme */
+[data-theme="dark"] {
+    /* Dark Theme Colors */
+    --theme-bg-color: #212529;
+    --theme-text-color: #f8f9fa;
+    --theme-border-color: #495057;
+    --theme-header-bg: #343a40;
+    --theme-row-hover: #2c3034;
+    --theme-card-bg: #343a40;
+    --theme-card-border: #495057;
+    --theme-modal-bg: #343a40;
+    --theme-tooltip-bg: rgba(255, 255, 255, 0.8);
+    --theme-tooltip-color: #212529;
+    --theme-btn-default-bg: #343a40;
+    --theme-btn-default-text: #f8f9fa;
+    --theme-btn-default-border: #495057;
+    --theme-marker-line-color: rgba(255, 255, 255, 0.1);
+
+    /* Dropdown Colors - Dark Theme */
+    --dropdown-bg: #343a40;
+    --dropdown-text: #f8f9fa;
+    --dropdown-hover-bg: #2c3034;
+    --dropdown-hover-text: #ffffff;
+    --dropdown-active-bg: var(--status-in-progress);
+    --dropdown-active-text: #ffffff;
+    --dropdown-divider: #495057;
+
+    /* Status Colors - Dark Theme */
+    --status-not-started: #90bfff;
+    --status-in-progress: #0d21fd;
+    --status-completed: #0a7040;
+    --status-late: #b02a37;
+    --status-on-hold: #adb5bd;
+}
+
+/* ========== GENERAL ELEMENTS ========== */
+body {
+    background-color: var(--theme-bg-color);
+    color: var(--theme-text-color);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+/* Text elements - ensure ALL text follows theme */
+h1, h2, h3, h4, h5, h6, p, span, div, a, button, input, select, textarea, label, li,
+.card-title, .card-text, .footer-text, footer, .page-footer, .footer {
+    color: var(--theme-text-color) !important;
+}
+
+/* Card elements */
+.card {
+    background-color: var(--theme-card-bg);
+    border-color: var(--theme-card-border);
+}
+
+.card-header, .card-footer {
+    background-color: var(--theme-header-bg);
+    border-color: var(--theme-border-color);
+    color: var(--theme-text-color) !important;
+}
+
+/* Card title specifically */
+.card-header h1, .card-header h2, .card-header h3,
+.card-header h4, .card-header h5, .card-header h6 {
+    color: var(--theme-text-color) !important;
+}
+
+/* Footer specific styles */
+footer, .footer, .page-footer {
+    background-color: var(--theme-header-bg);
+    border-color: var(--theme-border-color);
+}
+
+footer *, .footer *, .page-footer * {
+    color: var(--theme-text-color) !important;
+}
+
+/* ========== DROPDOWN STYLING ========== */
+/* Fix for dropdown styles in both themes */
+.dropdown-menu {
+    background-color: var(--dropdown-bg) !important;
+    border-color: var(--theme-border-color) !important;
+    color: var(--dropdown-text) !important;
+}
+
+.dropdown-item {
+    color: var(--dropdown-text) !important;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+    background-color: var(--dropdown-hover-bg) !important;
+    color: var(--dropdown-hover-text) !important;
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+    background-color: var(--dropdown-active-bg) !important;
+    color: var(--dropdown-active-text) !important;
+}
+
+.dropdown-divider {
+    border-color: var(--dropdown-divider) !important;
+}
+
+/* Button with dropdown toggle styling */
+.btn-outline-secondary.dropdown-toggle {
+    background-color: var(--theme-btn-default-bg) !important;
+    color: var(--theme-btn-default-text) !important;
+    border-color: var(--theme-btn-default-border) !important;
+}
+
+.btn-outline-secondary.dropdown-toggle:hover,
+.btn-outline-secondary.dropdown-toggle:focus {
+    background-color: var(--theme-row-hover) !important;
+}
+
+.btn-outline-secondary.dropdown-toggle.show {
+    background-color: var(--dropdown-active-bg) !important;
+    color: var(--dropdown-active-text) !important;
+    border-color: var(--dropdown-active-bg) !important;
+}
+
+/* ========== GANTT LAYOUT ELEMENTS ========== */
+.gantt-container {
+    background-color: var(--theme-bg-color);
+    border-color: var(--theme-border-color);
+}
+
+.gantt-row {
+    background-color: var(--theme-bg-color);
+    border-color: var(--theme-border-color);
+}
+
+.gantt-row:hover,
+.gantt-row.hovered {
+    background-color: var(--theme-row-hover);
+}
+
+/* ========== TIMELINE ELEMENTS ========== */
+/* Timeline containers */
+.gantt-timeline-header,
+.ganttTimelineHeader,
+.timeline-header {
+    background-color: var(--theme-header-bg);
+    border-color: var(--theme-border-color);
+    color: var(--theme-text-color);
+}
+
+.timeline-week,
+.timeline-month,
+.timeline-quarter,
+.timeline-day {
+    border-color: var(--theme-border-color);
+}
+
+.timeline-day-marker {
+    background-color: var(--theme-border-color);
+}
+
+.timeline-label-space {
+    background-color: var(--theme-header-bg);
+    border-color: var(--theme-border-color);
+}
+
+/* ========== TEXT ELEMENTS ========== */
+/* All text in timeline headers */
+.ganttTimelineHeader text,
+.timeline-header text,
+.gantt-timeline-header text,
+.gantt-header text,
+.gantt-container svg text,
+.gantt-chart svg text {
+    fill: var(--theme-text-color) !important;
+    color: var(--theme-text-color) !important;
+}
+
+/* Quarter labels */
+.timeline-quarter .quarter-label {
+    color: var(--theme-text-color) !important;
+    font-weight: bold;
+}
+
+/* Month labels */
+.timeline-month .month-label,
+.gantt-timeline-month,
+.gantt-month-header {
+    color: var(--theme-text-color) !important;
+}
+
+/* Week labels */
+.timeline-week .week-label,
+.gantt-week-header {
+    color: var(--theme-text-color) !important;
+}
+
+/* Day labels */
+.timeline-day .day-label,
+.gantt-day-header,
+.timeline-day-label {
+    color: var(--theme-text-color) !important;
+}
+
+/* Hour labels */
+.timeline-hour .hour-label,
+.gantt-hour-header {
+    color: var(--theme-text-color) !important;
+}
+
+/* Other header text */
+.gantt-header-cell,
+.gantt-header-label,
+.gantt-label {
+    color: var(--theme-text-color) !important;
+}
+
+/* Labels section */
+.gantt-labels {
+    background-color: var(--theme-header-bg);
+    border-color: var(--theme-border-color);
+    color: var(--theme-text-color);
+}
+
+/* ========== TASK BARS ========== */
+/* Task bar text legibility */
+.task-bar {
+    color: #ffffff;
+}
+
+[data-theme="dark"] .task-bar {
+    text-shadow: 0px 0px 2px rgba(0, 0, 0, 0.7);
+}
+
+/* ========== MODALS & UI ELEMENTS ========== */
+/* Modal styling */
+.modal-content {
+    background-color: var(--theme-modal-bg);
+    border-color: var(--theme-border-color);
+    color: var(--theme-text-color);
+}
+
+.modal-header, .modal-footer {
+    border-color: var(--theme-border-color);
+    color: var(--theme-text-color) !important;
+}
+
+/* Modal titles and text */
+.modal-title, .modal-body {
+    color: var(--theme-text-color) !important;
+}
+
+/* Loading indicator */
+.gantt-loading {
+    color: var(--theme-text-color);
+}
+
+.gantt-loading-spinner {
+    border-color: var(--theme-border-color);
+    border-top-color: var(--status-in-progress);
+}
+
+/* Filter buttons */
+.gantt-filter-btn {
+    background-color: var(--theme-btn-default-bg);
+    border-color: var(--theme-btn-default-border);
+    color: var(--theme-btn-default-text);
+}
+.gantt-filter-btn.active {
+    color: white !important;
+}
+.gantt-filter-btn.active:hover {
+    color: white var(--theme-row-hover) !important;
+}
+
+.gantt-filter-btn:hover {
+    background-color: var(--theme-row-hover);
+}
+
+/* Progress bar */
+.progress {
+    background-color: var(--theme-border-color);
+}
+
+/* ========== UTILITY CLASSES ========== */
+/* Background utility */
+.bg-light {
+    background-color: var(--theme-header-bg) !important;
+    color: var(--theme-text-color) !important;
+}
+
+/* Border utility */
+.border-bottom {
+    border-bottom-color: var(--theme-border-color) !important;
+}
+
+/* Table styling */
+.table {
+    color: var(--theme-text-color);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: var(--theme-row-hover);
+}
+
+/* Alert styles */
+.alert-info {
+    background-color: var(--theme-header-bg);
+    border-color: var(--theme-border-color);
+    color: var(--theme-text-color);
+}
+
+/* Override Bootstrap text classes */
+.text-dark {
+    color: var(--theme-text-color) !important;
+}
+
+[data-theme="dark"] .text-muted {
+    color: #adb5bd !important;
+}

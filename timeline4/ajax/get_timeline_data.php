@@ -1,0 +1,178 @@
+<?php
+/**
+ * File: ajax/get_timeline_data.php
+ * Lean endpoint for retrieving core Gantt chart timeline data only
+ * Badges and workweeks are loaded separately
+ */
+require_once('../../config_ssf_db.php');
+header('Content-Type: application/json');
+
+// Get filter from request
+$filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
+
+// Parse filter to extract project filter
+$projectFilter = null;
+if ($filter !== 'all' && preg_match('/^[A-Za-z0-9\-]+$/', $filter)) {
+    $projectFilter = $filter;
+}
+
+// Build the lean query - just core timeline data
+$sql = "
+SELECT DISTINCT 
+    p.JobNumber,
+    CASE 
+        WHEN sbde.Level = 1 THEN sbdeval.Description -- Level 1: Description is SequenceName
+        WHEN sbde.Level = 2 THEN 
+            -- Level 2: Extract parent description as SequenceName
+            (SELECT parent_desc.Description 
+             FROM fabrication.schedulebreakdownelements parent
+             INNER JOIN scheduledescriptions parent_desc 
+                 ON parent_desc.ScheduleDescriptionID = parent.ScheduleBreakdownValueID
+             WHERE parent.ScheduleBreakdownElementID = sbde.ParentScheduleBreakdownElementID)
+    END AS SequenceName,
+    CASE 
+        WHEN sbde.Level = 1 THEN NULL -- Level 1: No LotNumber
+        WHEN sbde.Level = 2 THEN sbdeval.Description -- Level 2: Current description is LotNumber
+    END AS LotNumber,
+    sbde.Level, -- Include level to distinguish between level 1 and level 2 records
+    -- Include RowGroupID as it appears in your original query
+    CASE 
+        WHEN sbde.Level = 1 THEN CONCAT(p.JobNumber,'.',sbdeval.Description)
+        WHEN sbde.Level = 2 THEN 
+            CONCAT(p.JobNumber,'.',
+                (SELECT parent_desc.Description 
+                 FROM fabrication.schedulebreakdownelements parent
+                 INNER JOIN scheduledescriptions parent_desc ON parent_desc.ScheduleDescriptionID = parent.ScheduleBreakdownValueID
+                 WHERE parent.ScheduleBreakdownElementID = sbde.ParentScheduleBreakdownElementID),
+                '.',
+                sbdeval.Description
+            )
+        ELSE sbdeval.Description
+    END AS RowGroupID,
+    sbde.ScheduleBreakdownElementID as elementId,
+    sbde.ParentScheduleBreakdownElementID as parentId,
+    sbde.Priority as priority,
+    p.GroupName AS pm,
+    sts.ScheduleTaskID as id,
+    sd.Description AS taskDescription,
+    sbdeval.Description as description,
+    sts.ActualStartDate as startDate,
+    sts.ActualEndDate as endDate,
+    ROUND(sts.PercentCompleted * 100, 2) AS percentage,
+    sts.OriginalEstimate AS hours,
+    CASE 
+        WHEN sts.PercentCompleted > 0 AND sts.PercentCompleted < 1 THEN 'in-progress'
+        WHEN sts.PercentCompleted >= 1 THEN 'completed'
+        ELSE 'not-started'
+    END AS status,
+    p.JobNumber as project
+FROM fabrication.schedulebreakdownelements AS sbde
+INNER JOIN schedulebaselines as sbl ON sbl.ScheduleBaselineID = sbde.ScheduleBaselineID AND sbl.IsCurrent = 1
+INNER JOIN scheduledescriptions AS sbdeval ON sbdeval.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
+INNER JOIN scheduletasks as sts ON sts.ScheduleBreakdownElementID = sbde.ScheduleBreakdownElementID
+INNER JOIN resources ON resources.ResourceID = sts.ResourceID
+INNER JOIN projects as p ON p.ProjectID = sts.ProjectID
+INNER JOIN scheduledescriptions as sd ON sd.ScheduleDescriptionID = sts.ScheduleDescriptionID
+WHERE 
+    p.JobStatusID IN (1,6)
+    AND sbde.Level < 3
+    AND sts.PercentCompleted < 0.99
+    AND resources.Description = 'Fabrication'
+    AND sd.Description = 'Fabrication'
+    AND sbdeval.Description IS NOT NULL
+    AND sts.ActualStartDate IS NOT NULL
+    AND sts.ActualEndDate IS NOT NULL
+    " . ($projectFilter !== null ? "AND p.JobNumber = ?" : "") . "
+ORDER BY p.JobNumber, SequenceName, LotNumber, sts.ActualStartDate, sts.ActualEndDate
+";
+
+// Prepare parameter array for the query
+$params = [];
+if ($projectFilter !== null) {
+    $params[] = $projectFilter;
+}
+
+// Prepare and execute query
+$stmt = $db->prepare($sql);
+$stmt->execute($params);
+$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Process the data for the Gantt chart
+$ganttData = processQueryResults($rows);
+
+// Output JSON
+echo json_encode($ganttData, JSON_PRETTY_PRINT);
+
+/**
+ * Process query results into Gantt chart format
+ *
+ * @param array $rows Database query results
+ * @return array Formatted data for Gantt chart
+ */
+function processQueryResults($rows) {
+    $tasks = [];
+    $earliestDate = null;
+    $latestDate = null;
+
+    foreach ($rows as $row) {
+        // Parse dates with error handling
+        $startDate = !empty($row['startDate']) ? $row['startDate'] : null;
+        $endDate = !empty($row['endDate']) ? $row['endDate'] : null;
+
+        // Skip if we don't have both dates
+        if (empty($startDate) || empty($endDate)) {
+            continue;
+        }
+
+        // Track earliest and latest dates for chart range
+        if ($earliestDate === null || strtotime($startDate) < strtotime($earliestDate)) {
+            $earliestDate = $startDate;
+        }
+
+        if ($latestDate === null || strtotime($endDate) > strtotime($latestDate)) {
+            $latestDate = $endDate;
+        }
+
+        // Add the row directly to tasks - it already has all the fields we need
+        $tasks[] = $row;
+    }
+
+    // Ensure we have a valid date range
+    if ($earliestDate === null || $latestDate === null) {
+        $today = date('Y-m-d');
+        $earliestDate = date('Y-m-d', strtotime('-14 days', strtotime($today)));
+        $latestDate = date('Y-m-d', strtotime('+14 days', strtotime($today)));
+    } else {
+        // Add padding to the date range
+        $earliestDate = date('Y-m-d', strtotime('-3 days', strtotime($earliestDate)));
+        $latestDate = date('Y-m-d', strtotime('+3 days', strtotime($latestDate)));
+    }
+
+    // Sort tasks by start date and then end date
+    usort($tasks, function($a, $b) {
+        // Get timestamps for comparison
+        $aStart = strtotime($a['startDate']);
+        $bStart = strtotime($b['startDate']);
+
+        // Compare start dates first
+        if ($aStart != $bStart) {
+            return $aStart - $bStart;
+        }
+
+        // If start dates are identical, compare end dates
+        $aEnd = strtotime($a['endDate']);
+        $bEnd = strtotime($b['endDate']);
+
+        return $aEnd - $bEnd;
+    });
+
+    // Format response
+    return [
+        'dateRange' => [
+            'start' => $earliestDate,
+            'end' => $latestDate
+        ],
+        'tasks' => $tasks
+    ];
+}
+?>
