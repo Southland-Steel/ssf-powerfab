@@ -162,6 +162,7 @@ require_once 'includes/header.php';
                         <th class="border-0">Last Activity</th>
                         <th class="border-0">Days Since Activity</th>
                         <th class="border-0">Status</th>
+                        <th class="border-0">Actions</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -217,6 +218,13 @@ require_once 'includes/header.php';
                                 <span class="status-badge <?php echo $statusClass; ?>">
                                     <?php echo htmlspecialchars($machine['Activity_Status']); ?>
                                 </span>
+                            </td>
+                            <td>
+                                <a href="rawdata.php?machine=<?php echo urlencode($machine['Machine']); ?>"
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="View raw feedback data">
+                                    RAW
+                                </a>
                             </td>
                         </tr>
                     <?php endforeach; ?>

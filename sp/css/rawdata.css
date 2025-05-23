@@ -1,0 +1,214 @@
+/* ===================================
+   Raw Data Viewer Styles
+   Optimized for iPad viewing
+   =================================== */
+
+/* Controls Bar */
+.controls-bar {
+    background: white;
+    padding: 1rem;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--card-shadow);
+}
+
+/* Table Container */
+.table-container {
+    background: white;
+    border-radius: var(--radius-lg);
+    overflow: auto;
+    box-shadow: var(--card-shadow);
+    max-height: calc(100vh - 350px);
+    -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+}
+
+/* Raw Data Table */
+#rawDataTable {
+    margin-bottom: 0;
+    font-size: 0.875rem;
+}
+
+#rawDataTable thead {
+    background: #f8f9fa;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+#rawDataTable thead th {
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    padding: 0.75rem 0.5rem;
+    white-space: nowrap;
+    position: relative;
+}
+
+.column-type {
+    display: block;
+    font-size: 0.75rem;
+    color: #6c757d;
+    font-weight: normal;
+}
+
+#rawDataTable tbody td {
+    padding: 0.5rem;
+    vertical-align: middle;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Highlight certain columns */
+#rawDataTable .column-FFR_CNC {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+#rawDataTable .column-DATM {
+    font-family: monospace;
+    font-size: 0.8rem;
+}
+
+/* Type badges */
+#rawDataTable .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Column Toggle Panel */
+.column-toggle-panel {
+    position: fixed;
+    right: 20px;
+    top: 100px;
+    width: 300px;
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-header {
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-body {
+    padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.column-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.column-toggle-item {
+    display: block;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.column-toggle-item:hover {
+    background: #f8f9fa;
+}
+
+.column-toggle-item input {
+    margin-right: 0.5rem;
+}
+
+/* Search highlight */
+.highlight {
+    background-color: yellow;
+    font-weight: bold;
+}
+
+/* Pagination */
+.pagination {
+    flex-wrap: wrap;
+}
+
+.pagination .page-link {
+    color: var(--primary-color);
+    border-color: #dee2e6;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+/* iPad Optimizations */
+@media (max-width: 1024px) {
+    .table-container {
+        max-height: calc(100vh - 300px);
+    }
+
+    #rawDataTable {
+        font-size: 0.8rem;
+    }
+
+    #rawDataTable thead th,
+    #rawDataTable tbody td {
+        padding: 0.4rem;
+    }
+
+    .column-toggle-panel {
+        width: 250px;
+        right: 10px;
+        top: 80px;
+    }
+
+    /* Hide less important columns on smaller screens */
+    .column-FFR_ID,
+    .column-GUID,
+    .column-DATR,
+    .column-TIMR {
+        display: none;
+    }
+}
+
+/* Landscape orientation for iPad */
+@media (max-width: 1024px) and (orientation: landscape) {
+    .page-header {
+        padding: 1rem 0;
+    }
+
+    .table-container {
+        max-height: calc(100vh - 250px);
+    }
+}
+
+/* Loading overlay */
+.table-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+/* Export progress */
+.export-progress {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: white;
+    padding: 1rem 1.5rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+}
