@@ -1,0 +1,116 @@
+/* ===================================
+   Dashboard Specific Styles
+   =================================== */
+
+/* Dashboard Header */
+.dashboard-header {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Activity Table */
+.activity-table {
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+}
+
+.table-header {
+    background: #f8f9fa;
+    padding: 1rem 1.5rem;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* Machine Name Column */
+.machine-name {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Last Activity Column */
+.last-activity {
+    color: #6c757d;
+    font-size: 0.9rem;
+}
+
+/* Days Since Activity Column */
+.days-today {
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.days-recent {
+    color: var(--info-color);
+}
+
+.days-old {
+    color: #6c757d;
+}
+
+/* Dashboard Statistics */
+.dashboard-stats {
+    margin-bottom: 2rem;
+}
+
+.dashboard-stats .stat-card {
+    transition: all 0.3s ease;
+}
+
+.dashboard-stats .stat-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Refresh Button Animation */
+.loading-spinner {
+    display: none;
+}
+
+.loading-spinner.active {
+    display: inline-block;
+}
+
+/* Machine Table Sorting Indicators */
+#machineTable th {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+#machineTable th:hover {
+    background-color: #e9ecef;
+}
+
+#machineTable th::after {
+    content: ' ↕';
+    opacity: 0.3;
+    font-size: 0.8em;
+}
+
+#machineTable th.sort-asc::after {
+    content: ' ↑';
+    opacity: 1;
+}
+
+#machineTable th.sort-desc::after {
+    content: ' ↓';
+    opacity: 1;
+}
+
+/* Responsive Dashboard */
+@media (max-width: 768px) {
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .table-header .row > div {
+        text-align: center !important;
+    }
+
+    .filter-buttons {
+        margin-top: 1rem !important;
+    }
+}

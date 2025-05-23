@@ -1,0 +1,253 @@
+/* ===================================
+   Machine Details Page Styles
+   =================================== */
+
+/* Period Selector */
+.period-selector .btn {
+    min-width: 100px;
+}
+
+.period-selector .btn.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Custom Date Range */
+#customDateRange {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: var(--radius-md);
+    margin-top: 1rem;
+}
+
+/* Stat Cards with Trends */
+.stat-trend {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+}
+
+.stat-trend.positive {
+    color: var(--success-color);
+}
+
+.stat-trend.negative {
+    color: var(--danger-color);
+}
+
+.stat-trend i {
+    font-size: 0.75rem;
+}
+
+/* Activity Timeline */
+.activity-timeline {
+    position: relative;
+    padding: 1rem 0;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.timeline-item {
+    display: flex;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: 20px;
+    top: 24px;
+    bottom: -24px;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item:last-child::before {
+    display: none;
+}
+
+.timeline-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 2px solid #dee2e6;
+    flex-shrink: 0;
+    z-index: 1;
+}
+
+.timeline-icon.type-N {
+    background: #e3f2fd;
+    border-color: #1976d2;
+    color: #1976d2;
+}
+
+.timeline-icon.type-P {
+    background: #e8f5e9;
+    border-color: #388e3c;
+    color: #388e3c;
+}
+
+.timeline-icon.type-A {
+    background: #ffebee;
+    border-color: #d32f2f;
+    color: #d32f2f;
+}
+
+.timeline-content {
+    flex: 1;
+    margin-left: 1rem;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: var(--radius-md);
+    padding: 1rem;
+}
+
+.timeline-time {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+.timeline-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+}
+
+.timeline-details {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Nests Table */
+#nestsTable tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#nestsTable tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.status-complete {
+    color: var(--success-color);
+}
+
+.status-in-progress {
+    color: var(--info-color);
+}
+
+.status-stopped {
+    color: var(--danger-color);
+}
+
+/* Time Breakdown Chart */
+#timeBreakdownChart {
+    max-height: 300px;
+}
+
+.time-legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.time-legend-color {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-sm);
+    margin-right: 0.5rem;
+}
+
+/* Production Trend Chart */
+#productionTrendChart {
+    max-height: 300px;
+}
+
+/* Stops Table */
+#stopsTable {
+    font-size: 0.875rem;
+}
+
+.stop-duration {
+    font-weight: 600;
+}
+
+.stop-duration.long {
+    color: var(--danger-color);
+}
+
+.stop-duration.medium {
+    color: var(--warning-color);
+}
+
+.stop-duration.short {
+    color: var(--success-color);
+}
+
+/* Export Modal */
+.export-options label {
+    display: block;
+    padding: 0.5rem;
+    border: 1px solid #dee2e6;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.export-options label:hover {
+    background: #f8f9fa;
+}
+
+.export-options input[type="radio"]:checked + label {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+/* Loading States */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .period-selector {
+        flex-wrap: wrap;
+    }
+
+    .period-selector .btn {
+        margin-bottom: 0.5rem;
+        min-width: auto;
+        flex: 1;
+    }
+
+    .timeline-content {
+        margin-left: 0.5rem;
+        padding: 0.75rem;
+    }
+
+    #nestsTable {
+        font-size: 0.875rem;
+    }
+
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+}

@@ -1,0 +1,324 @@
+/* ===================================
+   Machine Status Modal Styles
+   =================================== */
+
+/* Modal Customizations */
+.machine-modal .modal-dialog {
+    max-width: 800px;
+}
+
+.machine-modal .modal-header {
+    background: var(--primary-gradient);
+    color: white;
+    border-bottom: none;
+}
+
+.machine-modal .modal-title {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.machine-modal .modal-header .btn-close {
+    filter: brightness(0) invert(1);
+    opacity: 0.8;
+}
+
+.machine-modal .modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+/* Status Indicator */
+.machine-status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+}
+
+.machine-status-indicator.active {
+    background-color: #28a745;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+}
+
+.machine-status-indicator.idle {
+    background-color: #ffc107;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
+}
+
+.machine-status-indicator.stopped {
+    background-color: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+    animation: none;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.7;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Modal Body Sections */
+.modal-status-section {
+    background: #f8f9fa;
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+}
+
+.modal-status-section h6 {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Current Activity Display */
+.current-activity {
+    font-size: 1.25rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    margin-bottom: 0.5rem;
+}
+
+.activity-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.detail-item {
+    background: white;
+    padding: 0.75rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid #e9ecef;
+}
+
+.detail-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.detail-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+/* Progress Bar */
+.progress-section {
+    margin-top: 1rem;
+}
+
+.progress-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.modal-progress {
+    height: 25px;
+    background-color: #e9ecef;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.modal-progress .progress-bar {
+    background: var(--primary-gradient);
+    font-weight: 500;
+    line-height: 25px;
+    transition: width 0.6s ease;
+}
+
+/* Quick Stats Grid */
+.quick-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.quick-stat {
+    text-align: center;
+    padding: 1rem;
+    background: white;
+    border-radius: var(--radius-sm);
+    border: 1px solid #e9ecef;
+}
+
+.quick-stat-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 0.25rem;
+}
+
+.quick-stat-label {
+    font-size: 0.75rem;
+    color: #6c757d;
+    text-transform: uppercase;
+}
+
+/* Recent Activity List */
+.recent-activities {
+    max-height: 400px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #6c757d #f8f9fa;
+}
+
+.recent-activities::-webkit-scrollbar {
+    width: 8px;
+}
+
+.recent-activities::-webkit-scrollbar-track {
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.recent-activities::-webkit-scrollbar-thumb {
+    background: #6c757d;
+    border-radius: 4px;
+}
+
+.recent-activities::-webkit-scrollbar-thumb:hover {
+    background: #5a6268;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem;
+    background: white;
+    border-radius: var(--radius-sm);
+    margin-bottom: 0.5rem;
+    border: 1px solid #e9ecef;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+}
+
+.activity-item:hover {
+    background-color: #f8f9fa;
+}
+
+.activity-item .flex-grow-1 {
+    min-width: 0; /* Allow text truncation */
+}
+
+.activity-item strong {
+    color: var(--primary-color);
+}
+
+.activity-item small {
+    display: block;
+    margin-top: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.activity-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    font-size: 0.875rem;
+}
+
+.activity-icon.type-N {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.activity-icon.type-P {
+    background: #e8f5e9;
+    color: #388e3c;
+}
+
+.activity-icon.type-A {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+/* Type Badge */
+.activity-item .badge {
+    font-size: 0.7rem;
+    font-weight: normal;
+    padding: 0.2rem 0.4rem;
+    vertical-align: middle;
+}
+
+.activity-time {
+    margin-left: auto;
+    color: #6c757d;
+    font-size: 0.75rem;
+}
+
+/* Loading State */
+.modal-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+}
+
+.modal-loading .loading-spinner {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Error State */
+.modal-error {
+    text-align: center;
+    padding: 3rem;
+    color: var(--danger-color);
+}
+
+.modal-error i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+}
+
+/* Modal Footer */
+.machine-modal .modal-footer {
+    background: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .machine-modal .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    .activity-details,
+    .quick-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .current-activity {
+        font-size: 1.1rem;
+    }
+}
