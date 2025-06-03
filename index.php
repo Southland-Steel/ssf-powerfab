@@ -39,7 +39,7 @@
         </div>
         <div class="col-md-3">
             <h5 class="text-center">Production <-> PM</h5>
-            <a href="/timeline" class="btn btn-success">Project Timeline (new)</a>
+            <a href="/timeline4/index.php" class="btn btn-success">Project Timeline (new)</a>
             <a href="/timeline" class="btn btn-success">Project Timeline (old)</a>
             <a href="/resources" class="btn btn-success">Project Resources</a>
         </div>
