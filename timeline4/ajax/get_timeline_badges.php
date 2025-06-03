@@ -18,8 +18,7 @@ if ($filter !== 'all' && preg_match('/^[A-Za-z0-9\-]+$/', $filter)) {
 // Define the resource/task combinations we want to track
 $resourceTaskCombinations = [
     ['Customer', 'Client Approval', 'ClientApproval'],
-    ['Customer', 'IFC Drawings Received', 'IFCDrawingsReceived'],
-    ['Detailing', 'Issued For Fabrication', 'DetailingIFF']
+    ['Customer', 'IFC Drawings Received', 'IFCDrawingsReceived']
 ];
 
 // Convert combinations to SQL for use in query
@@ -214,7 +213,6 @@ SELECT
     COALESCE(s.HasPCI, 0) AS HasPCI,
     ROUND(MAX(CASE WHEN rtp.OutputColumnName = 'ClientApproval' THEN rtp.PercentageComplete ELSE 0 END), 2) AS ClientApprovalPercentComplete,
     ROUND(MAX(CASE WHEN rtp.OutputColumnName = 'IFCDrawingsReceived' THEN rtp.PercentageComplete ELSE 0 END), 2) AS IFCDrawingsReceivedPercentComplete,
-    ROUND(MAX(CASE WHEN rtp.OutputColumnName = 'DetailingIFF' THEN rtp.PercentageComplete ELSE 0 END), 2) AS DetailingIFFPercentComplete
 FROM ActiveFabricationProjects afp
 LEFT JOIN (
     SELECT * FROM SequenceLevelSummary
@@ -258,8 +256,7 @@ try {
             'TotalItems' => intval($row['TotalItems']),
             'HasPCI' => intval($row['HasPCI']),
             'ClientApprovalPercentComplete' => floatval($row['ClientApprovalPercentComplete']),
-            'IFCDrawingsReceivedPercentComplete' => floatval($row['IFCDrawingsReceivedPercentComplete']),
-            'DetailingIFFPercentComplete' => floatval($row['DetailingIFFPercentComplete'])
+            'IFCDrawingsReceivedPercentComplete' => floatval($row['IFCDrawingsReceivedPercentComplete'])
         ];
     }
 

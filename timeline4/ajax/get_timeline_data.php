@@ -16,7 +16,7 @@ if ($filter !== 'all' && preg_match('/^[A-Za-z0-9\-]+$/', $filter)) {
     $projectFilter = $filter;
 }
 
-// Build the lean query - just core timeline data with workweek date range consideration
+// Build the lean query - fabrication tasks with IFF subtasks
 $sql = "
 WITH ActiveFabricationProjects AS (
     SELECT DISTINCT 
@@ -86,6 +86,50 @@ WITH ActiveFabricationProjects AS (
         " . ($projectFilter !== null ? "AND p.JobNumber = ?" : "") . "
 ),
 
+-- Get IFF tasks for the same RowGroupIDs
+IFFTasks AS (
+    SELECT DISTINCT 
+        CASE 
+            WHEN sbde.Level = 1 THEN CONCAT(p.JobNumber,'.',sbdeval.Description)
+            WHEN sbde.Level = 2 THEN 
+                CONCAT(p.JobNumber,'.',
+                    (SELECT parent_desc.Description 
+                     FROM fabrication.schedulebreakdownelements parent
+                     INNER JOIN scheduledescriptions parent_desc ON parent_desc.ScheduleDescriptionID = parent.ScheduleBreakdownValueID
+                     WHERE parent.ScheduleBreakdownElementID = sbde.ParentScheduleBreakdownElementID),
+                    '.',
+                    sbdeval.Description
+                )
+            ELSE sbdeval.Description
+        END AS RowGroupID,
+        sts.ScheduleTaskID as iffTaskId,
+        sd.Description AS iffTaskDescription,
+        sts.ActualStartDate as iffMilestoneDate,
+        ROUND(sts.PercentCompleted * 100, 2) AS iffPercentage,
+        sts.OriginalEstimate AS iffHours,
+        CASE 
+            WHEN sts.PercentCompleted > 0 AND sts.PercentCompleted < 1 THEN 'in-progress'
+            WHEN sts.PercentCompleted >= 1 THEN 'completed'
+            ELSE 'not-started'
+        END AS iffStatus
+    FROM fabrication.schedulebreakdownelements AS sbde
+    INNER JOIN schedulebaselines as sbl ON sbl.ScheduleBaselineID = sbde.ScheduleBaselineID AND sbl.IsCurrent = 1
+    INNER JOIN scheduledescriptions AS sbdeval ON sbdeval.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
+    INNER JOIN scheduletasks as sts ON sts.ScheduleBreakdownElementID = sbde.ScheduleBreakdownElementID
+    INNER JOIN resources ON resources.ResourceID = sts.ResourceID
+    INNER JOIN projects as p ON p.ProjectID = sts.ProjectID
+    INNER JOIN scheduledescriptions as sd ON sd.ScheduleDescriptionID = sts.ScheduleDescriptionID
+    WHERE 
+        p.JobStatusID IN (1,6)
+        AND sbde.Level < 3
+        AND sts.PercentCompleted < 0.99
+        AND resources.Description = 'Detailing'
+        AND sd.Description = 'Issued for Fabrication'
+        AND sbdeval.Description IS NOT NULL
+        AND sts.ActualStartDate IS NOT NULL
+        " . ($projectFilter !== null ? "AND p.JobNumber = ?" : "") . "
+),
+
 -- Get workweek date ranges for the same projects
 WorkweekDateRanges AS (
     SELECT 
@@ -124,9 +168,16 @@ WorkweekDateRanges AS (
 
 SELECT 
     afp.*,
+    iff.iffTaskId,
+    iff.iffTaskDescription,
+    iff.iffMilestoneDate,
+    iff.iffPercentage,
+    iff.iffHours,
+    iff.iffStatus,
     wdr.EarliestWorkweekStart,
     wdr.LatestWorkweekEnd
 FROM ActiveFabricationProjects afp
+LEFT JOIN IFFTasks iff ON afp.RowGroupID = iff.RowGroupID
 CROSS JOIN WorkweekDateRanges wdr
 ORDER BY afp.JobNumber, afp.SequenceName, afp.LotNumber, afp.startDate, afp.endDate
 ";
@@ -134,8 +185,9 @@ ORDER BY afp.JobNumber, afp.SequenceName, afp.LotNumber, afp.startDate, afp.endD
 // Prepare parameter array for the query
 $params = [];
 if ($projectFilter !== null) {
-    // Add the parameter twice since it's used in both CTEs
+    // Add the parameter three times since it's used in three CTEs
     $params[] = $projectFilter; // ActiveFabricationProjects
+    $params[] = $projectFilter; // IFFTasks
     $params[] = $projectFilter; // WorkweekDateRanges
 }
 
@@ -182,6 +234,18 @@ function processQueryResults($rows) {
             $latestDate = $endDate;
         }
 
+        // Also consider IFF milestone date for date range (could extend timeline start)
+        if (!empty($row['iffMilestoneDate'])) {
+            $iffDate = strtotime($row['iffMilestoneDate']);
+            if ($earliestDate === null || $iffDate < strtotime($earliestDate)) {
+                $earliestDate = $row['iffMilestoneDate'];
+            }
+            // IFF dates could also extend the end date if they're later than fabrication
+            if ($latestDate === null || $iffDate > strtotime($latestDate)) {
+                $latestDate = $row['iffMilestoneDate'];
+            }
+        }
+
         // Track workweek dates (they're the same for all rows since we CROSS JOIN)
         if (!empty($row['EarliestWorkweekStart'])) {
             $earliestWorkweekDate = $row['EarliestWorkweekStart'];
@@ -190,9 +254,32 @@ function processQueryResults($rows) {
             $latestWorkweekDate = $row['LatestWorkweekEnd'];
         }
 
-        // Remove workweek date columns from task data before adding to tasks array
+        // Build IFF subtask object if data exists
+        $iffSubtask = null;
+        if (!empty($row['iffTaskId'])) {
+            $iffSubtask = [
+                'taskId' => $row['iffTaskId'],
+                'taskDescription' => $row['iffTaskDescription'],
+                'milestoneDate' => $row['iffMilestoneDate'],
+                'percentage' => floatval($row['iffPercentage']),
+                'hours' => floatval($row['iffHours']),
+                'status' => $row['iffStatus'],
+                'formattedMilestoneDate' => !empty($row['iffMilestoneDate']) ? date('M j, Y', strtotime($row['iffMilestoneDate'])) : null
+            ];
+        }
+
+        // Remove workweek date columns and IFF columns from main task data
         unset($row['EarliestWorkweekStart']);
         unset($row['LatestWorkweekEnd']);
+        unset($row['iffTaskId']);
+        unset($row['iffTaskDescription']);
+        unset($row['iffMilestoneDate']);
+        unset($row['iffPercentage']);
+        unset($row['iffHours']);
+        unset($row['iffStatus']);
+
+        // Add IFF subtask to the main task
+        $row['iffSubtask'] = $iffSubtask;
 
         // Add the row to tasks
         $tasks[] = $row;
