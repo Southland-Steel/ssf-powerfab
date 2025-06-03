@@ -145,19 +145,37 @@ require_once 'includes/header.php';
                 </div>
             </div>
 
-            <!-- Activity Timeline -->
+            <!-- Activity DataTable -->
             <div class="row mb-4">
                 <div class="col-12">
                     <div class="card">
                         <div class="card-header">
                             <h5 class="mb-0">
-                                <i class="fas fa-timeline me-2"></i>
-                                Activity Timeline
+                                <i class="fas fa-th-list me-2"></i>
+                                Production Activity Log
                             </h5>
                         </div>
                         <div class="card-body">
-                            <div id="activityTimeline" class="activity-timeline">
-                                <!-- Timeline will be populated by JavaScript -->
+                            <div class="table-responsive">
+                                <table class="table table-hover" id="activityTable">
+                                    <thead>
+                                    <tr>
+                                        <th>Date/Time</th>
+                                        <th>Type</th>
+                                        <th>Piece Mark</th>
+                                        <th>Size</th>
+                                        <th>Grade</th>
+                                        <th>Job</th>
+                                        <th>Sequence</th>
+                                        <th>Nest</th>
+                                        <th>Weight (lbs)</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody id="activityTableBody">
+                                    <!-- Table rows will be populated by JavaScript -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -172,8 +190,8 @@ require_once 'includes/header.php';
                             <div class="row align-items-center">
                                 <div class="col-md-6">
                                     <h5 class="mb-0">
-                                        <i class="fas fa-th-list me-2"></i>
-                                        Nests & Jobs
+                                        <i class="fas fa-layer-group me-2"></i>
+                                        Nests Summary
                                     </h5>
                                 </div>
                                 <div class="col-md-6 text-md-end">
@@ -271,9 +289,48 @@ require_once 'includes/header.php';
         </div>
     </div>
 
+    <!-- Bar Details Modal -->
+    <div class="modal fade" id="barDetailsModal" tabindex="-1" aria-labelledby="barDetailsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="barDetailsModalLabel">
+                        <i class="fas fa-bars me-2"></i>
+                        Bar Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="barDetailsLoading" class="text-center py-4">
+                        <div class="loading-spinner" style="width: 2rem; height: 2rem; margin: 0 auto;"></div>
+                        <p class="mt-2 text-muted">Loading bar details...</p>
+                    </div>
+                    <div id="barDetailsContent" style="display: none;">
+                        <!-- Bar details will be populated here -->
+                    </div>
+                    <div id="barDetailsError" class="alert alert-danger" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <span id="barErrorMessage">Error loading bar details</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Hidden input to store machine name for JavaScript -->
     <input type="hidden" id="machineName" value="<?php echo $machineDisplay; ?>">
     <input type="hidden" id="currentPeriod" value="<?php echo htmlspecialchars($period); ?>">
+
+    <!-- Include DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+
+    <!-- Include DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
 
 <?php
 // Include footer

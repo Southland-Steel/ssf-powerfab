@@ -212,7 +212,7 @@ SELECT
     COALESCE(s.TotalItems, 0) AS TotalItems,
     COALESCE(s.HasPCI, 0) AS HasPCI,
     ROUND(MAX(CASE WHEN rtp.OutputColumnName = 'ClientApproval' THEN rtp.PercentageComplete ELSE 0 END), 2) AS ClientApprovalPercentComplete,
-    ROUND(MAX(CASE WHEN rtp.OutputColumnName = 'IFCDrawingsReceived' THEN rtp.PercentageComplete ELSE 0 END), 2) AS IFCDrawingsReceivedPercentComplete,
+    ROUND(MAX(CASE WHEN rtp.OutputColumnName = 'IFCDrawingsReceived' THEN rtp.PercentageComplete ELSE 0 END), 2) AS IFCDrawingsReceivedPercentComplete
 FROM ActiveFabricationProjects afp
 LEFT JOIN (
     SELECT * FROM SequenceLevelSummary

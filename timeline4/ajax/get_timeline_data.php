@@ -122,7 +122,6 @@ IFFTasks AS (
     WHERE 
         p.JobStatusID IN (1,6)
         AND sbde.Level < 3
-        AND sts.PercentCompleted < 0.99
         AND resources.Description = 'Detailing'
         AND sd.Description = 'Issued for Fabrication'
         AND sbdeval.Description IS NOT NULL

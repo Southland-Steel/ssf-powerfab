@@ -1,6 +1,6 @@
 /**
  * File: js/gantt-bars.js
- * Handles rendering task bars for the Gantt chart with progressive enhancement
+ * Handles rendering task bars for the Gantt chart with integrated IFF display
  */
 GanttChart.Bars = (function() {
     'use strict';
@@ -43,7 +43,7 @@ GanttChart.Bars = (function() {
     }
 
     /**
-     * Create a single task row
+     * Create a single task row with integrated IFF badge
      * @param {Object} task - Task data
      * @return {jQuery} Task row element
      */
@@ -56,7 +56,9 @@ GanttChart.Bars = (function() {
             .attr('data-start-date', task.startDate)
             .attr('data-end-date', task.endDate)
             .attr('data-level', task.level)
-            .attr('data-row-group-id', task.RowGroupID || task.rowGroupId);
+            .attr('data-row-group-id', task.RowGroupID || task.rowGroupId)
+            .attr('data-has-iff', task.hasIFFData ? 'true' : 'false')
+            .attr('data-iff-percentage', task.iffPercentage || 0);
 
         // Create labels section
         const $labels = $('<div class="gantt-labels"></div>');
@@ -93,6 +95,13 @@ GanttChart.Bars = (function() {
         // Add task bar
         addTaskBar(task, $timeline);
 
+        // Add IFF badge if task has IFF data
+        if (task.hasIFFData) {
+            addIFFBadge($timeline, task);
+            // Also add IFF milestone marker on the timeline
+            addIFFMilestone($timeline, task);
+        }
+
         // Append timeline to row
         $row.append($timeline);
 
@@ -100,7 +109,83 @@ GanttChart.Bars = (function() {
     }
 
     /**
-     * Apply badge data to an existing task row
+     * Add IFF badge to timeline
+     * @param {jQuery} $timeline - Timeline element
+     * @param {Object} task - Task data with IFF information
+     */
+    function addIFFBadge($timeline, task) {
+        const iffPercentage = task.iffPercentage || 0;
+
+        // Create IFF badge positioned at top left
+        // This data comes from the Detailing resource with "Issued for Fabrication" task
+        const $iffBadge = createPercentageBadge(
+            iffPercentage,
+            'badge-top-left iff-badge detailing-iff',
+            `Detailing IFF: ${iffPercentage}% (Milestone: ${task.iffSubtask?.formattedMilestoneDate || 'N/A'})`
+        ).css({
+            'left': '20px',
+            'top': '5px'
+        });
+
+        $timeline.append($iffBadge);
+    }
+
+    /**
+     * Add IFF milestone marker on the timeline
+     * @param {jQuery} $timeline - Timeline element
+     * @param {Object} task - Task data with IFF information
+     */
+    function addIFFMilestone($timeline, task) {
+        if (!task.iffSubtask || !task.iffSubtask.milestoneDate) {
+            return;
+        }
+
+        // Parse the IFF milestone date
+        const milestoneDate = GanttChart.Core.parseDate(task.iffSubtask.milestoneDate);
+        if (!milestoneDate) {
+            return;
+        }
+
+        // Calculate position using TimeUtils
+        const milestonePos = GanttChart.TimeUtils.dateToPosition(milestoneDate);
+
+        // Only add if within visible range
+        if (milestonePos < 0 || milestonePos > 100) {
+            return;
+        }
+
+        // Create milestone marker
+        const $milestone = $('<div class="iff-milestone-marker"></div>')
+            .css('left', milestonePos + '%');
+
+        // Determine status class based on IFF percentage
+        const iffPercentage = task.iffPercentage || 0;
+        if (iffPercentage >= 99) {
+            $milestone.addClass('milestone-complete');
+        } else if (iffPercentage > 0) {
+            $milestone.addClass('milestone-in-progress');
+        } else {
+            $milestone.addClass('milestone-pending');
+        }
+
+        // Create tooltip content
+        const tooltipText = `IFF Milestone: ${task.iffSubtask.formattedMilestoneDate}\nStatus: ${task.iffSubtask.status}\nProgress: ${iffPercentage}%`;
+        $milestone.attr('title', tooltipText);
+
+        // Add percentage label if space allows
+        if (iffPercentage > 0) {
+            const $label = $('<div class="iff-milestone-label"></div>')
+                .text(Math.round(iffPercentage) + '%')
+                .css('left', milestonePos + '%');
+
+            $timeline.append($label);
+        }
+
+        $timeline.append($milestone);
+    }
+
+    /**
+     * Apply badge data to an existing task row (for remaining badges)
      * @param {jQuery} $row - The task row element
      * @param {Object} badges - Badge data object
      */
@@ -129,21 +214,12 @@ GanttChart.Bars = (function() {
         $labels.append(clientApprovalBadge);
 
         // Extract percentage values
-        const percentageIFF = badges.PercentageIFF || 0;
         const percentageIFA = badges.PercentageIFA || 0;
         const percentageCategorized = badges.PercentageCategorized || 0;
-        const detailingIFFPercentComplete = badges.DetailingIFFPercentComplete || 0;
 
-        // Create and add badges to timeline
-        const $topLeftBadge = createPercentageBadge(
-            detailingIFFPercentComplete,
-            'badge-top-left',
-            'Detailing IFF (from status update)'
-        ).css({
-            'left': '20px',
-            'top': '5px'
-        });
+        // Note: IFF badge is already added from task data, so we skip it here
 
+        // Create and add remaining badges to timeline
         const $bottomLeftBadge = createPercentageBadge(
             percentageCategorized,
             'badge-bottom-left',
@@ -162,17 +238,11 @@ GanttChart.Bars = (function() {
             'top': '5px'
         });
 
-        const $bottomRightBadge = createPercentageBadge(
-            percentageIFF,
-            'badge-bottom-right',
-            'IFF from Tekla Production Control PieceMarks'
-        ).css({
-            'right': '20px',
-            'bottom': '5px'
-        });
+        // Note: IFF badge (bottom-right) is now added from task data in createSingleTaskRow
+        // Only add the production control IFF badge if it's different from the detailing IFF
 
-        // Add badges to timeline
-        $timeline.append($topLeftBadge, $bottomLeftBadge, $topRightBadge, $bottomRightBadge);
+        // Add badges to timeline (excluding IFF which is already added)
+        $timeline.append($bottomLeftBadge, $topRightBadge);
     }
 
     /**
@@ -196,7 +266,7 @@ GanttChart.Bars = (function() {
 
         // Create badge element
         const $badge = $(`<span class="percentage-badge ${badgeClass} ${colorClass}" 
-                            title="${tooltipText}: ${roundedPercentage}%">
+                            title="${tooltipText}">
                             ${roundedPercentage}%
                           </span>`);
 
@@ -240,7 +310,7 @@ GanttChart.Bars = (function() {
     }
 
     /**
-     * Add a task bar to the timeline
+     * Add a task bar to the timeline with enhanced tooltip
      * @param {Object} task - Task data
      * @param {jQuery} $timeline - Timeline element to add bar to
      */
@@ -277,14 +347,21 @@ GanttChart.Bars = (function() {
             .attr('data-task-id', task.id)
             .attr('data-row-group-id', task.RowGroupID || task.rowGroupId);
 
-        // Create tooltip content
+        // Create enhanced tooltip content including IFF info
         let tooltipContent = `
         ${task.taskDescription || task.description}
         Start: ${GanttChart.Core.formatDate(task.startDate)}
         End: ${GanttChart.Core.formatDate(task.endDate)}
         Progress: ${task.percentage}%
-        ${task.hours ? 'Hours: ' + Math.round(task.hours, 0) : ''}
-        `;
+        ${task.hours ? 'Hours: ' + Math.round(task.hours, 0) : ''}`;
+
+        // Add IFF information if available
+        if (task.hasIFFData && task.iffSubtask) {
+            tooltipContent += `
+        
+        Detailing IFF: ${task.iffPercentage}%
+        IFF Milestone: ${task.iffSubtask.formattedMilestoneDate || 'N/A'}`;
+        }
 
         $bar.attr('title', tooltipContent);
 

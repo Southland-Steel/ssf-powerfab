@@ -1,6 +1,6 @@
 /**
  * File: js/gantt-interactions.js
- * Handles user interactions with the Gantt chart
+ * Handles user interactions with the Gantt chart including IFF filtering
  */
 GanttChart.Interactions = (function() {
     'use strict';
@@ -82,9 +82,12 @@ GanttChart.Interactions = (function() {
     }
 
     /**
-     * Initialize filter buttons
+     * Initialize filter buttons including IFF filters
      */
     function initializeFilterButtons() {
+        // Check if we need to add IFF filter buttons
+        addIFFFilterButtons();
+
         $('.gantt-filter-btn').on('click', function() {
             $('.gantt-filter-btn').removeClass('active');
             $(this).addClass('active');
@@ -95,7 +98,32 @@ GanttChart.Interactions = (function() {
     }
 
     /**
-     * Filter items based on criteria - with container visibility fix
+     * Add IFF-specific filter buttons if not already present
+     */
+    function addIFFFilterButtons() {
+        const $filterContainer = $('.gantt-filter-container > div:first');
+
+        // Check if IFF filter buttons already exist
+        if ($filterContainer.find('[data-filter="iff-complete"]').length === 0) {
+            // Add IFF filter buttons after existing ones
+            const iffFilters = `
+                <button class="gantt-filter-btn" data-filter="has-iff">Has IFF</button>
+                <button class="gantt-filter-btn" data-filter="iff-complete">IFF Complete</button>
+                <button class="gantt-filter-btn" data-filter="iff-pending">IFF Pending</button>
+            `;
+
+            // Insert before Client Approved button if it exists, otherwise at the end
+            const $clientApprovedBtn = $filterContainer.find('[data-filter="client-approval-complete"]');
+            if ($clientApprovedBtn.length > 0) {
+                $(iffFilters).insertBefore($clientApprovedBtn);
+            } else {
+                $filterContainer.append(iffFilters);
+            }
+        }
+    }
+
+    /**
+     * Filter items based on criteria - with IFF support
      * @param {string} filter - Filter identifier
      */
     function filterItems(filter) {
@@ -105,8 +133,7 @@ GanttChart.Interactions = (function() {
         const $container = $(GanttChart.Core.getConfig().container);
         const $noItemsMessage = $(GanttChart.Core.getConfig().noItemsMessage);
 
-        // IMPORTANT FIX: Show container and hide the "no items" message immediately
-        // This ensures we're starting with a visible container regardless of previous state
+        // Show container and hide the "no items" message immediately
         $container.show();
         $noItemsMessage.hide();
 
@@ -191,6 +218,34 @@ GanttChart.Interactions = (function() {
                     }
                 });
                 break;
+
+            // New IFF filters
+            case 'has-iff':
+                $visibleRows.each(function() {
+                    if ($(this).attr('data-has-iff') !== 'true') {
+                        $(this).hide();
+                    }
+                });
+                break;
+
+            case 'iff-complete':
+                $visibleRows.each(function() {
+                    const iffPercentage = parseFloat($(this).attr('data-iff-percentage') || 0);
+                    if (iffPercentage < 99) {
+                        $(this).hide();
+                    }
+                });
+                break;
+
+            case 'iff-pending':
+                $visibleRows.each(function() {
+                    const hasIFF = $(this).attr('data-has-iff') === 'true';
+                    const iffPercentage = parseFloat($(this).attr('data-iff-percentage') || 0);
+                    if (!hasIFF || iffPercentage >= 99) {
+                        $(this).hide();
+                    }
+                });
+                break;
         }
 
         // Update the item count badge
@@ -199,12 +254,10 @@ GanttChart.Interactions = (function() {
         // Show "no items" message if no rows are visible
         const visibleCount = $('.task-row:visible').length;
         if (visibleCount === 0) {
-            // Add debug logging to verify
             console.log("No visible rows after filtering - showing 'no items' message");
             $noItemsMessage.show();
             $container.hide();
         } else {
-            // Add debug logging to verify
             console.log(`Found ${visibleCount} visible rows - showing container`);
             $noItemsMessage.hide();
             $container.show();
@@ -249,11 +302,20 @@ GanttChart.Interactions = (function() {
     }
 
     /**
-     * Update item count badge
+     * Update item count badge with IFF statistics
      */
     function updateItemCount() {
         const count = $('.task-row:visible').length;
-        $('#itemCountBadge').text(count);
+        const iffCount = $('.task-row:visible[data-has-iff="true"]').length;
+
+        let badgeText = count.toString();
+
+        // Add IFF count if any visible tasks have IFF
+        if (iffCount > 0) {
+            badgeText = `${count} (${iffCount} IFF)`;
+        }
+
+        $('#itemCountBadge').text(badgeText);
 
         // Change badge color based on count
         const $badge = $('#itemCountBadge');
@@ -272,6 +334,7 @@ GanttChart.Interactions = (function() {
      */
     function refresh() {
         updateItemCount();
+        addIFFFilterButtons();
     }
 
     // Public API

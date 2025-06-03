@@ -717,3 +717,146 @@ input:checked + .theme-switch-slider:before {
     background-color: #ffc107; /* Yellow for pending */
     border: 1px solid #e0a800;
 }
+
+/* IFF Badge Specific Styling */
+.percentage-badge.iff-badge {
+    background-color: #6610f2; /* Purple for IFF by default */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    font-weight: bold;
+}
+
+.percentage-badge.iff-badge.badge-success {
+    background-color: #198754; /* Green when complete */
+}
+
+.percentage-badge.iff-badge.badge-warning {
+    background-color: #6610f2; /* Purple when in progress */
+}
+
+.percentage-badge.iff-badge.badge-danger {
+    background-color: #dc3545; /* Red when not started */
+}
+
+/* Visual indicator for rows with IFF data */
+.task-row[data-has-iff="true"] .gantt-labels {
+    border-left: 3px solid #6610f2;
+    padding-left: 7px;
+}
+
+/* Highlight IFF percentage in export and tooltips */
+.iff-indicator {
+    color: #6610f2;
+    font-weight: bold;
+    margin-left: 5px;
+}
+/* IFF Milestone Marker Styles */
+.iff-milestone-marker {
+    position: absolute;
+    top: 50%;
+    width: 0;
+    height: 0;
+    transform: translateY(-50%);
+    z-index: 15;
+    cursor: help;
+    transition: transform 0.2s ease;
+}
+
+/* Diamond shape for IFF milestone */
+.iff-milestone-marker::before {
+    content: '';
+    position: absolute;
+    top: -8px;
+    left: -8px;
+    width: 16px;
+    height: 16px;
+    background-color: #6610f2;
+    transform: rotate(45deg);
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Status-based colors */
+.iff-milestone-marker.milestone-complete::before {
+    background-color: #198754; /* Green */
+}
+
+.iff-milestone-marker.milestone-in-progress::before {
+    background-color: #ffc107; /* Yellow - same as badge warning color */
+}
+
+.iff-milestone-marker.milestone-pending::before {
+    background-color: #dc3545; /* Red */
+}
+
+/* Hover effect */
+.iff-milestone-marker:hover {
+    transform: translateY(-50%) scale(1.2);
+}
+
+/* Alternative: Vertical line style (comment out diamond style above to use) */
+/*
+.iff-milestone-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: #6610f2;
+    z-index: 15;
+    cursor: help;
+    opacity: 0.8;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.iff-milestone-marker.milestone-complete {
+    background-color: #198754;
+}
+
+.iff-milestone-marker.milestone-in-progress {
+    background-color: #6610f2;
+}
+
+.iff-milestone-marker.milestone-pending {
+    background-color: #dc3545;
+}
+
+.iff-milestone-marker:hover {
+    opacity: 1;
+    transform: scaleX(1.5);
+}
+
+.iff-milestone-marker::before {
+    content: '';
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 8px solid currentColor;
+}
+*/
+
+/* Ensure IFF milestones are visible but don't overlap with task bars */
+.task-bar {
+    z-index: 10;
+}
+
+.iff-milestone-marker {
+    z-index: 15;
+}
+
+.workweek-dot {
+    z-index: 12;
+}
+
+/* Add connecting line from milestone to task bar (optional) */
+.iff-milestone-connector {
+    position: absolute;
+    top: 50%;
+    height: 1px;
+    background-color: rgba(102, 16, 242, 0.3);
+    z-index: 9;
+    pointer-events: none;
+}

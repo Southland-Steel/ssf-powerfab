@@ -70,16 +70,19 @@ try {
 
     $summary = $db->queryRow($summarySql, $params);
 
-    // Get all activities for timeline
+    // Get all activities for the DataTable
     $activitiesSql = "
         SELECT 
             f.FFR_TYP AS Type,
             f.FFR_NEST AS Nest,
             f.FFR_BON AS Batch,
             f.FFR_COM AS Job,
-            f.FFR_DWG AS Drawing,
+            f.FFR_DWG AS Sequence,
             f.FFR_RP AS Part_Mark,
-            f.FFR_PRF AS Profile,
+            f.FFR_RS AS Piece_Mark,
+            f.FFR_PRF AS Size,
+            f.FFR_MAT AS Grade,
+            f.FFR_PDS AS Weight,
             f.FFR_NBP AS Parts_Count,
             f.FFR_OPE AS Operator,
             f.FFR_DATD AS Start_Date,
@@ -87,6 +90,8 @@ try {
             f.FFR_DAT AS End_Date,
             f.FFR_TIM AS End_Time,
             f.DATM AS Timestamp,
+            f.BAR_ID,
+            f.NES_ID,
             CASE
                 WHEN f.FFR_TYP = 'N' THEN 'Bar Loaded'
                 WHEN f.FFR_TYP = 'P' THEN 'Cutting Parts'

@@ -7,6 +7,8 @@
 let currentData = null;
 let currentPeriod = 'today';
 let chartInstances = {};
+let activityDataTable = null;
+let barDetailsModal = null;
 
 // Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', function() {
@@ -20,6 +22,12 @@ function initializePage() {
     // Get initial values
     const machineName = document.getElementById('machineName').value;
     const initialPeriod = document.getElementById('currentPeriod').value || 'today';
+
+    // Initialize modal
+    const modalElement = document.getElementById('barDetailsModal');
+    if (modalElement) {
+        barDetailsModal = new bootstrap.Modal(modalElement);
+    }
 
     // Set up event listeners
     setupEventListeners();
@@ -153,8 +161,8 @@ function updateDisplay(data) {
     // Update summary cards
     updateSummaryCards(data.summary);
 
-    // Update activity timeline
-    updateActivityTimeline(data.activities);
+    // Update activity DataTable
+    updateActivityTable(data.activities);
 
     // Update nests table
     updateNestsTable(data.nests);
@@ -186,46 +194,235 @@ function updateSummaryCards(summary) {
 
     // Efficiency
     document.getElementById('efficiency').textContent = `${summary.efficiency || 0}%`;
-
-    // TODO: Add trend indicators based on previous period comparison
 }
 
 /**
- * Update activity timeline
+ * Update activity DataTable
  */
-function updateActivityTimeline(activities) {
-    const timeline = document.getElementById('activityTimeline');
+function updateActivityTable(activities) {
+    const tableBody = document.getElementById('activityTableBody');
+
+    // Destroy existing DataTable if it exists
+    if (activityDataTable) {
+        activityDataTable.destroy();
+    }
 
     if (!activities || activities.length === 0) {
-        timeline.innerHTML = '<p class="text-muted text-center">No activities found for this period</p>';
+        tableBody.innerHTML = '<tr><td colspan="10" class="text-center text-muted">No activities found for this period</td></tr>';
         return;
     }
 
-    // Limit to last 50 activities for performance
-    const limitedActivities = activities.slice(0, 50);
-
-    timeline.innerHTML = limitedActivities.map(activity => {
-        const icon = getActivityIcon(activity.Type);
-        const time = formatDateTime(activity.Timestamp);
+    // Build table HTML
+    tableBody.innerHTML = activities.map(activity => {
+        const dateTime = formatDateTime(activity.Timestamp);
+        const type = getActivityTypeLabel(activity.Type);
+        const typeClass = getActivityTypeClass(activity.Type);
 
         return `
-            <div class="timeline-item">
-                <div class="timeline-icon type-${activity.Type}">
-                    ${icon}
-                </div>
-                <div class="timeline-content">
-                    <div class="timeline-time">${time}</div>
-                    <div class="timeline-title">${activity.Activity_Text}</div>
-                    <div class="timeline-details">
-                        ${activity.Nest ? `Nest: ${activity.Nest}` : ''}
-                        ${activity.Part_Mark ? ` | Part: ${activity.Part_Mark}` : ''}
-                        ${activity.Profile ? ` | Profile: ${activity.Profile}` : ''}
-                        ${activity.Operator ? ` | Operator: ${activity.Operator}` : ''}
-                    </div>
-                </div>
-            </div>
+            <tr data-nest="${activity.Nest || ''}" data-type="${activity.Type}">
+                <td>${dateTime}</td>
+                <td><span class="badge ${typeClass}">${type}</span></td>
+                <td>${activity.Piece_Mark || '-'}</td>
+                <td>${activity.Size || '-'}</td>
+                <td>${activity.Grade || '-'}</td>
+                <td>${activity.Job || '-'}</td>
+                <td>${activity.Sequence || '-'}</td>
+                <td>${activity.Nest || '-'}</td>
+                <td>${activity.Weight ? parseFloat(activity.Weight).toFixed(2) : '-'}</td>
+                <td>
+                    ${activity.Nest ? `
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewBarDetails('${activity.Nest}', '${activity.Batch || ''}', '${activity.NES_ID || ''}', '${activity.BAR_ID || ''}')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    ` : '-'}
+                </td>
+            </tr>
         `;
     }).join('');
+
+    // Initialize DataTable
+    activityDataTable = $('#activityTable').DataTable({
+        pageLength: 25,
+        order: [[0, 'asc']], // Sort by date/time descending
+        responsive: true,
+        language: {
+            search: "Filter activities:",
+            lengthMenu: "Show _MENU_ activities per page"
+        }
+    });
+}
+
+/**
+ * View bar details
+ */
+async function viewBarDetails(nest, batch, nesId, barId) {
+    if (!nest) return;
+
+    // Show modal with loading state
+    barDetailsModal.show();
+    showBarDetailsLoading();
+
+    try {
+        const machine = document.getElementById('machineName').value;
+        const url = `ajax/get_bar_details.php?machine=${encodeURIComponent(machine)}&nest=${encodeURIComponent(nest)}&batch=${encodeURIComponent(batch || '')}&nes_id=${encodeURIComponent(nesId || '')}&bar_id=${encodeURIComponent(barId || '')}`;
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+            showBarDetailsError(data.error);
+        } else {
+            displayBarDetails(data);
+        }
+
+    } catch (error) {
+        console.error('Error loading bar details:', error);
+        showBarDetailsError('Failed to load bar details. Please try again.');
+    }
+}
+
+/**
+ * Display bar details in modal
+ */
+function displayBarDetails(data) {
+    const content = document.getElementById('barDetailsContent');
+    const modalTitle = document.getElementById('barDetailsModalLabel');
+
+    // Update modal title
+    modalTitle.innerHTML = `
+        <i class="fas fa-bars me-2"></i>
+        Bar Details - Nest: ${data.nest_name || 'N/A'}
+    `;
+
+    // Build content HTML
+    let html = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3">Nest Information</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <th width="40%">Nest Name:</th>
+                        <td>${data.nest_name || '-'}</td>
+                    </tr>
+                    <tr>
+                        <th>Description:</th>
+                        <td>${data.nest_description || '-'}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Quantity:</th>
+                        <td>${data.nest_quantity || 0}</td>
+                    </tr>
+                    <tr>
+                        <th>Quantity Produced:</th>
+                        <td>${data.nest_quantity_produced || 0}</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6 class="fw-bold mb-3">Production Summary</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <th width="40%">Total Bars:</th>
+                        <td>${data.bars ? data.bars.length : 0}</td>
+                    </tr>
+                    <tr>
+                        <th>Parts Cut:</th>
+                        <td>${data.total_parts_cut || 0}</td>
+                    </tr>
+                    <tr>
+                        <th>Total Weight:</th>
+                        <td>${data.total_weight ? data.total_weight.toFixed(2) + ' lbs' : '-'}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    `;
+
+    // Add bars table if available
+    if (data.bars && data.bars.length > 0) {
+        html += `
+            <h6 class="fw-bold mt-4 mb-3">Bar Details</h6>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover">
+                    <thead>
+                        <tr>
+                            <th>Bar Number</th>
+                            <th>Bar ID</th>
+                            <th>Profile</th>
+                            <th>Thickness</th>
+                            <th>Length</th>
+                            <th>Weight</th>
+                            <th>Waste</th>
+                            <th>Cut List Item</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        data.bars.forEach(bar => {
+            // Extract CutListItemID from BAR_XID if available
+            let cutListItemId = '-';
+            if (bar.Cut_List_Item_ID) {
+                cutListItemId = bar.Cut_List_Item_ID;
+            }
+
+            html += `
+                <tr>
+                    <td><strong>${bar.Bar_Number || '-'}</strong></td>
+                    <td>${bar.Bar_ID || '-'}</td>
+                    <td>${bar.Profile || '-'}</td>
+                    <td>${bar.Thickness ? bar.Thickness + ' mm' : '-'}</td>
+                    <td>${bar.Length ? bar.Length + ' mm' : '-'}</td>
+                    <td>${bar.Weight ? parseFloat(bar.Weight).toFixed(2) + ' lbs' : '-'}</td>
+                    <td>${bar.Waste ? bar.Waste + ' mm' : '-'}</td>
+                    <td>${cutListItemId}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+    } else {
+        html += `
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle me-2"></i>
+                No bar information available for this nest.
+            </div>
+        `;
+    }
+
+    content.innerHTML = html;
+
+    // Hide loading, show content
+    document.getElementById('barDetailsLoading').style.display = 'none';
+    document.getElementById('barDetailsError').style.display = 'none';
+    content.style.display = 'block';
+}
+
+/**
+ * Show bar details loading state
+ */
+function showBarDetailsLoading() {
+    document.getElementById('barDetailsLoading').style.display = 'block';
+    document.getElementById('barDetailsContent').style.display = 'none';
+    document.getElementById('barDetailsError').style.display = 'none';
+}
+
+/**
+ * Show bar details error
+ */
+function showBarDetailsError(message) {
+    document.getElementById('barErrorMessage').textContent = message;
+    document.getElementById('barDetailsLoading').style.display = 'none';
+    document.getElementById('barDetailsContent').style.display = 'none';
+    document.getElementById('barDetailsError').style.display = 'block';
 }
 
 /**
@@ -369,28 +566,48 @@ function drawSimpleBarChart(ctx, labels, values) {
 }
 
 /**
- * Get bar color by index
- */
-function getBarColor(index) {
-    const colors = ['#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d'];
-    return colors[index % colors.length];
-}
-
-/**
  * Helper Functions
  */
 
-function getActivityIcon(type) {
+function formatDateTime(dateString) {
+    if (!dateString) return '-';
+
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString;
+
+    const options = {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    };
+
+    return date.toLocaleString('en-US', options);
+}
+
+function getActivityTypeLabel(type) {
     switch (type) {
-        case 'N':
-            return '<i class="fas fa-download"></i>';
-        case 'P':
-            return '<i class="fas fa-cut"></i>';
-        case 'A':
-            return '<i class="fas fa-stop"></i>';
-        default:
-            return '<i class="fas fa-question"></i>';
+        case 'N': return 'Bar Loading';
+        case 'P': return 'Part Cutting';
+        case 'A': return 'Machine Stop';
+        default: return 'Unknown: ' + type;
     }
+}
+
+function getActivityTypeClass(type) {
+    switch (type) {
+        case 'N': return 'bg-info';
+        case 'P': return 'bg-success';
+        case 'A': return 'bg-danger';
+        default: return 'bg-secondary';
+    }
+}
+
+function getBarColor(index) {
+    const colors = ['#28a745', '#ffc107', '#17a2b8', '#dc3545', '#6c757d'];
+    return colors[index % colors.length];
 }
 
 function formatDuration(minutes) {

@@ -1,12 +1,12 @@
 /**
  * File: js/gantt-ajax.js
- * Handles AJAX requests for the Gantt chart with sequential loading
+ * Handles AJAX requests for the Gantt chart with integrated data loading
  */
 GanttChart.Ajax = (function() {
     'use strict';
 
     /**
-     * Load Gantt chart data with sequential enhancement
+     * Load Gantt chart data with integrated badge data
      * @param {string} filter - Filter to apply to data
      */
     function loadData(filter) {
@@ -16,12 +16,12 @@ GanttChart.Ajax = (function() {
         // Reset item count badge
         $('#itemCountBadge').text('0').removeClass('bg-success bg-primary').addClass('bg-secondary');
 
-        // Step 1: Load core timeline data
+        // Load timeline data which now includes IFF data
         loadTimelineData(filter);
     }
 
     /**
-     * Step 1: Load core timeline data
+     * Load timeline data including IFF subtask information
      * @param {string} filter - Filter to apply to data
      */
     function loadTimelineData(filter) {
@@ -51,7 +51,7 @@ GanttChart.Ajax = (function() {
     }
 
     /**
-     * Handle successful timeline response
+     * Handle successful timeline response with integrated IFF data
      * @param {Object} response - Server response
      * @param {string} filter - Current filter
      */
@@ -67,7 +67,7 @@ GanttChart.Ajax = (function() {
             const tasks = response.tasks;
             const dateRange = response.dateRange;
 
-            // Process tasks data to normalize property names if needed
+            // Process tasks data to normalize property names and extract IFF data
             const processedTasks = tasks.map(task => {
                 // Ensure consistent property names
                 if (!task.rowGroupId && task.RowGroupID) {
@@ -84,6 +84,17 @@ GanttChart.Ajax = (function() {
                     task.description = task.taskDescription;
                 } else if (!task.description && task.SequenceName) {
                     task.description = task.SequenceName + (task.LotNumber ? ' - ' + task.LotNumber : '');
+                }
+
+                // Extract IFF data from the task if it has an iffSubtask
+                if (task.iffSubtask) {
+                    task.hasIFFData = true;
+                    task.iffPercentage = task.iffSubtask.percentage || 0;
+                    task.iffStatus = task.iffSubtask.status;
+                    task.iffMilestoneDate = task.iffSubtask.milestoneDate;
+                } else {
+                    task.hasIFFData = false;
+                    task.iffPercentage = 0;
                 }
 
                 return task;
@@ -106,7 +117,7 @@ GanttChart.Ajax = (function() {
                     dateRange.end
                 );
 
-                // Generate task bars (without badges/workweeks initially)
+                // Generate task bars with IFF badges integrated
                 GanttChart.Bars.generate(
                     processedTasks,
                     dateRange.start,
@@ -131,8 +142,8 @@ GanttChart.Ajax = (function() {
                 // Show chart
                 GanttChart.Core.showChart();
 
-                // Step 2: Load enhancement data
-                loadEnhancementData(processedTasks, filter);
+                // Load remaining enhancement data (badges and workweeks)
+                loadRemainingEnhancementData(filter);
 
             } else {
                 // Show no items message
@@ -145,12 +156,10 @@ GanttChart.Ajax = (function() {
     }
 
     /**
-     * Step 2: Load enhancement data (badges and workweeks)
-     * @param {Array} tasks - Array of task objects
+     * Load remaining enhancement data (badges and workweeks)
      * @param {string} filter - Current filter
      */
-    function loadEnhancementData(tasks, filter) {
-        // No need to extract RowGroupIDs - just pass the same filter
+    function loadRemainingEnhancementData(filter) {
         // Load badges and workweeks simultaneously
         Promise.allSettled([
             loadBadgeData(filter),
@@ -176,7 +185,7 @@ GanttChart.Ajax = (function() {
     }
 
     /**
-     * Load badge data using the same filter approach as timeline
+     * Load badge data (excluding IFF which now comes from timeline)
      * @param {string} filter - Current filter
      * @returns {Promise} Promise that resolves with badge data
      */
@@ -204,7 +213,7 @@ GanttChart.Ajax = (function() {
     }
 
     /**
-     * Load workweek data using the same filter approach as timeline
+     * Load workweek data
      * @param {string} filter - Current filter
      * @returns {Promise} Promise that resolves with workweek data
      */
@@ -232,7 +241,7 @@ GanttChart.Ajax = (function() {
     }
 
     /**
-     * Apply badge data to existing task rows
+     * Apply badge data to existing task rows (excluding IFF data)
      * @param {Object} badgeData - Badge data keyed by RowGroupID
      */
     function applyBadgeData(badgeData) {
@@ -275,9 +284,6 @@ GanttChart.Ajax = (function() {
                             .text(Math.round(clientApproval * 10) / 10 + '%')
                             .attr('title', `Client Approval: ${Math.round(clientApproval * 10) / 10}%`);
                     }
-
-                    // Add other badges similarly...
-                    // This is a simplified implementation
                 }
             }
         });
@@ -350,13 +356,14 @@ GanttChart.Ajax = (function() {
             return;
         }
 
-        // Prepare CSV header
+        // Prepare CSV header - now including IFF percentage
         const headers = [
             'Project',
             'Element',
             'Task Description',
             'Status',
             'Progress',
+            'IFF Progress',
             'Start Date',
             'End Date',
             'Hours'
@@ -389,6 +396,7 @@ GanttChart.Ajax = (function() {
                 csvEscapeValue(task.taskDescription || task.TaskDescription || task.description || ''),
                 csvEscapeValue(task.status || ''),
                 task.percentage + '%',
+                (task.iffPercentage || 0) + '%',
                 task.startDate ? GanttChart.Core.formatDate(task.startDate) : '',
                 task.endDate ? GanttChart.Core.formatDate(task.endDate) : '',
                 task.hours || ''
@@ -405,7 +413,7 @@ GanttChart.Ajax = (function() {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.setAttribute('href', url);
-        link.setAttribute('download', 'gantt_data.csv');
+        link.setAttribute('download', 'gantt_data_with_iff.csv');
         link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
