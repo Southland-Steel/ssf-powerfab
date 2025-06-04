@@ -312,7 +312,7 @@ GanttChart.Interactions = (function() {
 
         // Add IFF count if any visible tasks have IFF
         if (iffCount > 0) {
-            badgeText = `${count} (${iffCount} IFF)`;
+            badgeText = `${count}`;
         }
 
         $('#itemCountBadge').text(badgeText);
