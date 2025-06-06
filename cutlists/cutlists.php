@@ -125,7 +125,7 @@
                         <th>Weight (lbs)</th>
                         <th>Group</th>
                         <th>Machine</th>
-                        <th>Cutlist</th>
+                        <th>[ID] Cutlist</th>
                     </tr>
                     </thead>
                     <tbody>
@@ -505,7 +505,7 @@
             <td>${item.Weight}</td>
             <td>${item.MachineGroup}</td>
             <td>${item.MachineName}</td>
-            <td>${item.CutlistName}</td>
+            <td>[${item.ProductionControlCutlistID}] ${item.CutlistName}</td>
         `;
                 tbody.appendChild(row);
 

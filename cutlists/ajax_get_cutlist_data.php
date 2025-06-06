@@ -12,6 +12,7 @@ try {
     $query = "
         SELECT 
             pccli.ProductionControlCutListItemID,
+            pccl.ProductionControlCutlistID,
             CONCAT(xtn.ExternalNestExtra1, '-', LPAD(xtn.ExternalNestExtra2, 2, '0')) AS NestNumber,
             wp.WorkPackageNumber,
             wp.Group2 as WorkWeek,
