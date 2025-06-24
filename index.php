@@ -49,7 +49,7 @@
         </div>
         <div class="col-md-3">
             <h5 class="text-center">Transition</h5>
-            <a href="view_ssf_earned_hours.php" class="btn btn-warning">Earned Hours</a>
+            <a href="earnedhours/index.php" class="btn btn-warning">Earned Hours</a>
             <a href="view_ssf_hit_stations.php" class="btn btn-success">View SSF Production Monitor</a>
             <a href="view_ssf_stations.php" class="btn btn-info">View SSF Stations</a>
             <a href="view_ssf_route_removal.php" class="btn btn-info">Route Removal Tool</a>
