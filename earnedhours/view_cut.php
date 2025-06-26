@@ -65,7 +65,7 @@ try{
         left join fabrication.workpackages as wp on wp.WorkPackageID = pcseq.WorkPackageID
         inner join fabrication.stations on stations.StationID = pcis.StationID
         inner join fabrication.users on users.UserID = pcis.UserID
-        where pcis.DateCompleted = :query_date and stations.Description = 'cut'
+        where pcis.DateCompleted = :query_date and stations.Description = 'cut' and wp.WorkshopID = 1
         order by ManHours desc";
 
     $stmt = $pdo->prepare($sql);

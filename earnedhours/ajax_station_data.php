@@ -42,8 +42,10 @@ try {
     end) as ManHours
     from fabrication.productioncontrolitemstations as pcis 
     inner join fabrication.stations on stations.StationID = pcis.StationID
+    inner join fabrication.productioncontrolsequences as pcseq on pcis.SequenceID = pcseq.SequenceID
+    left join fabrication.workpackages as wp on wp.WorkPackageID = pcseq.WorkPackageID
     where STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND CURDATE() 
-    and stations.Description = 'cut' and pcis.DateCompleted IS NOT NULL
+    and stations.Description = 'cut' and pcis.DateCompleted IS NOT NULL and wp.WorkshopID = 1
     group by pcis.DateCompleted
     order by pcis.DateCompleted desc";
 
@@ -70,8 +72,10 @@ try {
     end) as AssemblyManHours
     from fabrication.productioncontrolitemstations as pcis 
     inner join fabrication.stations on stations.StationID = pcis.StationID
+    inner join fabrication.productioncontrolsequences as pcseq on pcis.SequenceID = pcseq.SequenceID
+    left join fabrication.workpackages as wp on wp.WorkPackageID = pcseq.WorkPackageID
     where STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND CURDATE() 
-    and stations.Description = 'fit' and pcis.DateCompleted IS NOT NULL
+    and stations.Description = 'fit' and pcis.DateCompleted IS NOT NULL and wp.WorkshopID = 1
     group by pcis.DateCompleted
     order by pcis.DateCompleted desc";
 
@@ -115,8 +119,10 @@ try {
         end as AssemblyRouteName
         from fabrication.productioncontrolitemstations as pcis
         inner join fabrication.stations on stations.StationID = pcis.StationID
+        inner join fabrication.productioncontrolsequences as pcseq on pcis.SequenceID = pcseq.SequenceID
+        left join fabrication.workpackages as wp on wp.WorkPackageID = pcseq.WorkPackageID
         where STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND CURDATE() 
-        and stations.Description = 'final qc' and pcis.DateCompleted IS NOT NULL
+        and stations.Description = 'final qc' and pcis.DateCompleted IS NOT NULL and wp.WorkshopID = 1
         order by pcis.DateCompleted desc";
 
     $finalqc_stmt = $pdo->prepare($finalqc_query);
