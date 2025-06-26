@@ -156,7 +156,7 @@ try {
 <body>
     <div class="container">
         <header class="monitor-header">
-            <a href="view_open_ncr_summary.php" class="return-button">← Return to Summary</a>
+            <a href="index.php" class="return-button">← Return to Summary</a>
             <h1>Inspection NCR - Details</h1>
             <?php if (!empty($query_record)): ?>
                 <p>
