@@ -137,6 +137,19 @@ $export_data = [];
             border: 1px solid #5a6fd8;
         }
 
+        .btn-job-export {
+            background-color: #28a745;
+            color: white;
+            border: 1px solid #28a745;
+            margin-right: 10px;
+        }
+
+        .btn-job-export:hover {
+            background-color: #218838;
+            color: white;
+            border: 1px solid #1e7e34;
+        }
+
         .loading-spinner {
             display: none;
             text-align: center;
@@ -167,6 +180,7 @@ $export_data = [];
             <div class="action-buttons d-flex justify-content-start">
                 <button class="btn btn-color btn-sm" id="exportJSON">Export Weekly Summary (JSON)</button>
                 <button class="btn btn-color btn-sm" id="exportCSV" >Export Weekly Summary (CSV)</button>
+                <button class="btn btn-job-export btn-sm" id="exportJobDataCSV">Export Job Data (CSV)</button>
             </div>
 
             <div class="loading-spinner" id="loadingSpinner">
@@ -224,8 +238,10 @@ $export_data = [];
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="view_weekly_earnedhours.js"></script>
+<script src="view_hours_by_jobNum.js"></script>
 <script>
     let stationData = null;
+    let jobNumberExporter = null;
 
     function toggleTooltip() {
         const tooltip = document.getElementById('tooltipContent');
@@ -259,6 +275,42 @@ $export_data = [];
         document.getElementById('finalqc6dayAvg').textContent = Math.round(stats.finalqc_6day_avg * 100) / 100;
         document.getElementById('total6dayAvg').textContent = Math.round(stats.total_6day_avg * 100) / 100;
     }
+
+    async function exportJobDataToCSV() {
+    try {
+        console.log('Starting job data export...');
+        
+        const response = await fetch('jobNumber_data.php');
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const text = await response.text();
+        console.log('Raw response:', text);
+        
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (parseError) {
+            console.error('JSON parse error:', parseError);
+            console.error('Response text:', text);
+            throw new Error('Invalid JSON response from server');
+        }
+        
+        if (!data.success) {
+            throw new Error(data.message || 'Server returned error');
+        }
+
+        const jobHours = new JobNumberWeeklyHours();
+        jobHours.setData(data.data);
+        jobHours.downloadJobNumberWeeklySummary('csv');
+        
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Error exporting job data: ' + error.message);
+    }
+}
 
     function loadStationData() {
         document.getElementById('loadingSpinner').style.display = 'block';
@@ -349,6 +401,8 @@ $export_data = [];
     }
 
     document.addEventListener('DOMContentLoaded', function() {
+        jobNumberExporter = new JobNumberWeeklyHours();
+
         loadStationData();
 
         document.getElementById('exportCSV').addEventListener('click', function() {
@@ -366,6 +420,24 @@ $export_data = [];
                 weeklyHours.downloadWeeklySummary('json');
             }
         });
+
+        document.getElementById('exportJobDataCSV').addEventListener('click', async function() {
+    try {
+        const response = await fetch('jobNumber_data.php');
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            const jobNumberHours = new JobNumberWeeklyHours();
+            jobNumberHours.setData(data.data);
+            jobNumberHours.downloadJobNumberWeeklySummary('csv');
+        } else {
+            throw new Error(data.message || 'Failed to load job data');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Error exporting job data: ' + error.message);
+    }
+});
     });
 </script>
 </body>

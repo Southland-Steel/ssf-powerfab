@@ -136,6 +136,9 @@ try {
         if($routeName == 'BO'){
             $newHours = ($tmp['AssemblyManHours'] * 0.8);
         }
+        elseif($routeName == 'SHIP LOOSE'){
+            $newHours = ($tmp['AssemblyManHours'] * 0);
+        }
         else{
             $newHours = ($tmp['AssemblyManHours'] * 0.4);
         }
