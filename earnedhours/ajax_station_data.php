@@ -6,6 +6,16 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 require_once '../config_ssf_db.php';
 
+$default_days = 30;
+
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : null;
+$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : null;
+
+if (!$start_date || !$end_date) {
+    $end_date = date('Y-m-d');
+    $start_date = date('Y-m-d', strtotime("-{$default_days} days"));
+}
+
 $response = [
     'success' => false,
     'message' => '',
@@ -44,12 +54,14 @@ try {
     inner join fabrication.stations on stations.StationID = pcis.StationID
     inner join fabrication.productioncontrolsequences as pcseq on pcis.SequenceID = pcseq.SequenceID
     left join fabrication.workpackages as wp on wp.WorkPackageID = pcseq.WorkPackageID
-    where STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND CURDATE() 
+    where STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN :begin_date AND :end_date 
     and stations.Description = 'cut' and pcis.DateCompleted IS NOT NULL and wp.WorkshopID = 1
     group by pcis.DateCompleted
     order by pcis.DateCompleted desc";
 
     $cut_stmt = $pdo->prepare($cut_query);
+    $cut_stmt->bindParam(':begin_date', $start_date);
+    $cut_stmt->bindParam(':end_date', $end_date);
     $cut_stmt->execute();
 
     while($tmp = $cut_stmt->fetch(PDO::FETCH_ASSOC)){
@@ -74,12 +86,14 @@ try {
     inner join fabrication.stations on stations.StationID = pcis.StationID
     inner join fabrication.productioncontrolsequences as pcseq on pcis.SequenceID = pcseq.SequenceID
     left join fabrication.workpackages as wp on wp.WorkPackageID = pcseq.WorkPackageID
-    where STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND CURDATE() 
+    where STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN :begin_date AND :end_date 
     and stations.Description = 'fit' and pcis.DateCompleted IS NOT NULL and wp.WorkshopID = 1
     group by pcis.DateCompleted
     order by pcis.DateCompleted desc";
 
     $fit_stmt = $pdo->prepare($fit_query);
+    $fit_stmt->bindParam(':begin_date', $start_date);
+    $fit_stmt->bindParam(':end_date', $end_date);
     $fit_stmt->execute();
 
     while($tmp = $fit_stmt->fetch(PDO::FETCH_ASSOC)){
@@ -121,11 +135,13 @@ try {
         inner join fabrication.stations on stations.StationID = pcis.StationID
         inner join fabrication.productioncontrolsequences as pcseq on pcis.SequenceID = pcseq.SequenceID
         left join fabrication.workpackages as wp on wp.WorkPackageID = pcseq.WorkPackageID
-        where STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND CURDATE() 
+        where STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN :begin_date AND :end_date 
         and stations.Description = 'final qc' and pcis.DateCompleted IS NOT NULL and wp.WorkshopID = 1
         order by pcis.DateCompleted desc";
 
     $finalqc_stmt = $pdo->prepare($finalqc_query);
+    $finalqc_stmt->bindParam(':begin_date', $start_date);
+    $finalqc_stmt->bindParam(':end_date', $end_date);
     $finalqc_stmt->execute();
 
     $date_totals = [];
@@ -239,14 +255,14 @@ try {
             'cut_total' => $cut_total,
             'fit_total' => $fit_total,
             'finalqc_total' => $finalqc_total,
-            'cut_avg' => $cut_avg,
-            'fit_avg' => $fit_avg,
-            'finalqc_avg' => $finalqc_avg,
-            'total_avg' => $total_avg,
-            'cut_6day_avg' => $cut_6day_avg,
-            'fit_6day_avg' => $fit_6day_avg,
-            'finalqc_6day_avg' => $finalqc_6day_avg,
-            'total_6day_avg' => $total_6day_avg
+            'cut_avg' => round($cut_avg, 2),
+            'fit_avg' => round($fit_avg, 2),
+            'finalqc_avg' => round($finalqc_avg, 2),
+            'total_avg' => round($total_avg, 2),
+            'cut_6day_avg' => round($cut_6day_avg, 2),
+            'fit_6day_avg' => round($fit_6day_avg, 2),
+            'finalqc_6day_avg' => round($finalqc_6day_avg, 2),
+            'total_6day_avg' => round($total_6day_avg, 2)
         ],
         'export_data' => $export_data
     ];

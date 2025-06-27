@@ -5,11 +5,10 @@ class JobNumberWeeklyHours {
     }
 
     getWeekStart(dateString) {
-        // Parse the date string manually to avoid timezone issues
         const [year, month, day] = dateString.split('-').map(Number);
-        const date = new Date(year, month - 1, day); // month is 0-indexed
+        const date = new Date(year, month - 1, day);
         
-        const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
+        const dayOfWeek = date.getDay();
         const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert to Monday-based week
         
         const weekStart = new Date(date);
@@ -32,7 +31,6 @@ class JobNumberWeeklyHours {
     }
 
     formatActualDate(dateString) {
-        // Already in YYYY-MM-DD format, just return as is
         return dateString;
     }
 
@@ -68,7 +66,6 @@ class JobNumberWeeklyHours {
             }
 
             if (this.stations.includes(stationName)) {
-                // Use CalculatedHours which should be the same across all station types
                 let hours = parseFloat(item.CalculatedHours || 0);
                 
                 weeklyJobData[weekKey][jobNumber][stationName] += hours;
@@ -93,7 +90,7 @@ class JobNumberWeeklyHours {
         data.forEach(item => {
             if (!item.DateCompleted || !item.StationName || !item.JobNumber) return;
 
-            const dateKey = item.DateCompleted; // Use the actual date instead of week start
+            const dateKey = item.DateCompleted;
             const jobNumber = item.JobNumber.toString();
             const stationName = this.normalizeStationName(item.StationName);
 
@@ -130,7 +127,14 @@ class JobNumberWeeklyHours {
         }
     }
 
-    downloadJobNumberCSV(dailyJobData) {
+    downloadJobNumberCSV() {
+        if (!this.data || this.data.length === 0) {
+            alert('No job data available to export');
+            return;
+        }
+
+        const dailyJobData = this.convertFlatDataToDailyFormat(this.data);
+        
         const rows = [];
         
         const headers = ['Week', 'Date', 'Job Number', ...this.stations, 'Total'];
@@ -149,7 +153,6 @@ class JobNumberWeeklyHours {
                 return numA - numB;
             });
 
-            // Add job rows for this date
             sortedJobs.forEach(jobNumber => {
                 const data = jobData[jobNumber];
                 const row = [
@@ -163,7 +166,6 @@ class JobNumberWeeklyHours {
             });
         });
 
-        // Remove the last empty row if it exists
         if (rows.length > 1 && rows[rows.length - 1].every(cell => cell === '')) {
             rows.pop();
         }
@@ -247,7 +249,6 @@ class JobNumberWeeklyHours {
 
     generateSummaryReport() {
         const stats = this.getSummaryStats();
-
         let report = `
         <div class="summary-report">
             <h4>Job Number Daily Hours Summary</h4>
@@ -299,6 +300,49 @@ class JobNumberWeeklyHours {
         return report;
     }
 
+    setData(data) {
+        this.data = data;
+    }
+
+    getData() {
+        return this.data;
+    }
+
+    clearData() {
+        this.data = [];
+    }
+
+    convertFlatDataToDailyFormat(flatData) {
+        const dailyJobData = {};
+        
+        flatData.forEach(record => {
+            const date = record.DateCompleted;
+            const jobNumber = record.JobNumber;
+            const station = record.StationName;
+            const hours = parseFloat(record.CalculatedHours) || 0;
+            
+            if (!dailyJobData[date]) {
+                dailyJobData[date] = {};
+            }
+            
+            if (!dailyJobData[date][jobNumber]) {
+                dailyJobData[date][jobNumber] = {
+                    Cut: 0,
+                    Fit: 0,
+                    FinalQC: 0,
+                    Total: 0
+                };
+            }
+            
+            if (this.stations.includes(station)) {
+                dailyJobData[date][jobNumber][station] += hours;
+                dailyJobData[date][jobNumber]['Total'] += hours;
+            }
+        });
+        
+        return dailyJobData;
+    }
+
     downloadFile(content, filename, type) {
         const blob = new Blob([content], { type });
         const link = document.createElement('a');
@@ -308,17 +352,5 @@ class JobNumberWeeklyHours {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(link.href);
-    }
-
-    setData(data) {
-        this.data = data || [];
-    }
-
-    getData() {
-        return this.data;
-    }
-
-    clearData() {
-        this.data = [];
     }
 }

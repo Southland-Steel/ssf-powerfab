@@ -11,6 +11,16 @@ header('Access-Control-Allow-Headers: Content-Type');
 
 require_once '../config_ssf_db.php';
 
+$default_days = 30;
+
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : null;
+$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : null;
+
+if (!$start_date || !$end_date) {
+    $end_date = date('Y-m-d');
+    $start_date = date('Y-m-d', strtotime("-{$default_days} days"));
+}
+
 $response = [
     'success' => false,
     'message' => '',
@@ -22,9 +32,9 @@ try {
     
     $pdo = $db;
 
-    $finalqcData = exportFinalQCData($pdo);
-    $cutData = exportCutData($pdo);
-    $fitData = exportFitData($pdo);
+    $finalqcData = exportFinalQCData($pdo, $start_date, $end_date);
+    $cutData = exportCutData($pdo, $start_date, $end_date);
+    $fitData = exportFitData($pdo, $start_date, $end_date);
 
     $combinedRecords = [];
 
@@ -65,7 +75,7 @@ try {
     $response['success'] = true;
     $response['message'] = 'Data retrieved successfully';
     $response['summary'] = [
-        'date_range' => 'Last 60 days',
+        'date_range' => "From {$start_date} to {$end_date}",
         'total_records' => count($combinedRecords),
         'finalqc_records' => count($finalqcData['records'] ?? []),
         'cut_records' => count($cutData['records'] ?? []),
@@ -84,7 +94,7 @@ ob_clean();
 echo json_encode($response, JSON_NUMERIC_CHECK);
 exit;
 
-function exportFinalQCData($pdo) {
+function exportFinalQCData($pdo, $start_date, $end_date) {
     try {
         $sql = "SELECT
             pcis.DateCompleted,
@@ -124,13 +134,15 @@ function exportFinalQCData($pdo) {
         INNER JOIN fabrication.productioncontrolsequences as pcseq on pcis.SequenceID = pcseq.SequenceID
         INNER JOIN fabrication.productioncontroljobs as pcj on pcj.ProductionControlID = pcis.ProductionControlID
         LEFT JOIN fabrication.workpackages as wp on wp.WorkPackageID = pcseq.WorkPackageID
-        WHERE STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND CURDATE() 
+        WHERE STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN :begin_date AND :end_date 
             AND stations.Description = 'final qc' 
             AND pcis.DateCompleted IS NOT NULL 
             AND wp.WorkshopID = 1
         ORDER BY pcis.DateCompleted DESC";
 
         $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':begin_date', $start_date);
+        $stmt->bindParam(':end_date', $end_date);
         $stmt->execute();
         
         $results = [];
@@ -144,6 +156,8 @@ function exportFinalQCData($pdo) {
 
             if ($routeName == 'BO') {
                 $calculatedHours = $baseHours * 0.8;
+            } elseif ($routeName == 'SHIP LOOSE') {
+                $calculatedHours = $baseHours * 0;
             } else {
                 $calculatedHours = $baseHours * 0.4;
             }
@@ -169,14 +183,14 @@ function exportFinalQCData($pdo) {
         
         return [
             'export_type' => 'finalqc',
-            'date_range' => 'Last 60 days',
+            'date_range' => "From {$start_date} to {$end_date}",
             'total_records' => count($results),
             'records' => $results
         ];
     } catch (Exception $e) {
         return [
             'export_type' => 'finalqc',
-            'date_range' => 'Last 60 days',
+            'date_range' => "From {$start_date} to {$end_date}",
             'total_records' => 0,
             'records' => [],
             'error' => $e->getMessage()
@@ -184,7 +198,7 @@ function exportFinalQCData($pdo) {
     }
 }
 
-function exportCutData($pdo) {
+function exportCutData($pdo, $start_date, $end_date) {
     try {
         $sql = "SELECT
             pcis.DateCompleted,
@@ -205,7 +219,7 @@ function exportCutData($pdo) {
         INNER JOIN fabrication.productioncontrolsequences as pcseq on pcis.SequenceID = pcseq.SequenceID
         INNER JOIN fabrication.productioncontroljobs as pcj on pcj.ProductionControlID = pcis.ProductionControlID
         LEFT JOIN fabrication.workpackages as wp on wp.WorkPackageID = pcseq.WorkPackageID
-        WHERE STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND CURDATE() 
+        WHERE STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN :begin_date AND :end_date 
             AND stations.Description = 'cut' 
             AND pcis.DateCompleted IS NOT NULL 
             AND wp.WorkshopID = 1
@@ -213,11 +227,12 @@ function exportCutData($pdo) {
         ORDER BY pcis.DateCompleted DESC";
 
         $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':begin_date', $start_date);
+        $stmt->bindParam(':end_date', $end_date);
         $stmt->execute();
         
         $results = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            // Apply Cut station multiplier (0.2)
             $baseHours = floatval($row['BaseManHours'] ?? 0);
             $calculatedHours = $baseHours * 0.2;
             
@@ -230,14 +245,14 @@ function exportCutData($pdo) {
         
         return [
             'export_type' => 'cut',
-            'date_range' => 'Last 60 days',
+            'date_range' => "From {$start_date} to {$end_date}",
             'total_records' => count($results),
             'records' => $results
         ];
     } catch (Exception $e) {
         return [
             'export_type' => 'cut',
-            'date_range' => 'Last 60 days',
+            'date_range' => "From {$start_date} to {$end_date}",
             'total_records' => 0,
             'records' => [],
             'error' => $e->getMessage()
@@ -245,7 +260,7 @@ function exportCutData($pdo) {
     }
 }
 
-function exportFitData($pdo) {
+function exportFitData($pdo, $start_date, $end_date) {
     try {
         $sql = "SELECT
             pcis.DateCompleted,
@@ -266,7 +281,7 @@ function exportFitData($pdo) {
         INNER JOIN fabrication.productioncontrolsequences as pcseq on pcis.SequenceID = pcseq.SequenceID
         INNER JOIN fabrication.productioncontroljobs as pcj on pcj.ProductionControlID = pcis.ProductionControlID
         LEFT JOIN fabrication.workpackages as wp on wp.WorkPackageID = pcseq.WorkPackageID
-        WHERE STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN DATE_SUB(CURDATE(), INTERVAL 60 DAY) AND CURDATE() 
+        WHERE STR_TO_DATE(pcis.DateCompleted, '%Y-%m-%d') BETWEEN :begin_date AND :end_date 
             AND stations.Description = 'fit' 
             AND pcis.DateCompleted IS NOT NULL 
             AND wp.WorkshopID = 1
@@ -274,6 +289,8 @@ function exportFitData($pdo) {
         ORDER BY pcis.DateCompleted DESC";
 
         $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':begin_date', $start_date);
+        $stmt->bindParam(':end_date', $end_date);
         $stmt->execute();
         
         $results = [];
@@ -290,14 +307,14 @@ function exportFitData($pdo) {
         
         return [
             'export_type' => 'fit',
-            'date_range' => 'Last 60 days',
+            'date_range' => "From {$start_date} to {$end_date}",
             'total_records' => count($results),
             'records' => $results
         ];
     } catch (Exception $e) {
         return [
             'export_type' => 'fit',
-            'date_range' => 'Last 60 days',
+            'date_range' => "From {$start_date} to {$end_date}",
             'total_records' => 0,
             'records' => [],
             'error' => $e->getMessage()
