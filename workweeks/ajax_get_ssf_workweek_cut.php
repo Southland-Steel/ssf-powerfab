@@ -13,6 +13,8 @@ pciss.QuantityCompleted as QtyCut,
 ROUND(pci.Quantity / pca.AssemblyQuantity) as AssemblyEachQuantity,
 pciseq.Quantity as SequenceQuantity,
 ROUND((pci.Quantity / pca.AssemblyQuantity) * pciseq.Quantity) as TotalPieceMarkQuantityNeeded,
+pci.MainPiece as isMainPiece,
+pci.ManHours as ManHoursEach,
 shapes.Shape
 FROM workpackages wp
 INNER JOIN productioncontrolsequences pcseq ON pcseq.WorkPackageID = wp.WorkPackageID
@@ -24,7 +26,7 @@ INNER JOIN productioncontrolitemstationsummary pciss
 ON pci.ProductionControlItemID = pciss.ProductionControlItemID
 AND pciss.SequenceID = pcseq.SequenceID
 INNER JOIN stations ON pciss.StationID = stations.StationID
-WHERE wp.Group2 = :workweek
+WHERE wp.Group2 = :workweek and wp.WorkshopID = 1
 AND stations.Description = 'CUT'
  and shapes.Shape NOT IN ('WA','NU','HS','MB')
 LIMIT :limit OFFSET :offset";

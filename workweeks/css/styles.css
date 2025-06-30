@@ -1,0 +1,418 @@
+/* Main Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 5px;
+    line-height: 1.6;
+}
+
+/* Loading Overlay */
+#loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255,255,255,0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-spinner {
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    font-size: 18px;
+    font-weight: bold;
+    color: #99332B;
+}
+
+/* Table Styles */
+table {
+    width: 100%;
+    font-size: 12px;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+}
+
+/* Status Classes */
+.status-complete {
+    background-color: #90EE90 !important;
+    color: #155724;
+}
+
+.status-notstarted {
+    background-color: #fff3cd !important;
+    color: #004085;
+}
+
+.status-na {
+    background-color: transparent !important;
+    color: #004085;
+}
+
+.status-partial {
+    background-color: #cce5ff !important;
+    color: #856404;
+}
+
+/* Work Package Styles */
+.wpnotreleased {
+    color: #ffd700 !important;
+    font-style: italic !important;
+}
+
+.wponhold {
+    background-color: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: white !important;
+}
+
+.wponhold:hover {
+    background-color: #bb2d3b !important;
+    border-color: #bb2d3b !important;
+}
+
+/* Filter Styles */
+#bayFilter, #wpFilter, #routeFilter, #categoryFilter, #sequenceFilter {
+    flex-wrap: wrap;
+    gap: 3px;
+    padding: 2px 5px;
+    margin: 1px 0;
+    align-items: center;
+}
+
+#bayFilter button, #wpFilter button, #routeFilter button, #categoryFilter button, #sequenceFilter button {
+    padding: 2px 8px;
+    font-size: 0.85rem;
+    margin: 0;
+    height: 26px;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+#sequenceFilter button {
+    margin-bottom: 0px !important;
+    font-size: 0.65rem;
+}
+
+/* Card Styles */
+.card-body {
+    padding: 3px;
+}
+
+.card-header {
+    font-size: 14px;
+    padding: 4px 5px;
+}
+
+.btn-ssf {
+    background-color: #99332b;
+}
+
+/* Summary Styles */
+.station-summary {
+    font-weight: bold;
+    font-size: 12px;
+    background-color: #f8f9fa;
+}
+
+.station-summary td {
+    padding: 2px;
+}
+
+.summary-data p {
+    margin: 1px;
+    font-size: 12px;
+}
+
+.summary-data h6 {
+    margin: 1px;
+    font-size: 14px;
+    font-weight: bold;
+    text-decoration: underline;
+}
+
+/* Table Column Styles */
+.table-columns th {
+    font-size: 12px;
+    padding: 2px;
+}
+
+.table-columns th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.table-columns th.sortable:hover {
+    background-color: #e9ecef;
+    text-decoration: underline;
+}
+
+.sort-arrow {
+    font-size: 10px;
+    margin-left: 3px;
+    color: #6c757d;
+}
+
+.table-datarow td {
+    padding: 1px 5px;
+}
+
+/* Week Button Styles */
+.week-btn {
+    padding: 2px 20px;
+    margin: 5px;
+    background-color: #99332B;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    font-size: 14px;
+}
+
+.week-btn:hover {
+    background-color: #7A2822;
+}
+
+.week-btn:active {
+    background-color: #5C1E1A;
+    transform: scale(0.95);
+}
+
+.week-btn.active {
+    background-color: white;
+    border: 1px solid #99332B;
+    color: #99332B;
+    font-weight: bold;
+}
+
+/* Disabled Button Styles */
+.btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Hold Row Styles */
+.hold-row {
+    font-family: "Courier New", Courier, monospace;
+}
+
+.hold-row td:nth-child(1) {
+    border-left: 2px solid #820041;
+    background-color: #fdccd3;
+}
+
+/* Piecemark Styles */
+.uncompleted-piecemark {
+    background-color: #ffbbbb;
+}
+
+/* Week Schedule Styles */
+#weekschedule {
+    margin-bottom: 1px;
+}
+
+#weekschedule td {
+    padding: 2px 5px;
+}
+
+#weekschedule th {
+    padding: 3px 5px;
+}
+
+#weekschedule td:nth-child(2) {
+    text-align: center;
+}
+
+/* Completed Row */
+.completed-row {
+    background-color: #90EE90;
+}
+
+/* Big Text Overlay */
+#big-text {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    font-size: 48px;
+    color: rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+}
+
+/* Sticky Header */
+#projectTable thead th {
+    position: sticky;
+    top: 0;
+    background-color: #f2f2f2;
+    z-index: 10;
+}
+
+#projectTable thead th::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Column Complete Styles */
+.col-complete {
+    background-color: #006400 !important;
+    color: #ffffff !important;
+}
+
+.col-empty {
+    background-color: #333333 !important;
+    color: #ffffff !important;
+    text-align: center;
+}
+
+/* Project Data Styles */
+#projectData {
+    position: relative;
+    display: block;
+    margin-top: 10px;
+}
+
+/* Logo Styles */
+.toplogo {
+    position: absolute;
+    left: 500px;
+    top: -10px;
+}
+
+/* Container Styles */
+.table-container {
+    margin-top: 3px;
+}
+
+.filters-wrapper {
+    flex-direction: column;
+    gap: 3px;
+    align-items: center;
+    margin-bottom: 3px;
+}
+
+.filter-group {
+    padding-right: 10px;
+}
+
+.filter-group:last-child {
+    border-right: none;
+}
+
+/* Export Buttons */
+.export-buttons {
+    margin: 10px 0;
+    display: none;
+    gap: 10px;
+    position: absolute;
+    top: 32px;
+    right: 0px;
+}
+
+@media (min-width: 961px) {
+    .export-buttons {
+        display: flex;
+    }
+}
+
+/* JSON Viewer Styles */
+#jsonContent {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+#jsonContent .json-key {
+    color: #881391;
+    font-weight: 500;
+}
+
+#jsonContent .json-string {
+    color: #22863a;
+}
+
+#jsonContent .json-number {
+    color: #005cc5;
+}
+
+#jsonContent .json-boolean {
+    color: #b31d28;
+}
+
+#jsonContent .json-null {
+    color: #6a737d;
+}
+
+.collapsible {
+    cursor: pointer;
+    user-select: none;
+}
+
+.collapse-icon {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    line-height: 12px;
+    text-align: center;
+    background-color: #e9ecef;
+    border-radius: 3px;
+    margin-right: 4px;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+.collapsed > .collapsible-content {
+    display: none;
+}
+
+.json-indent {
+    margin-left: 20px;
+}
+
+.expandable-container {
+    position: relative;
+}
+
+.array-length {
+    color: #6c757d;
+    font-size: 11px;
+    margin-left: 4px;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* Sort indicators */
+.sort-indicator {
+    font-size: 10px;
+    margin-left: 3px;
+    color: #6c757d;
+}
