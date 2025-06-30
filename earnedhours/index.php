@@ -23,13 +23,14 @@ $export_data = [];
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Production Overview</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
         .bg-gradient-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         }
 
         .table-container-custom {
-            max-height: 78.5vh;
+            max-height: 74.5vh;
             overflow-y: auto;
         }
 
@@ -137,10 +138,37 @@ $export_data = [];
             border: 1px solid #5a6fd8;
         }
 
+        .btn-job-export {
+            background-color: #28a745;
+            color: white;
+            border: 1px solid #28a745;
+            margin-right: 10px;
+        }
+
+        .btn-job-export:hover {
+            background-color: #218838;
+            color: white;
+            border: 1px solid #1e7e34;
+        }
+
         .loading-spinner {
             display: none;
             text-align: center;
             padding: 20px;
+        }
+
+        .date-filter-section {
+            background: #f8f9fa;
+            border-radius: 0.375rem;
+            padding: 4px;
+            margin-bottom: 4px;
+            border: 1px solid #dee2e6;
+        }
+
+        .date-filter-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 4px;
         }
     </style>
 </head>
@@ -163,10 +191,27 @@ $export_data = [];
                     </div>
                 </div>
             </div>
+            <div class="date-filter-section">
+                <div class="row align-items-end">
+                    <div class="col-md-4">
+                        <label class="date-filter-label">Start Date</label>
+                        <input type="text" id="startDatePicker" class="form-control" placeholder="Select start date">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="date-filter-label">End Date</label>
+                        <input type="text" id="endDatePicker" class="form-control" placeholder="Select end date">
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-primary" id="applyDateFilter">Apply Filter</button>
+                        <button class="btn btn-secondary" id="resetDateFilter">Reset to Default</button>
+                    </div>
+                </div>
+            </div>
 
             <div class="action-buttons d-flex justify-content-start">
                 <button class="btn btn-color btn-sm" id="exportJSON">Export Weekly Summary (JSON)</button>
                 <button class="btn btn-color btn-sm" id="exportCSV" >Export Weekly Summary (CSV)</button>
+                <button class="btn btn-job-export btn-sm" id="exportJobDataCSV">Export Job Data (CSV)</button>
             </div>
 
             <div class="loading-spinner" id="loadingSpinner">
@@ -193,27 +238,28 @@ $export_data = [];
                         <th class="text-center fw-bold text-uppercase small py-2 px-1">Date Completed</th>
                         <th class="text-center fw-bold text-uppercase small py-2 px-1">
                             Man Hours Cut
-                            <br><span class="avg-label">Daily Avg: <span id="cutAvg">0</span></span>
-                            <br><span class="avg-label">6-Day Avg: <span id="cut6dayAvg">0</span></span>
+                            <br><span class="avg-label">Daily Avg: <span id="cutAvg">0.00</span></span>
+                            <br><span class="avg-label">6-Day Avg: <span id="cut6dayAvg">0.00</span></span>
                         </th>
                         <th class="text-center fw-bold text-uppercase small py-2 px-1">
                             Man Hours Fit
-                            <br><span class="avg-label">Daily Avg: <span id="fitAvg">0</span></span>
-                            <br><span class="avg-label">6-Day Avg: <span id="fit6dayAvg">0</span></span>
+                            <br><span class="avg-label">Daily Avg: <span id="fitAvg">0.00</span></span>
+                            <br><span class="avg-label">6-Day Avg: <span id="fit6dayAvg">0.00</span></span>
                         </th>
                         <th class="text-center fw-bold text-uppercase small py-2 px-1">
                             Man Hours Final QC
-                            <br><span class="avg-label">Daily Avg: <span id="finalqcAvg">0</span></span>
-                            <br><span class="avg-label">6-Day Avg: <span id="finalqc6dayAvg">0</span></span>
+                            <br><span class="avg-label">Daily Avg: <span id="finalqcAvg">0.00</span></span>
+                            <br><span class="avg-label">6-Day Avg: <span id="finalqc6dayAvg">0.00</span></span>
                         </th>
                         <th class="text-center fw-bold text-uppercase small py-2 px-1">
-                            Total Earned Man Hours
-                            <br><span class="avg-label">Daily Avg: <span id="totalAvg">0</span></span>
-                            <br><span class="avg-label">6-Day Avg: <span id="total6dayAvg">0</span></span>
+                            Total Man Hours
+                            <br><span class="avg-label">Daily Avg: <span id="totalAvg">0.00</span></span>
+                            <br><span class="avg-label">6-Day Avg: <span id="total6dayAvg">0.00</span></span>
                         </th>
                     </tr>
                     </thead>
-                    <tbody id="tableBody">
+                    <tbody id="tableBodyContent">
+                    <!-- Table rows will be populated by JavaScript -->
                     </tbody>
                 </table>
             </div>
@@ -222,150 +268,226 @@ $export_data = [];
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="view_weekly_earnedhours.js"></script>
+<script src="view_hours_by_jobNum.js"></script>
+
 <script>
-    let stationData = null;
+    let startDatePicker, endDatePicker;
+    let startDate = null;
+    let endDate = null;
+    const weeklyHours = new WeeklyHours();
+    const jobNumberWeeklyHours = new JobNumberWeeklyHours();
 
-    function toggleTooltip() {
-        const tooltip = document.getElementById('tooltipContent');
-        if (tooltip.style.display === 'none' || tooltip.style.display === '') {
-            tooltip.style.display = 'block';
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        const defaultStartDate = new Date(today);
+        defaultStartDate.setDate(today.getDate() - 30);
+
+        startDatePicker = flatpickr("#startDatePicker", {
+            dateFormat: "Y-m-d",
+            defaultDate: defaultStartDate,
+            maxDate: today,
+            onChange: function(selectedDates, dateStr, instance) {
+                startDate = dateStr;
+                // Update end date picker's minDate
+                if (endDatePicker) {
+                    endDatePicker.set('minDate', dateStr);
+                }
+            }
+        });
+
+        endDatePicker = flatpickr("#endDatePicker", {
+            dateFormat: "Y-m-d",
+            defaultDate: today,
+            maxDate: today,
+            onChange: function(selectedDates, dateStr, instance) {
+                endDate = dateStr;
+                // Update start date picker's maxDate
+                if (startDatePicker) {
+                    startDatePicker.set('maxDate', dateStr);
+                }
+            }
+        });
+
+        startDate = startDatePicker.formatDate(defaultStartDate, "Y-m-d");
+        endDate = endDatePicker.formatDate(today, "Y-m-d");
+
+        loadStationData();
+    });
+
+    document.getElementById('applyDateFilter').addEventListener('click', function() {
+        if (startDate && endDate) {
+            loadStationData();
         } else {
-            tooltip.style.display = 'none';
+            alert('Please select both start and end dates');
         }
-    }
+    });
 
-    function showError(message) {
-        document.getElementById('errorText').textContent = message;
-        document.getElementById('errorMessage').style.display = 'block';
-    }
+    document.getElementById('resetDateFilter').addEventListener('click', function() {
+        const today = new Date();
+        const defaultStartDate = new Date(today);
+        defaultStartDate.setDate(today.getDate() - 30);
 
-    function showNoData() {
-        document.getElementById('noDataMessage').style.display = 'block';
-    }
-
-    function showData() {
-        document.getElementById('dataTable').style.display = 'block';
-    }
-
-    function updateStatistics(stats) {
-        document.getElementById('cutAvg').textContent = Math.round(stats.cut_avg * 100) / 100;
-        document.getElementById('fitAvg').textContent = Math.round(stats.fit_avg * 100) / 100;
-        document.getElementById('finalqcAvg').textContent = Math.round(stats.finalqc_avg * 100) / 100;
-        document.getElementById('totalAvg').textContent = Math.round(stats.total_avg * 100) / 100;
-        document.getElementById('cut6dayAvg').textContent = Math.round(stats.cut_6day_avg * 100) / 100;
-        document.getElementById('fit6dayAvg').textContent = Math.round(stats.fit_6day_avg * 100) / 100;
-        document.getElementById('finalqc6dayAvg').textContent = Math.round(stats.finalqc_6day_avg * 100) / 100;
-        document.getElementById('total6dayAvg').textContent = Math.round(stats.total_6day_avg * 100) / 100;
-    }
+        startDatePicker.setDate(defaultStartDate);
+        endDatePicker.setDate(today);
+        
+        startDate = startDatePicker.formatDate(defaultStartDate, "Y-m-d");
+        endDate = endDatePicker.formatDate(today, "Y-m-d");
+        
+        loadStationData();
+    });
 
     function loadStationData() {
-        document.getElementById('loadingSpinner').style.display = 'block';
+        showLoading();
 
-        fetch('ajax_station_data.php')
+        let url = 'ajax_station_data.php';
+        if (startDate && endDate) {
+            url += `?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+        }
+
+        fetch(url)
             .then(response => response.json())
             .then(data => {
-                document.getElementById('loadingSpinner').style.display = 'none';
-
-                if (data.success && data.data) {
-                    if (data.data.all_dates && Array.isArray(data.data.all_dates)) {
-                        stationData = data.data;
-                        document.getElementById('dayCount').textContent = data.data.all_dates.length;
-
-                        if (data.data.statistics) {
-                            updateStatistics(data.data.statistics);
-                        }
-
-                        populateTable(data.data);
-
-                        if (data.data.all_dates.length === 0) {
-                            showNoData();
-                        } else {
-                            showData();
-                        }
-                    } else {
-                        showError('Invalid data structure: all_dates is missing or not an array');
-                    }
+                hideLoading();
+                
+                if (data.success) {
+                    populateTable(data.data);
+                    weeklyHours.setData(convertDataForWeeklyHours(data.data.export_data));
                 } else {
                     showError(data.message || 'Unknown error occurred');
                 }
             })
             .catch(error => {
-                document.getElementById('loadingSpinner').style.display = 'none';
-                showError('Failed to load data: ' + error.message);
+                hideLoading();
+                showError('Network error: ' + error.message);
+                console.error('Fetch error:', error);
             });
     }
 
-    function populateTable(data) {
-        const tableBody = document.getElementById('tableBody');
-        tableBody.innerHTML = '';
+    function showLoading() {
+        document.getElementById('loadingSpinner').style.display = 'block';
+        document.getElementById('dataTable').style.display = 'none';
+        document.getElementById('errorMessage').style.display = 'none';
+        document.getElementById('noDataMessage').style.display = 'none';
+    }
 
-        if (!data.all_dates || !Array.isArray(data.all_dates)) {
-            console.error('Invalid data structure: all_dates is missing or not an array');
+    function hideLoading() {
+        document.getElementById('loadingSpinner').style.display = 'none';
+    }
+
+    function showError(message) {
+        document.getElementById('errorText').textContent = message;
+        document.getElementById('errorMessage').style.display = 'block';
+        document.getElementById('dataTable').style.display = 'none';
+        document.getElementById('noDataMessage').style.display = 'none';
+    }
+
+    function populateTable(data) {
+        const tableBody = document.getElementById('tableBodyContent');
+        
+        if (!data.all_dates || data.all_dates.length === 0) {
+            document.getElementById('noDataMessage').style.display = 'block';
+            document.getElementById('dataTable').style.display = 'none';
             return;
         }
 
+        const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+        function getDayName(dateString) {
+            const [year, month, day] = dateString.split('-').map(Number);
+            const date = new Date(year, month - 1, day); // month is 0-indexed
+            return dayNames[date.getDay()];
+        }
+
+        document.getElementById('dayCount').textContent = data.all_dates.length;
+
+        document.getElementById('cutAvg').textContent = parseFloat(data.statistics.cut_avg || 0).toFixed(2);
+        document.getElementById('fitAvg').textContent = parseFloat(data.statistics.fit_avg || 0).toFixed(2);
+        document.getElementById('finalqcAvg').textContent = parseFloat(data.statistics.finalqc_avg || 0).toFixed(2);
+        document.getElementById('totalAvg').textContent = parseFloat(data.statistics.total_avg || 0).toFixed(2);
+        document.getElementById('cut6dayAvg').textContent = parseFloat(data.statistics.cut_6day_avg || 0).toFixed(2);
+        document.getElementById('fit6dayAvg').textContent = parseFloat(data.statistics.fit_6day_avg || 0).toFixed(2);
+        document.getElementById('finalqc6dayAvg').textContent = parseFloat(data.statistics.finalqc_6day_avg || 0).toFixed(2);
+        document.getElementById('total6dayAvg').textContent = parseFloat(data.statistics.total_6day_avg || 0).toFixed(2);
+
+        tableBody.innerHTML = '';
+
         data.all_dates.forEach(date => {
-            const cutHours = (data.cut_data && data.cut_data[date]) || 0;
-            const fitHours = (data.fit_data && data.fit_data[date]) || 0;
-            const finalqcHours = (data.finalqc_data && data.finalqc_data[date]) || 0;
+            const row = document.createElement('tr');
+            
+            const cutHours = parseFloat(data.cut_data[date] || 0);
+            const fitHours = parseFloat(data.fit_data[date] || 0);
+            const finalqcHours = parseFloat(data.finalqc_data[date] || 0);
             const totalHours = cutHours + fitHours + finalqcHours;
 
-            const dateObj = new Date(date);
-            const dayNames = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
-            const dayOfWeek = dayNames[dateObj.getDay()];
-            const formattedDate = `${date} (${dayOfWeek})`;
+            const dayName = getDayName(date);
 
-            const row = document.createElement('tr');
             row.innerHTML = `
-        <td class="text-center fw-bold text-date py-1 px-1">${formattedDate}</td>
-        <td class="text-center py-1 px-1 cut-hours">
-            ${(data.cut_data && data.cut_data[date]) ?
-                `<a href="view_cut.php?query_date=${encodeURIComponent(date)}" class="clickable-hours text-cut fw-bold">${Math.round(data.cut_data[date] * 100) / 100} hrs</a>` :
-                '<span class="text-muted fst-italic">-</span>'
-            }
-        </td>
-        <td class="text-center py-1 px-1 fit-hours">
-            ${(data.fit_data && data.fit_data[date]) ?
-                `<a href="view_fit.php?query_date=${encodeURIComponent(date)}" class="clickable-hours text-fit fw-bold">${Math.round(data.fit_data[date] * 100) / 100} hrs</a>` :
-                '<span class="text-muted fst-italic">-</span>'
-            }
-        </td>
-        <td class="text-center py-1 px-1 finalqc-hours">
-            ${(data.finalqc_data && data.finalqc_data[date]) ?
-                `<a href="view_finalQC.php?query_date=${encodeURIComponent(date)}" class="clickable-hours text-finalqc fw-bold">${Math.round(data.finalqc_data[date] * 100) / 100} hrs</a>` :
-                '<span class="text-muted fst-italic">-</span>'
-            }
-        </td>
-        <td class="text-center fw-bold text-success py-1 px-1">
-            <span class="text-total fw-bold non-clickable-hours">
-                ${totalHours > 0 ? Math.round(totalHours * 100) / 100 + ' hrs' : '<span class="text-muted fst-italic">-</span>'}
-            </span>
-        </td>
-    `;
+                <td class="text-center py-1 px-1 fw-bold text-date">${date} (${dayName})</td>
+                <td class="text-center py-1 px-1 cut-hours">
+                    ${cutHours > 0 ? 
+                        `<a href="view_cut.php?query_date=${date}" class="clickable-hours text-cut fw-bold">${cutHours.toFixed(2)}</a>` : 
+                        `<span class="non-clickable-hours text-muted">-</span>`
+                    }
+                </td>
+                <td class="text-center py-1 px-1 fit-hours">
+                    ${fitHours > 0 ? 
+                        `<a href="view_fit.php?query_date=${date}" class="clickable-hours text-fit fw-bold">${fitHours.toFixed(2)}</a>` : 
+                        `<span class="non-clickable-hours text-muted">-</span>`
+                    }
+                </td>
+                <td class="text-center py-1 px-1 finalqc-hours">
+                    ${finalqcHours > 0 ? 
+                        `<a href="view_finalQC.php?query_date=${date}" class="clickable-hours text-finalqc fw-bold">${finalqcHours.toFixed(2)}</a>` : 
+                        `<span class="non-clickable-hours text-muted">-</span>`
+                    }
+                </td>
+                <td class="text-center py-1 px-1 fw-bold text-total">${totalHours > 0 ? totalHours.toFixed(2) : '-'}</td>
+            `;
+            
             tableBody.appendChild(row);
         });
+
+        document.getElementById('dataTable').style.display = 'block';
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        loadStationData();
+    function convertDataForWeeklyHours(exportData) {
+        return exportData || [];
+    }
 
-        document.getElementById('exportCSV').addEventListener('click', function() {
-            if (stationData && stationData.export_data) {
-                const weeklyHours = new WeeklyHours();
-                weeklyHours.setData(stationData.export_data);
-                weeklyHours.downloadWeeklySummary('csv');
-            }
-        });
+    function toggleTooltip() {
+        const tooltip = document.getElementById('tooltipContent');
+        tooltip.style.display = tooltip.style.display === 'none' ? 'block' : 'none';
+    }
 
-        document.getElementById('exportJSON').addEventListener('click', function() {
-            if (stationData && stationData.export_data) {
-                const weeklyHours = new WeeklyHours();
-                weeklyHours.setData(stationData.export_data);
-                weeklyHours.downloadWeeklySummary('json');
-            }
-        });
+    document.getElementById('exportJSON').addEventListener('click', () => {
+        weeklyHours.downloadWeeklySummary('json');
+    });
+
+    document.getElementById('exportCSV').addEventListener('click', () => {
+        weeklyHours.downloadWeeklySummary('csv');
+    });
+
+    document.getElementById('exportJobDataCSV').addEventListener('click', () => {
+        let url = 'jobNumber_data.php';
+        if (startDate && endDate) {
+            url += `?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`;
+        }
+        
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    jobNumberWeeklyHours.setData(data.data);
+                    jobNumberWeeklyHours.downloadJobNumberCSV();
+                } else {
+                    alert('Error loading job data: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Network error loading job data: ' + error.message);
+            });
     });
 </script>
 </body>

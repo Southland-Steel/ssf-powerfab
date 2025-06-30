@@ -88,6 +88,9 @@ try{
         if($routeName == 'BO'){
             $newHours = ($tmp['AssemblyManHours'] * 0.8);
         }
+        elseif($routeName == 'SHIP LOOSE'){
+            $newHours = ($tmp['AssemblyManHours'] * 0);
+        }
         else{
             $newHours = ($tmp['AssemblyManHours'] * 0.4);
         }
@@ -95,6 +98,10 @@ try{
         $info[] = $tmp;
         $sum += $newHours;
     }
+    usort($info, function($a, $b) {
+        return $b['AssemblyManHours'] <=> $a['AssemblyManHours'];
+    });
+
 
 }catch(PDOException $e) {
     var_dump($e->getMessage());
