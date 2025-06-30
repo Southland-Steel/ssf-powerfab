@@ -89,8 +89,7 @@
     <h1 class="mb-4">
         Work Package Grid
         <div class="workshop-selector">
-            <button class="workshop-btn active" data-workshop="1">Amite</button>
-            <button class="workshop-btn" data-workshop="2">Greensburg</button>
+            <button class="workshop-btn active" data-workshop="1">Greensburg</button>
         </div>
     </h1>
     <p>These are the workpackages and their assigned workweek for each job.</p>
