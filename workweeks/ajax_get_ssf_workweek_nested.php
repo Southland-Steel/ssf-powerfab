@@ -41,7 +41,7 @@ LEFT JOIN (
 ) cut_summary ON cut_summary.ProductionControlItemID = pci.ProductionControlItemID 
     AND cut_summary.SequenceID = pcseq.SequenceID
 WHERE wp.Group2 = :workweek and wp.WorkshopID = 1
-    AND shapes.Shape NOT IN ('WA','NU','HS','MB')
+    AND shapes.Shape NOT IN ('WA','NU','HS','MB', 'WS')
     -- Include all items in the workweek (remove the filter that excluded non-nested items)
 LIMIT :limit OFFSET :offset";
 

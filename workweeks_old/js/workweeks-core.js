@@ -217,9 +217,7 @@ function processDataInChunks(workweekData, nestedData, cutData, kitData) {
                         // If TotalEstimatedManHours is missing or invalid, calculate it from available data
                         if (!item.TotalEstimatedManHours || isNaN(parseFloat(item.TotalEstimatedManHours))) {
                             // Calculate based on AssemblyManHoursEach * MainPieceQuantity or SequenceMainMarkQuantity
-                            if (item.AssemblyManHoursEach && item.MainPieceQuantity) {
-                                item.TotalEstimatedManHours = parseFloat(item.AssemblyManHoursEach) * parseFloat(item.MainPieceQuantity);
-                            } else if (item.AssemblyManHoursEach && item.SequenceMainMarkQuantity) {
+                            if (item.AssemblyManHoursEach && item.SequenceMainMarkQuantity) {
                                 item.TotalEstimatedManHours = parseFloat(item.AssemblyManHoursEach) * parseFloat(item.SequenceMainMarkQuantity);
                             } else {
                                 // Set a default if we can't calculate
@@ -293,9 +291,7 @@ function mergeItemData(workweekItem, nestedPieces, cutPieces, kitPieces) {
         console.warn(`TotalEstimatedManHours missing or invalid for workweek item with MainMark: ${workweekItem.MainMark}`);
 
         // Try to calculate it from the component properties
-        if (workweekItem.AssemblyManHoursEach && workweekItem.MainPieceQuantity) {
-            workweekItem.TotalEstimatedManHours = parseFloat(workweekItem.AssemblyManHoursEach) * parseFloat(workweekItem.MainPieceQuantity);
-        } else if (workweekItem.AssemblyManHoursEach && workweekItem.SequenceMainMarkQuantity) {
+        if (workweekItem.AssemblyManHoursEach && workweekItem.SequenceMainMarkQuantity) {
             workweekItem.TotalEstimatedManHours = parseFloat(workweekItem.AssemblyManHoursEach) * parseFloat(workweekItem.SequenceMainMarkQuantity);
         } else {
             workweekItem.TotalEstimatedManHours = 0;
