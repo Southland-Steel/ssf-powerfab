@@ -82,6 +82,9 @@
         .workshop-greensburg thead {
             background-color: #d4edda; /* Light green background for table header */
         }
+        .badge.bg-primary{
+            background-color: #99332b !important;
+        }
     </style>
 </head>
 <body class="">
