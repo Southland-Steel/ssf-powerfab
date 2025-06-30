@@ -33,7 +33,7 @@
         <div class="col-md-3">
             <h5 class="text-center">SSF Production Resources</h5>
             <a href="workweeks/index.php" class="btn btn-primary">View SSF Workweeks</a>
-            <a href="workpackages/index.php" class="btn btn-primary">Work Package Placement</a>
+            <a href="workpackages/index.php" class="btn btn-info">Work Package Placement</a>
             <a href="/postfab" class="btn btn-secondary">Post Fabrication Status</a>
             <a href="/cutlists" class="btn btn-info">Cut Lists</a>
             <a href="/checkups/index.php" class="btn btn-warning">Checkups</a>
