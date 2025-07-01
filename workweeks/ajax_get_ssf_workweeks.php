@@ -50,9 +50,10 @@ $sql = "SELECT
     INNER JOIN productioncontrolassemblies as pca ON pca.ProductionControlAssemblyID = pciseq.ProductionControlAssemblyID
     INNER JOIN productioncontrolitems as pci ON pci.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
     INNER JOIN shapes ON shapes.ShapeID = pci.ShapeID AND shapes.Shape NOT IN ('HS','NU','WA')
-    LEFT JOIN routes as rt on rt.RouteID = pci.RouteID
+    INNER JOIN routes as rt on rt.RouteID = pci.RouteID
+    INNER JOIN routestations on routestations.RouteID = rt.RouteID
     LEFT JOIN productioncontrolcategories as pccat on pccat.CategoryID = pci.CategoryID
-    INNER JOIN productioncontrolitemstationsummary as pciss ON pciss.ProductionControlItemID = pci.ProductionControlItemID AND pciss.SequenceID = pcseq.SequenceID AND pciss.ProductionControlID = pcseq.ProductionControlID
+    INNER JOIN productioncontrolitemstationsummary as pciss ON pciss.ProductionControlItemID = pci.ProductionControlItemID AND pciss.SequenceID = pcseq.SequenceID AND pciss.ProductionControlID = pcseq.ProductionControlID and routestations.StationID = pciss.StationID
     INNER JOIN stations ON stations.StationID = pciss.StationID AND stations.Description not in ('IFA','IFF','CUT','NESTED')
  WHERE wp.Group2 = ${workweek} AND pcseq.AssemblyQuantity > 0 AND pci.MainPiece = 1 and wp.WorkshopID = 1";
 
