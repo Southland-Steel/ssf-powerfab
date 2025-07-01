@@ -99,8 +99,8 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
 <body>
     <div class="container">
         <header class="monitor-header">
-            <h1>Cut Summary Report</h1>
-            <p class="text-muted">Weekly Summary for MCUT and CUT by Work Week</p>
+            <h1>Cut Summary Report By Hours</h1>
+            <p class="text-muted">Weekly Summary for Main Piece and Piece Mark Cuts by Work Week</p>
         </header>
         
         <div class="row mb-3">
@@ -119,10 +119,10 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                 <thead>
                     <tr>
                         <th class="center">Work Week</th>
-                        <th class="center">MCUT</th>
-                        <th class="center">MCUT Total</th>
-                        <th class="center">CUT</th>
-                        <th class="center">CUT Total</th>
+                        <th class="center">Main Piece Cut<br><h6>Earned Hours</h6></th>
+                        <th class="center">Main Piece Cut Target</th>
+                        <th class="center">Piece Mark Cut<br><h6>Earned Hours</h6></th>
+                        <th class="center">Piece Mark Cut Target</th>
                         <th class="center">Progress</th>
                     </tr>
                 </thead>
