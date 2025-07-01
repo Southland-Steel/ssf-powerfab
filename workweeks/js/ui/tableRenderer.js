@@ -190,7 +190,41 @@ class TableRenderer {
                        data-assembly="${assembly.ProductionControlItemSequenceID}">
                         PCS: ${totalPiecesCompleted} / ${totalPiecesNeeded}
                     </a>`;
-            } else if (stationName === 'CUT' || stationName === 'MCUT') {
+            } else if (stationName === 'CUT') {
+                // For CUT station: Calculate total hours by summing QtyCut * ManHoursEach for all pieces
+                let stationTotalHours = 0;
+                let stationUsedHours = 0;
+
+                if (station.Pieces && station.Pieces.length > 0) {
+                    // Direct sum of QtyCut * ManHoursEach (this is the actual used hours)
+                    stationUsedHours = station.Pieces.reduce((sum, piece) => {
+                        const qtyCut = parseInt(piece.QtyCut || 0);
+                        const manHoursEach = parseFloat(piece.ManHoursEach || 0);
+                        return sum + (qtyCut * manHoursEach);
+                    }, 0) * 0.2;
+
+                    // Calculate total hours based on TotalPieceMarkQuantityNeeded
+                    stationTotalHours = station.Pieces.reduce((sum, piece) => {
+                        const qtyNeeded = parseInt(piece.TotalPieceMarkQuantityNeeded || 0);
+                        const manHoursEach = parseFloat(piece.ManHoursEach || 0);
+                        return sum + (qtyNeeded * manHoursEach);
+                    }, 0) * 0.2;
+                }
+
+                cellContent = `
+        <a href="#" class="station-details" data-station="${stationName}"
+           data-assembly="${assembly.ProductionControlItemSequenceID}">
+            PCQTY: ${totalPiecesCompleted} / ${totalPiecesNeeded}
+        </a>
+        <br>HRS: ${Formatter.formatNumber(stationUsedHours)} / ${Formatter.formatNumber(stationTotalHours)}`;
+
+                console.log(`CUT hours calculation:`, {
+                    pieces: station.Pieces,
+                    totalHours: stationTotalHours,
+                    usedHours: stationUsedHours
+                });
+            } else if (stationName === 'MCUT') {
+                // For MCUT station: Use existing calculation with completion ratio
                 const stationTotalHours = Calculator.calculatePieceStationHours(station.Pieces, stationName);
                 const completedAssemblies = Calculator.calculateCompletedAssemblies(station.Pieces, stationName);
                 const totalNeeded = parseInt(assembly.SequenceMainMarkQuantity) || 0;
@@ -198,17 +232,20 @@ class TableRenderer {
                 const stationUsedHours = stationTotalHours * completionRatio;
 
                 cellContent = `
-                    <a href="#" class="station-details" data-station="${stationName}"
-                       data-assembly="${assembly.ProductionControlItemSequenceID}">
-                        PCQTY: ${totalPiecesCompleted} / ${totalPiecesNeeded}
-                    </a>
-                    <br>HRS: ${Formatter.formatNumber(stationUsedHours)} / ${Formatter.formatNumber(stationTotalHours)}`;
+        <a href="#" class="station-details" data-station="${stationName}"
+           data-assembly="${assembly.ProductionControlItemSequenceID}">
+            PCQTY: ${totalPiecesCompleted} / ${totalPiecesNeeded}
+        </a>
+        <br>HRS: ${Formatter.formatNumber(stationUsedHours)} / ${Formatter.formatNumber(stationTotalHours)}`;
+
+                console.log(station.Pieces);
             } else if (stationName === 'KIT') {
                 cellContent = `
                     <a href="#" class="station-details" data-station="${stationName}"
                        data-assembly="${assembly.ProductionControlItemSequenceID}">
                         PCQTY: ${totalPiecesCompleted} / ${totalPiecesNeeded}
-                    </a>`;
+                    </a>
+`;
             }
 
             return `<td class="${statusClass}">${cellContent}</td>`;
@@ -301,14 +338,35 @@ class TableRenderer {
                 // Calculate hours only for stations that track them
                 if (HOUR_TRACKING_STATIONS.includes(stationName)) {
                     let stationTotalHours = 0;
+                    let completedHours = 0;
 
-                    if (['MCUT', 'CUT'].includes(stationName)) {
+                    if (stationName === 'CUT') {
+                        // For CUT: Direct calculation of hours from pieces
+                        if (station.Pieces && station.Pieces.length > 0) {
+                            // Used hours: sum of QtyCut * ManHoursEach
+                            completedHours = station.Pieces.reduce((sum, piece) => {
+                                const qtyCut = parseInt(piece.QtyCut || 0);
+                                const manHoursEach = parseFloat(piece.ManHoursEach || 0);
+                                return sum + (qtyCut * manHoursEach);
+                            }, 0) * 0.2;
+
+                            // Total hours: sum of TotalPieceMarkQuantityNeeded * ManHoursEach
+                            stationTotalHours = station.Pieces.reduce((sum, piece) => {
+                                const qtyNeeded = parseInt(piece.TotalPieceMarkQuantityNeeded || 0);
+                                const manHoursEach = parseFloat(piece.ManHoursEach || 0);
+                                return sum + (qtyNeeded * manHoursEach);
+                            }, 0) * 0.2;
+                        }
+                    } else if (stationName === 'MCUT') {
+                        // For MCUT: Use existing calculation with completion ratio
                         stationTotalHours = Calculator.calculatePieceStationHours(station.Pieces, stationName);
+                        completedHours = stationTotalHours * completionRatio;
                     } else {
+                        // For other stations: Use assembly-based calculation
                         stationTotalHours = assemblyStationHours[stationName] || 0;
+                        completedHours = stationTotalHours * completionRatio;
                     }
 
-                    const completedHours = stationTotalHours * completionRatio;
                     stationTotals[stationName].hours.completed += completedHours;
                     stationTotals[stationName].hours.total += stationTotalHours;
                 }

@@ -22,9 +22,7 @@ INNER JOIN productioncontrolitemsequences pciseq ON pciseq.SequenceID = pcseq.Se
 INNER JOIN productioncontrolassemblies pca ON pciseq.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
 INNER JOIN productioncontrolitems pci ON pci.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
 INNER JOIN shapes ON shapes.ShapeID = pci.ShapeID
-INNER JOIN productioncontrolitemstationsummary pciss
-ON pci.ProductionControlItemID = pciss.ProductionControlItemID
-AND pciss.SequenceID = pcseq.SequenceID
+INNER JOIN productioncontrolitemstationsummary pciss ON pci.ProductionControlItemID = pciss.ProductionControlItemID AND pciss.SequenceID = pcseq.SequenceID
 INNER JOIN stations ON pciss.StationID = stations.StationID
 WHERE wp.Group2 = :workweek and wp.WorkshopID = 1
 AND stations.Description = 'CUT'
