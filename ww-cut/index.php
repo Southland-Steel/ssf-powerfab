@@ -94,6 +94,21 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        .clickable-row {
+            cursor: pointer;
+        }
+        
+        .clickable-row:hover {
+            background-color: #e3f2fd !important;
+        }
+
+        .modal-table-container {
+            max-height: 60vh;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -138,10 +153,51 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
         </div>
     </div>
 
+    <!-- Drilldown Modal -->
+    <div class="modal fade" id="drilldownModal" tabindex="-1" aria-labelledby="drilldownModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="drilldownModalLabel">Cut Details - Work Week <span id="modalWorkWeek"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="modalAlertContainer"></div>
+                    <div class="modal-table-container">
+                        <table class="table table-bordered table-striped" id="drilldownTable">
+                            <thead>
+                                <tr>
+                                    <th class="center">Work Week</th>
+                                    <th class="center">Shape</th>
+                                    <th class="center">Work Package Number</th>
+                                    <th class="center">Main Piece Cut<br><h6>Earned Hours</h6></th>
+                                    <th class="center">Main Piece Cut Target</th>
+                                    <th class="center">Piece Mark Cut<br><h6>Earned Hours</h6></th>
+                                    <th class="center">Piece Mark Cut Target</th>
+                                </tr>
+                            </thead>
+                            <tbody id="drilldownTableBody">
+                                <tr>
+                                    <td colspan="7" class="center">
+                                        <div class="loading-spinner me-2"></div>
+                                        Loading data...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Function to show alerts
-        function showAlert(message, type = 'danger') {
-            const alertContainer = document.getElementById('alertContainer');
+        function showAlert(message, type = 'danger', containerId = 'alertContainer') {
+            const alertContainer = document.getElementById(containerId);
             const alertHtml = `
                 <div class="alert alert-${type} alert-dismissible fade show" role="alert">
                     ${message}
@@ -171,7 +227,76 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
             return 'bg-danger';
         }
 
+        function formatValue(value) {
+            if (value == null || value == undefined || value == '') {
+                return '-';
+            }
+            return value;
+        }
 
+        function openDrilldownModal(workWeek) {
+            const modal = new bootstrap.Modal(document.getElementById('drilldownModal'));
+            const modalWorkWeek = document.getElementById('modalWorkWeek');
+            const drilldownTableBody = document.getElementById('drilldownTableBody');
+            
+            // Set work week in modal title
+            modalWorkWeek.textContent = workWeek;
+            
+            // Clear previous alerts
+            document.getElementById('modalAlertContainer').innerHTML = '';
+            
+            // Clear table body and show loading
+            drilldownTableBody.innerHTML = '<tr><td colspan="7" class="center"><div class="loading-spinner me-2"></div>Loading data...</td></tr>';
+            
+            // Show modal
+            modal.show();
+            
+            // Fetch drilldown data
+            fetch(`ajax_cut_drilldown.php?workweek=${workWeek}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Clear table body
+                    drilldownTableBody.innerHTML = '';
+                    
+                    if (data && data.length > 0) {
+                        // Populate table with data
+                        data.forEach(row => {
+                            const mcut = row.MCUT !== null && row.MCUT !== undefined && row.MCUT !== '' ? parseFloat(row.MCUT).toFixed(2) : '-';
+                            const mcutTotal = row.MCUTtotal !== null && row.MCUTtotal !== undefined && row.MCUTtotal !== '' ? parseFloat(row.MCUTtotal).toFixed(2) : '-';
+                            const cut = row.CUT !== null && row.CUT !== undefined && row.CUT !== '' ? parseFloat(row.CUT).toFixed(2) : '-';
+                            const cutTotal = row.CUTtotal !== null && row.CUTtotal !== undefined && row.CUTtotal !== '' ? parseFloat(row.CUTtotal).toFixed(2) : '-';
+                            
+                            const tr = document.createElement('tr');
+                            tr.innerHTML = `
+                                <td class="center">${formatValue(row.WorkWeek)}</td>
+                                <td class="center">${formatValue(row.Shape)}</td>
+                                <td class="center">${formatValue(row.WorkPackageNumber)}</td>
+                                <td class="center">${mcut}</td>
+                                <td class="center">${mcutTotal}</td>
+                                <td class="center">${cut}</td>
+                                <td class="center">${cutTotal}</td>
+                            `;
+                            
+                            drilldownTableBody.appendChild(tr);
+                        });
+                        
+                        showAlert(`Successfully loaded ${data.length} detail records`, 'success', 'modalAlertContainer');
+                    } else {
+                        drilldownTableBody.innerHTML = '<tr><td colspan="7" class="center">No detail data found</td></tr>';
+                        showAlert('No detail data found for this work week', 'warning', 'modalAlertContainer');
+                    }
+                })
+                .catch(error => {
+                    drilldownTableBody.innerHTML = '<tr><td colspan="7" class="center text-danger">Error loading detail data</td></tr>';
+                    showAlert('Error loading detail data: ' + error.message, 'danger', 'modalAlertContainer');
+                    console.error('Error:', error);
+                });
+        }
 
         function loadCutSummary() {
             const loadingSpinner = document.getElementById('loadingSpinner');
@@ -219,6 +344,8 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                             const progressBarClass = getProgressBarClass(progressPercentage);
                             
                             const tr = document.createElement('tr');
+                            tr.className = 'clickable-row';
+                            tr.onclick = () => openDrilldownModal(row.WorkWeek);
                             tr.innerHTML = `
                                 <td class="center">${row.WorkWeek}</td>
                                 <td class="center">${mcut.toFixed(2)}</td>
@@ -238,8 +365,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                                     </div>
                                 </td>
                             `;
-                            console.log(row.WorkWeek);
-                            console.log(targetWeek);
+                            
                             if(row.WorkWeek == targetWeek){
                                 tr.classList.add('targetweek');
                             }
@@ -247,8 +373,6 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                             tableBody.appendChild(tr);
                         });
 
-
-                        
                         showAlert(`Successfully loaded ${data.length} records`, 'success');
                     } else {
                         tableBody.innerHTML = '<tr><td colspan="6" class="center">No data found</td></tr>';
