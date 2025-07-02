@@ -1,5 +1,5 @@
 <?php
-require_once '../config_ssf_db.php';
+require_once '../../config_ssf_db.php';
 
 $currentYear = substr(date('o'), -2);
 $currentWeek = date('W');
@@ -9,10 +9,8 @@ $endweek = $workweek + 9;
 
 $sql = "SELECT
     wp.Group2 as WorkWeek,
-    sum(case when routes.Route = 'BO' then pca.AssemblyManHoursEach*pciss.QuantityCompleted end)*0.8 as FQCBO,
-    sum(case when routes.Route = 'BO' then pca.AssemblyManHoursEach*pciss.TotalQuantity end)*0.8 as FQCBOtotal,
-    sum(case when routes.Route <> 'BO' then pca.AssemblyManHoursEach*pciss.QuantityCompleted end)*0.4 as FQC,
-    sum(case when routes.Route <> 'BO' then pca.AssemblyManHoursEach*pciss.TotalQuantity end)*0.4 as FQCtotal
+    sum(pca.AssemblyManHoursEach*pciss.QuantityCompleted)*0.4 as Fit,
+    sum(pca.AssemblyManHoursEach*pciss.TotalQuantity)*0.4 as FitTotal
     FROM workpackages wp
     INNER JOIN productioncontrolsequences pcseq ON pcseq.WorkPackageID = wp.WorkPackageID
     INNER JOIN productioncontrolitemsequences pciseq ON pciseq.SequenceID = pcseq.SequenceID
@@ -23,7 +21,7 @@ $sql = "SELECT
     INNER JOIN productioncontrolitemstationsummary pciss ON pci.ProductionControlItemID = pciss.ProductionControlItemID AND pciss.SequenceID = pcseq.SequenceID and routestations.StationID = pciss.StationID
     INNER JOIN stations ON pciss.StationID = stations.StationID
     inner join fabrication.productioncontrolcategories as cat on cat.CategoryID = pci.CategoryID
-    where (cast(wp.Group2 as UNSIGNED) between :startweek and :endweek) and stations.Description = 'FINAL QC' AND wp.WorkshopID = 1
+    where (cast(wp.Group2 as UNSIGNED) between :startweek and :endweek) and stations.Description = 'FIT' AND wp.WorkshopID = 1
     group by wp.Group2
     order by wp.Group2 asc";
 

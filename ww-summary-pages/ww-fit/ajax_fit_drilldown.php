@@ -1,6 +1,6 @@
 <?php
 
-require_once '../config_ssf_db.php';
+require_once '../../config_ssf_db.php';
 
 // Get the work week parameter
 $workweek = isset($_GET['workweek']) ? intval($_GET['workweek']) : 0;
