@@ -634,7 +634,7 @@
                     </td>
                     <td>${task.ProjectDescription}${formatNotes(task.Notes)}</td>
                     <td>${((task.Level == 2) ? task.ParentDescription + '->' : '')}${task.taskDescription}</td>
-                    <td>${(parseFloat(task.PercentCompleted)).toFixed(2)*100}%</td>
+                    <td>${Math.round(parseFloat(task.PercentCompleted) * 100)}%</td>
                     <td>${task.StartByDate}</td>
                     <td class="${endDate < today ? 'past-date' : ''}">${task.EndByDate}</td>
                     <td>${task.ActualDuration}</td>
