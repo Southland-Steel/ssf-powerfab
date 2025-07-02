@@ -24,8 +24,10 @@ if ($resourceId) {
             WHEN sbde.Level = 2 THEN sbdeval.Description -- Level 2: Current description is LotNumber
         END AS LotNumber,
         CASE 
-            WHEN sbde.Level = 1 THEN sd.Description
-            WHEN sbde.Level = 2 THEN concat(pdesc.Description, '->', sd.Description)
+            WHEN sbde.Level = 1 and sts.Level = 3 THEN sd.Description
+            WHEN sbde.Level = 1 and sts.Level = 4 THEN concat(pdesc.Description, '->', sd.Description)
+            WHEN sbde.Level = 2 and sts.Level = 4 THEN sd.Description
+            WHEN sbde.Level = 2 and sts.Level = 5 THEN concat(pdesc.Description, '->', sd.Description)
         END AS TaskPath,
         sbde.Level, -- Include level to distinguish between level 1 and level 2 records
         sbde.ScheduleBreakdownElementID as SBDEelementId,
