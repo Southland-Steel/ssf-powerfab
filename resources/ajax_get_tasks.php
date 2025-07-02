@@ -5,51 +5,60 @@ $resourceId = $_GET['resourceId'] ?? null;
 header('Content-Type: application/json');
 if ($resourceId) {
     $query = "
-        SELECT 
-            sts.ScheduleTaskID,
-            p.JobNumber,
-            p.JobStatusID,
-            p.JobDescription AS ProjectDescription,
-            sd.Description AS ScheduleDescription,
-            ROUND(sts.PercentCompleted * 100) AS PercentCompleted,
-            resources.Description AS ResourceDescription,
-            sts.ActualStartDate as StartByDate,
-            sts.ActualEndDate as EndByDate,
-            sts.ActualDuration,
-            sts.StatusLink,
-            sts.Level,
-            sts.Priority,
-            sts.TaskType,
-            sts.ParentScheduleTaskID,
-            parent_sd.Description AS ParentDescription,
-            p.GroupName as PM,
-            p.GroupName2 as ProjectStatus,
-            sts.ResourceID,
-            snt.NoteText,
-            sbtn.DateTimeCreated as NoteTime,
-            sbdeval.Description as BreakdownValue,
-            sbde.Priority
-        FROM
-            scheduletasks sts
-        INNER JOIN
-            projects p ON sts.ProjectID = p.ProjectID
-		inner join schedulebreakdownelements as sbde ON sbde.ScheduleBreakdownElementID = sts.ScheduleBreakdownElementID
-		inner join scheduledescriptions as sbdeval ON sbdeval.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
-        LEFT JOIN
-            scheduledescriptions sd ON sts.ScheduleDescriptionID = sd.ScheduleDescriptionID
-        LEFT JOIN
-            scheduletasks parent_sts ON sts.ParentScheduleTaskID = parent_sts.ScheduleTaskID
-        LEFT JOIN
-            scheduledescriptions parent_sd ON parent_sts.ScheduleDescriptionID = parent_sd.ScheduleDescriptionID
-        LEFT JOIN
-            resources ON sts.ResourceID = resources.ResourceID
-        LEFT JOIN schedulebasetasknotes as sbtn ON sbtn.ScheduleBaseTaskID = sts.ScheduleBaseTaskID
-        LEFT JOIN schedulenotetexts as snt ON sbtn.ScheduleNoteTextID = snt.ScheduleNoteTextID
-        WHERE 
-            p.JobStatusID = 1
-            AND sts.ResourceID = :resourceId
-        ORDER BY 
-            sts.ActualEndDate ASC, sbde.Priority DESC, sts.Level ASC
+        SELECT DISTINCT 
+        p.JobNumber as JobNumber,
+        p.JobStatusID,
+        p.JobDescription as ProjectDescription,
+        CASE 
+            WHEN sbde.Level = 1 THEN sbdeval.Description -- Level 1: Description is SequenceName
+            WHEN sbde.Level = 2 THEN 
+                -- Level 2: Extract parent description as SequenceName
+                (SELECT parent_desc.Description 
+                 FROM fabrication.schedulebreakdownelements parent
+                 INNER JOIN scheduledescriptions parent_desc 
+                     ON parent_desc.ScheduleDescriptionID = parent.ScheduleBreakdownValueID
+                 WHERE parent.ScheduleBreakdownElementID = sbde.ParentScheduleBreakdownElementID)
+        END AS SequenceName,
+        CASE 
+            WHEN sbde.Level = 1 THEN 0 -- Level 1: No LotNumber
+            WHEN sbde.Level = 2 THEN sbdeval.Description -- Level 2: Current description is LotNumber
+        END AS LotNumber,
+        CASE 
+            WHEN sbde.Level = 1 THEN sd.Description
+            WHEN sbde.Level = 2 THEN concat(pdesc.Description, '->', sd.Description)
+        END AS TaskPath,
+        sbde.Level, -- Include level to distinguish between level 1 and level 2 records
+        sbde.ScheduleBreakdownElementID as SBDEelementId,
+        sbde.ParentScheduleBreakdownElementID as SBDEparentId,
+        sbde.Priority as priority,
+        p.GroupName AS PM,
+        sts.ScheduleTaskID,
+        sd.Description AS taskDescription,
+        sbdeval.Description as description,
+        sts.ActualStartDate as StartByDate,
+        sts.ActualEndDate as EndByDate,
+        sts.ActualDuration,
+        sts.ParentScheduleTaskID,
+        sts.PercentCompleted,
+        pdesc.Description as ParentDescription
+    FROM fabrication.schedulebreakdownelements AS sbde
+    INNER JOIN schedulebaselines as sbl ON sbl.ScheduleBaselineID = sbde.ScheduleBaselineID AND sbl.IsCurrent = 1
+    INNER JOIN scheduledescriptions AS sbdeval ON sbdeval.ScheduleDescriptionID = sbde.ScheduleBreakdownValueID
+    INNER JOIN scheduletasks as sts ON sts.ScheduleBreakdownElementID = sbde.ScheduleBreakdownElementID
+    INNER JOIN resources ON resources.ResourceID = sts.ResourceID
+    INNER JOIN projects as p ON p.ProjectID = sts.ProjectID
+    INNER JOIN scheduledescriptions as sd ON sd.ScheduleDescriptionID = sts.ScheduleDescriptionID
+    INNER JOIN scheduletasks as psts ON psts.ScheduleTaskID = sts.ParentScheduleTaskID
+    INNER JOIN scheduledescriptions as pdesc ON pdesc.ScheduleDescriptionID = psts.ScheduleDescriptionID
+    WHERE 
+        p.JobStatusID IN (1,6)
+        AND sbde.Level < 3
+        AND sts.PercentCompleted < 0.99
+        AND sts.ResourceID = :resourceId
+        AND sbdeval.Description IS NOT NULL
+        AND sts.ActualStartDate IS NOT NULL
+        AND sts.ActualEndDate IS NOT NULL
+	ORDER BY sts.ActualEndDate ASC, sbde.Priority
     ";
 
 
@@ -60,97 +69,7 @@ if ($resourceId) {
 
     $tasks = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-
-    // Process tasks to group and nest notes
-    $processedTasks = [];
-    $taskMap = [];
-
-    foreach ($tasks as $task) {
-        $scheduleTaskId = $task['ScheduleTaskID'];
-
-        if (!isset($taskMap[$scheduleTaskId])) {
-            // This is a new task
-            $taskMap[$scheduleTaskId] = $task;
-            $taskMap[$scheduleTaskId]['Notes'] = [];
-            $taskMap[$scheduleTaskId]['TaskPath'] = ''; // Initialize TaskPath
-            if ($task['NoteText'] !== null) {
-                $taskMap[$scheduleTaskId]['Notes'][] = [
-                    'NoteText' => $task['NoteText'],
-                    'time' => $task['NoteTime']
-                ];
-            }
-            unset($taskMap[$scheduleTaskId]['NoteText']);
-            $processedTasks[] = &$taskMap[$scheduleTaskId];
-        } else {
-            // This task already exists, just add the note if it's not null
-            if ($task['NoteText'] !== null) {
-                $taskMap[$scheduleTaskId]['Notes'][] = [
-                    'NoteText' => $task['NoteText'],
-                    'time' => $task['NoteTime']
-                ];
-            }
-        }
-    }
-
-    // Build task hierarchy
-    $rootTasks = [];
-    foreach ($processedTasks as &$task) {
-        $task['children'] = [];
-        $parentId = $task['ParentScheduleTaskID'];
-        if ($parentId && isset($taskMap[$parentId])) {
-            $taskMap[$parentId]['children'][] = &$task;
-        } else {
-            $rootTasks[] = &$task;
-        }
-    }
-
-    function buildTaskPath(&$task, $taskMap) {
-        // If Level is 1, just use the task's own description
-        if ($task['Level'] == 1) {
-            $task['TaskPath'] = $task['ScheduleDescription'];
-            return;
-        }
-
-        // For Level > 1, use parent description and current description
-        if ($task['Level'] > 1) {
-            $task['TaskPath'] = $task['ParentDescription'] . ' | <br>' . $task['ScheduleDescription'];
-        }
-    }
-
-    // Build paths for all processed tasks
-    foreach ($processedTasks as &$task) {
-        buildTaskPath($task, $taskMap);
-    }
-
-    // Function to flatten the tasks
-    function flattenTasks($tasks) {
-        $result = [];
-        foreach ($tasks as $task) {
-            $taskCopy = $task;
-            unset($taskCopy['children']);
-            $result[] = $taskCopy;
-            if (!empty($task['children'])) {
-                $result = array_merge($result, flattenTasks($task['children']));
-            }
-        }
-        return $result;
-    }
-
-    $flattenedTasks = flattenTasks($rootTasks);
-
-    // Sort the flattened tasks based on EndByDate, then Level, then Priority
-    usort($flattenedTasks, function($a, $b) {
-        $dateComparison = strcmp($a['EndByDate'], $b['EndByDate']);
-        if ($dateComparison !== 0) {
-            return $dateComparison;
-        }
-        if ($a['Priority'] != $b['Priority']) {
-            return $a['Priority'] - $b['Priority'];
-        }
-        return $b['Level'] - $a['Level'];
-    });
-
-    echo json_encode($flattenedTasks, JSON_PRETTY_PRINT);
+    echo json_encode($tasks, JSON_PRETTY_PRINT);
 } else {
     echo json_encode(['error' => 'No resource ID provided']);
 }
