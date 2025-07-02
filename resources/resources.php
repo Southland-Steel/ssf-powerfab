@@ -629,7 +629,7 @@
                           ${task.ProjectStatus == 'REVIEWED' ? 'status-reviewed' : ''}">
                     <td>
                         <a class="${jobLinkClass}" onclick="filterByJobNumber('${task.JobNumber}')">
-                            ${task.JobNumber} - ${task.SequenceName} ${(task.LotNumber!=0) ? '-'+task.LotNumber : ''}
+                            ${task.JobNumber} - ${task.SequenceName}${(task.LotNumber!=0) ? '-'+task.LotNumber : ''}
                         </a>
                     </td>
                     <td>${task.ProjectDescription}${formatNotes(task.Notes)}</td>
