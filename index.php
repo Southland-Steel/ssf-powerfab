@@ -34,19 +34,19 @@
             <h5 class="text-center">SSF Production Resources</h5>
             <a href="workweeks/index.php" class="btn btn-primary">View SSF Workweeks</a>
             <a href="workpackages/index.php" class="btn btn-info">Work Package Placement</a>
-            <a href="/postfab" class="btn btn-secondary">Post Fabrication Status</a>
-            <a href="cutlists" class="btn btn-info">Cut Lists</a>
+            <a href="/postfab/postfab.php" class="btn btn-secondary">Post Fabrication Status</a>
+            <a href="/cutlists/cutlists.php" class="btn btn-info">Cut Lists</a>
             <a href="/checkups/index.php" class="btn btn-warning">Checkups</a>
         </div>
         <div class="col-md-3">
             <h5 class="text-center">Production <-> PM</h5>
             <a href="/timeline4/index.php" class="btn btn-success">Project Timeline (new)</a>
-            <a href="/timeline" class="btn btn-success">Project Timeline (old)</a>
-            <a href="/resources" class="btn btn-success">Project Resources</a>
+            <a href="/timeline/timeline.php" class="btn btn-success">Project Timeline (old)</a>
+            <a href="/resources/resources.php" class="btn btn-success">Project Resources</a>
         </div>
         <div class="col-md-3">
             <h5 class="text-center">Inventory</h5>
-            <a href="/inventory2" class="btn btn-info">Inventory</a>
+            <a href="/inventory2/inventory2.php" class="btn btn-info">Inventory</a>
         </div>
         <div class="col-md-3">
             <h5 class="text-center">Transition</h5>
