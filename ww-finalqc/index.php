@@ -135,13 +135,14 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                     <tr>
                         <th class="center">Work Week</th>
                         <th class="center">FQC<br><h6>Earned Hours</h6></th>
-                        <th class="center">FQC Total</th>
+                        <th class="center">FQC Target</th>
+                        <th class="center">Total Hours Remaining</th>
                         <th class="center">Progress</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr>
-                        <td colspan="4" class="center">
+                        <td colspan="5" class="center">
                             <div class="loading-spinner me-2"></div>
                             Loading data...
                         </td>
@@ -167,14 +168,17 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                                 <tr>
                                     <th class="center">Work Week</th>
                                     <th class="center">Shape</th>
-                                    <th class="center">Work Package Number</th>
+                                    <th class="center">Route</th>
+                                    <th class="center">Category</th>
+                                    <th class="center">Job Numbers</th>
                                     <th class="center">FQC<br><h6>Earned Hours</h6></th>
-                                    <th class="center">FQC Total</th>
+                                    <th class="center">FQC Target<br><h6>Earned Hours</h6></th>
+                                    <th class="center">Assemblies Remaining</th>
                                 </tr>
                             </thead>
                             <tbody id="drilldownTableBody">
                                 <tr>
-                                    <td colspan="5" class="center">
+                                    <td colspan="6" class="center">
                                         <div class="loading-spinner me-2"></div>
                                         Loading data...
                                     </td>
@@ -242,7 +246,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
             document.getElementById('modalAlertContainer').innerHTML = '';
             
             // Clear table body and show loading
-            drilldownTableBody.innerHTML = '<tr><td colspan="5" class="center"><div class="loading-spinner me-2"></div>Loading data...</td></tr>';
+            drilldownTableBody.innerHTML = '<tr><td colspan="6" class="center"><div class="loading-spinner me-2"></div>Loading data...</td></tr>';
             
             // Show modal
             modal.show();
@@ -276,21 +280,24 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                             tr.innerHTML = `
                                 <td class="center">${formatValue(row.WorkWeek)}</td>
                                 <td class="center">${formatValue(row.Shape)}</td>
-                                <td class="center">${formatValue(row.WorkPackageNumber)}</td>
+                                <td class="center">${formatValue(row.Route)}</td>
+                                <td class="center">${formatValue(row.Category)}</td>
+                                <td class="center">${formatValue(row.JobNumbers)}</td>
                                 <td class="center">${fqcCombined.toFixed(2)}</td>
                                 <td class="center">${fqcTotalCombined.toFixed(2)}</td>
+                                <td class="center">${formatValue(row.QuantityRemaining)}</td>
                             `;
                             drilldownTableBody.appendChild(tr);
                         });
 
                         showAlert(`Successfully loaded ${data.length} detail records`, 'success', 'modalAlertContainer');
                     } else {
-                        drilldownTableBody.innerHTML = '<tr><td colspan="5" class="center">No data found</td></tr>';
+                        drilldownTableBody.innerHTML = '<tr><td colspan="6" class="center">No data found</td></tr>';
                         showAlert('No detail data found for the selected work week', 'warning', 'modalAlertContainer');
                     }
                 })
                 .catch(error => {
-                    drilldownTableBody.innerHTML = '<tr><td colspan="5" class="center text-danger">Error loading data</td></tr>';
+                    drilldownTableBody.innerHTML = '<tr><td colspan="6" class="center text-danger">Error loading data</td></tr>';
                     showAlert('Error loading detail data: ' + error.message, 'danger', 'modalAlertContainer');
                     console.error('Error:', error);
                 });
@@ -310,7 +317,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
             document.getElementById('alertContainer').innerHTML = '';
 
             // Clear table body
-            tableBody.innerHTML = '<tr><td colspan="4" class="center"><div class="loading-spinner me-2"></div>Loading data...</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="5" class="center"><div class="loading-spinner me-2"></div>Loading data...</td></tr>';
 
             fetch('ajax_finalqc_summary.php')
                 .then(response => {
@@ -350,6 +357,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                                 <td class="center">${row.WorkWeek}</td>
                                 <td class="center">${fqcCombined.toFixed(2)}</td>
                                 <td class="center">${fqcTotalCombined.toFixed(2)}</td>
+                                <td class="center">${(fqcTotalCombined - fqcCombined).toFixed(2)}</td>
                                 <td class="center">
                                     <div class="progress" style="height: 20px;">
                                         <div class="progress-bar ${progressBarClass}" 
@@ -378,7 +386,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
 
                         showAlert(`Successfully loaded ${data.length} records`, 'success');
                     } else {
-                        tableBody.innerHTML = '<tr><td colspan="4" class="center">No data found</td></tr>';
+                        tableBody.innerHTML = '<tr><td colspan="5" class="center">No data found</td></tr>';
                         showAlert('No data found for the selected criteria', 'warning');
                     }
                 })
@@ -388,7 +396,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                         loadingSpinner.style.display = 'none';
                     }
                     
-                    tableBody.innerHTML = '<tr><td colspan="4" class="center text-danger">Error loading data</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="5" class="center text-danger">Error loading data</td></tr>';
                     showAlert('Error loading data: ' + error.message, 'danger');
                     console.error('Error:', error);
                 });

@@ -11,29 +11,31 @@ if ($workweek <= 0) {
     exit;
 }
 
-$sql = "SELECT
+$sql = "SELECT 
     wp.Group2 as WorkWeek,
     shapes.Shape,
-    wp.WorkPackageNumber,
+    routes.Route,
+    group_concat(distinct substring(category.Description, 1, 3) separator ', ') as Category,
+    GROUP_CONCAT(DISTINCT REPLACE(SUBSTRING(wp.WorkPackageNumber, 1, 4), '-', '') SEPARATOR ', ') AS JobNumbers,
     SUM(CASE when pci.MainPiece = 1 THEN (pciss.QuantityCompleted * (pci.ManHours/pci.Quantity)) END)*0.2 AS MCUT,
     SUM(CASE when pci.MainPiece = 1 THEN (pciss.TotalQuantity * (pci.ManHours/pci.Quantity)) END)*0.2 AS MCUTtotal,
     SUM(CASE when pci.MainPiece = 0 THEN (pciss.QuantityCompleted * (pci.ManHours/pci.Quantity)) END)*0.2 AS CUT,
-    SUM(CASE when pci.MainPiece = 0 THEN (pciss.TotalQuantity * (pci.ManHours/pci.Quantity)) END)*0.2 AS CUTtotal
+    SUM(CASE when pci.MainPiece = 0 THEN (pciss.TotalQuantity * (pci.ManHours/pci.Quantity)) END)*0.2 AS CUTtotal,
+    sum(pciss.TotalQuantity - pciss.QuantityCompleted) as QuantityRemaining
     FROM workpackages wp
     INNER JOIN productioncontrolsequences pcseq ON pcseq.WorkPackageID = wp.WorkPackageID
     INNER JOIN productioncontrolitemsequences pciseq ON pciseq.SequenceID = pcseq.SequenceID
     INNER JOIN productioncontrolassemblies pca ON pciseq.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
     INNER JOIN productioncontrolitems pci ON pci.ProductionControlAssemblyID = pca.ProductionControlAssemblyID
-    INNER JOIN shapes ON shapes.ShapeID = pci.ShapeID
+    inner join productioncontrolcategories category on category.CategoryID = pci.CategoryID
+    inner join routes on routes.RouteID = pci.RouteID
+    inner join shapes on shapes.ShapeID = pci.ShapeID
     INNER JOIN productioncontrolitemstationsummary pciss ON pci.ProductionControlItemID = pciss.ProductionControlItemID AND pciss.SequenceID = pcseq.SequenceID
     INNER JOIN stations ON pciss.StationID = stations.StationID
-    WHERE wp.Group2 = :workweek 
-    AND shapes.shape NOT IN('WA','NU','HS','MB','WS') 
-    AND stations.Description = 'CUT' 
-    AND wp.WorkshopID = 1
-    AND pciss.TotalQuantity <> pciss.QuantityCompleted
-    GROUP BY wp.Group2, shapes.Shape, wp.WorkPackageNumber
-    ORDER BY shapes.Shape DESC, wp.WorkPackageNumber";
+    where wp.Group2 = :workweek and shapes.shape not in('WA','NU','HS','MB','WS') and stations.Description = 'CUT' AND wp.WorkshopID = 1
+       and pciss.TotalQuantity <> pciss.QuantityCompleted
+    group by wp.Group2, shapes.Shape, routes.Route
+    order by shapes.Shape desc, routes.Route, category.Description";
 
 try {
     $stmt = $db->prepare($sql);
