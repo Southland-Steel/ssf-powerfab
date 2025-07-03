@@ -59,6 +59,10 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
         tr.targetweek{
             border: 3px solid red !important;
         }
+
+        tr.current-week{
+            background-color: #f7ff86 !important;
+        }
         
         th, td {
             border: 1px solid #ddd;
@@ -117,15 +121,6 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
             <h1>Final QC Summary Report By Hours</h1>
             <p class="text-muted">Weekly Summary for Final QC Earned Hours by Work Week</p>
         </header>
-        
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <button class="btn btn-primary" onclick="refreshData()">
-                    <i class="loading-spinner me-2" id="loadingSpinner" style="display: none;"></i>
-                    Refresh Data
-                </button>
-            </div>
-        </div>
 
         <div id="alertContainer"></div>
         
@@ -178,7 +173,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                             </thead>
                             <tbody id="drilldownTableBody">
                                 <tr>
-                                    <td colspan="6" class="center">
+                                    <td colspan="8" class="center">
                                         <div class="loading-spinner me-2"></div>
                                         Loading data...
                                     </td>
@@ -246,7 +241,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
             document.getElementById('modalAlertContainer').innerHTML = '';
             
             // Clear table body and show loading
-            drilldownTableBody.innerHTML = '<tr><td colspan="6" class="center"><div class="loading-spinner me-2"></div>Loading data...</td></tr>';
+            drilldownTableBody.innerHTML = '<tr><td colspan="8" class="center"><div class="loading-spinner me-2"></div>Loading data...</td></tr>';
             
             // Show modal
             modal.show();
@@ -290,28 +285,21 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                             drilldownTableBody.appendChild(tr);
                         });
 
-                        showAlert(`Successfully loaded ${data.length} detail records`, 'success', 'modalAlertContainer');
                     } else {
-                        drilldownTableBody.innerHTML = '<tr><td colspan="6" class="center">No data found</td></tr>';
-                        showAlert('No detail data found for the selected work week', 'warning', 'modalAlertContainer');
+                        drilldownTableBody.innerHTML = '<tr><td colspan="8" class="center">No data found</td></tr>';
                     }
                 })
                 .catch(error => {
-                    drilldownTableBody.innerHTML = '<tr><td colspan="6" class="center text-danger">Error loading data</td></tr>';
+                    drilldownTableBody.innerHTML = '<tr><td colspan="8" class="center text-danger">Error loading data</td></tr>';
                     showAlert('Error loading detail data: ' + error.message, 'danger', 'modalAlertContainer');
                     console.error('Error:', error);
                 });
         }
 
         function loadFinalQcSummary() {
-            const loadingSpinner = document.getElementById('loadingSpinner');
             const tableBody = document.getElementById('tableBody');
-            const targetWeek = <?= $currentWorkweek?>
-
-            // Show loading spinner
-            if (loadingSpinner) {
-                loadingSpinner.style.display = 'inline-block';
-            }
+            const targetWeek = <?= $currentWorkweek?>;
+            const currentWeek = <?= $currentWorkweek?>;
             
             // Clear previous alerts
             document.getElementById('alertContainer').innerHTML = '';
@@ -327,11 +315,6 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                     return response.json();
                 })
                 .then(data => {
-                    // Hide loading spinner
-                    if (loadingSpinner) {
-                        loadingSpinner.style.display = 'none';
-                    }
-                    
                     // Clear table body
                     tableBody.innerHTML = '';
                     
@@ -380,31 +363,22 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                             if(row.WorkWeek == targetWeek){
                                 tr.classList.add('targetweek');
                             }
+                            if(row.WorkWeek == currentWeek){
+                                tr.classList.add('current-week');
+                            }
 
                             tableBody.appendChild(tr);
                         });
 
-                        showAlert(`Successfully loaded ${data.length} records`, 'success');
                     } else {
                         tableBody.innerHTML = '<tr><td colspan="5" class="center">No data found</td></tr>';
-                        showAlert('No data found for the selected criteria', 'warning');
                     }
                 })
                 .catch(error => {
-                    // Hide loading spinner
-                    if (loadingSpinner) {
-                        loadingSpinner.style.display = 'none';
-                    }
-                    
                     tableBody.innerHTML = '<tr><td colspan="5" class="center text-danger">Error loading data</td></tr>';
                     showAlert('Error loading data: ' + error.message, 'danger');
                     console.error('Error:', error);
                 });
-        }
-        
-        // Function to refresh data
-        function refreshData() {
-            loadFinalQcSummary();
         }
         
         // Load data when page loads
