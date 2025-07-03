@@ -37,10 +37,31 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
             padding: 5px;
             background-color: #f0f0f0;
             border-radius: 5px;
+            position: relative;
         }
         .monitor-header h1 {
             color: #333;
             margin-bottom: 10px;
+        }
+
+        .return-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background-color: #6c757d;
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        .return-button:hover {
+            background-color: #5a6268;
+            color: white;
+            text-decoration: none;
         }
 
         .table-container {
@@ -118,6 +139,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
 <body>
     <div class="container">
         <header class="monitor-header">
+            <a href="../index.php" class="return-button">Return to Summary</a>
             <h1>Fit Summary Report By Hours</h1>
             <p class="text-muted">Weekly Summary for Fit Earned Hours by Work Week</p>
         </header>
