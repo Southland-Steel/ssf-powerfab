@@ -136,7 +136,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
             border-right: 3px solid red;
         }
 
-        .cutTarget td.cut,.fitTarget td.fit,.finalqcTarget td.finalqc{
+        .cutTarget td.cut,.fitTarget td.fit,.finalqcTarget td.finalqc, .overallTarget td.overall{
             border-bottom: 3px solid red !important;
         }
         
@@ -263,6 +263,7 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
         function loadSummaryData() {
             const tableBody = document.getElementById('tableBody');
             const currentWeek = <?= $currentWorkweek?>;
+            const overallTarget = <?= $currentWorkweek?>;
             const cutTarget = <?= $currentWorkweek + 4?>;
             const fitTarget = <?= $currentWorkweek + 1?>;
             const fqcTarget = <?= $currentWorkweek?>;
@@ -388,6 +389,9 @@ $currentWorkweek = intval($currentYear . str_pad($currentWeek, 2, '0', STR_PAD_L
                         }
                         if(workWeek == fqcTarget){
                             tr.classList.add('finalqcTarget');
+                        }
+                        if(workWeek == overallTarget){
+                            tr.classList.add('overallTarget');
                         }
                         if(workWeek == dummy1){
                             tr.classList.add('dummy1');
