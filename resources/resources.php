@@ -87,14 +87,14 @@
             font-size: 14px;
         }
 
-        .pm-buttons {
+        .pm-buttons, .job-buttons {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
             margin-bottom: 10px;
         }
 
-        .pm-button {
+        .pm-button, .job-button {
             padding: 6px 12px;
             background-color: #e0e0e0;
             border: none;
@@ -103,12 +103,19 @@
             transition: all 0.2s;
         }
 
-        .pm-button:hover {
+        .pm-button:hover, .job-button:hover {
             background-color: #d0d0d0;
         }
 
         .pm-button.active {
             background-color: #4CAF50;
+            color: white;
+            transform: scale(1.05);
+            font-weight: bold;
+        }
+
+        .job-button.active {
+            background-color: #2196F3;
             color: white;
             transform: scale(1.05);
             font-weight: bold;
@@ -166,6 +173,7 @@
         a {
             color: #0066cc;
             text-decoration: none;
+            cursor: pointer;
         }
 
         a:hover {
@@ -275,6 +283,64 @@
         .markdown-content li {
             margin-bottom: 0.5em;
         }
+
+        .filter-section-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        .job-link {
+            color: #0066cc;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .job-link:hover {
+            text-decoration: underline;
+        }
+
+        .job-link.active {
+            color: #2196F3;
+            font-weight: bold;
+        }
+
+        .no-results-message {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px 20px;
+            text-align: center;
+        }
+
+        .no-results-box {
+            background-color: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 30px 40px;
+            max-width: 500px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .no-results-icon {
+            font-size: 48px;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+
+        .no-results-text {
+            font-size: 18px;
+            color: #495057;
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .filter-info {
+            font-size: 16px;
+            color: #6c757d;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -302,16 +368,18 @@
 
     <div class="main-content">
         <div class="filters-section">
+            <div class="filter-section-label">Project Manager Filter:</div>
             <div id="pmButtons" class="pm-buttons"></div>
+
+            <div class="filter-section-label">Job Number Filter:</div>
+            <div id="jobButtons" class="job-buttons"></div>
 
             <div class="filter-row">
                 <div class="filter-group">
-                    <label class="filter-label">Breakdown Value</label>
-                    <input type="text" id="breakdownFilter" class="filter-input" placeholder="Filter by breakdown value...">
+                    <input type="text" id="breakdownFilter" class="filter-input" placeholder="Filter by Sequence value...">
                 </div>
 
                 <div class="filter-group">
-                    <label class="filter-label">Tasks</label>
                     <select id="scheduleFilter" class="filter-input">
                         <option value="">All Tasks</option>
                     </select>
@@ -330,7 +398,7 @@
             <table class="tasks-table">
                 <thead>
                 <tr>
-                    <th>Job Number</th>
+                    <th>JobSequenceLot</th>
                     <th>Project Description</th>
                     <th>Tasks</th>
                     <th>pct.</th>
@@ -355,6 +423,7 @@
         selectedResource: null,
         filters: {
             pm: null,
+            jobNumber: null,
             breakdown: '',
             schedule: '',
             showCompleted: false
@@ -375,10 +444,15 @@
         await loadResources();
         bindEvents();
 
-        // Restore saved PM filter
+        // Restore saved filters
         const savedPM = localStorage.getItem('selectedPM');
         if (savedPM) {
             store.filters.pm = savedPM;
+        }
+
+        const savedJobNumber = localStorage.getItem('selectedJobNumber');
+        if (savedJobNumber) {
+            store.filters.jobNumber = savedJobNumber;
         }
     }
 
@@ -403,6 +477,7 @@
                 return endDateCompare || (new Date(a.StartByDate) - new Date(b.StartByDate));
             });
             updatePMButtons();
+            updateJobButtons();
             applyFilters();
         } catch (error) {
             console.error('Error loading tasks:', error);
@@ -440,8 +515,15 @@
             filteredResults = filteredResults.filter(task => task.PM === store.filters.pm);
         }
 
+        if (store.filters.jobNumber) {
+            filteredResults = filteredResults.filter(task => task.JobNumber === store.filters.jobNumber);
+        }
+
         filteredResults = filteredResults.filter(task => {
-            if (store.filters.breakdown && !task.BreakdownValue.toString().toLowerCase().includes(store.filters.breakdown)) {
+            // Create the JobSequenceLot string that matches what's displayed in the table
+            const jobSequenceLot = `${task.JobNumber} - ${task.SequenceName} ${(task.LotNumber != 0) ? '-' + task.LotNumber : ''}`.toLowerCase();
+
+            if (store.filters.breakdown && !jobSequenceLot.includes(store.filters.breakdown)) {
                 return false;
             }
 
@@ -477,23 +559,107 @@
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        if (store.filteredTasks.length === 0) {
+            // Build the filter description
+            let filterDescription = [];
+            if (store.filters.pm) {
+                filterDescription.push(`PM = ${store.filters.pm}`);
+            }
+            if (store.filters.jobNumber) {
+                filterDescription.push(`Job Number = ${store.filters.jobNumber}`);
+            }
+            if (store.filters.breakdown) {
+                filterDescription.push(`Breakdown contains "${store.filters.breakdown}"`);
+            }
+            if (store.filters.schedule) {
+                filterDescription.push(`Task = "${store.filters.schedule}"`);
+            }
+            if (!store.filters.showCompleted) {
+                filterDescription.push("Completion < 100%");
+            }
+
+            const filterText = filterDescription.length > 0
+                ? filterDescription.join(' and ')
+                : 'current criteria';
+
+            // Check if PM or Job Number filters are active (from localStorage)
+            const hasPersistentFilters = store.filters.pm || store.filters.jobNumber;
+
+            // Create the clear filters button HTML if needed
+            const clearFiltersButton = hasPersistentFilters ? `
+            <button onclick="clearPersistentFilters()" style="
+                margin-top: 20px;
+                padding: 10px 20px;
+                background-color: #dc3545;
+                color: white;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 16px;
+                transition: background-color 0.2s;
+            " onmouseover="this.style.backgroundColor='#c82333'"
+               onmouseout="this.style.backgroundColor='#dc3545'">
+                Clear PM/Job Filters
+            </button>
+        ` : '';
+
+            tbody.innerHTML = `
+            <tr>
+                <td colspan="8" style="padding: 0; border: none;">
+                    <div class="no-results-message">
+                        <div class="no-results-box">
+                            <div class="no-results-icon">📋</div>
+                            <p class="no-results-text">There are no tasks to display</p>
+                            <p class="filter-info">where ${filterText}</p>
+                            ${clearFiltersButton}
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        `;
+            return;
+        }
+
         tbody.innerHTML = store.filteredTasks
             .map(task => {
                 const endDate = new Date(task.EndByDate);
+                const jobLinkClass = store.filters.jobNumber === task.JobNumber ? 'job-link active' : 'job-link';
                 return `
-                    <tr class="${task.JobStatusID == 13 ? 'on-hold' : ''}
-                              ${task.ProjectStatus == 'REVIEWED' ? 'status-reviewed' : ''}">
-                        <td><a>${task.JobNumber} - ${task.BreakdownValue} [${task.Priority}]</a></td>
-                        <td>${task.ProjectDescription}${formatNotes(task.Notes)}</td>
-                        <td>${task.TaskPath}</td>
-                        <td>${task.PercentCompleted}%</td>
-                        <td>${task.StartByDate}</td>
-                        <td class="${endDate < today ? 'past-date' : ''}">${task.EndByDate}</td>
-                        <td>${task.ActualDuration}</td>
-                        <td>${task.PM}</td>
-                    </tr>
-                `;
+                <tr class="${task.JobStatusID == 13 ? 'on-hold' : ''}
+                          ${task.ProjectStatus == 'REVIEWED' ? 'status-reviewed' : ''}">
+                    <td>
+                        <a class="${jobLinkClass}" onclick="filterByJobNumber('${task.JobNumber}')">
+                            ${task.JobNumber} - ${task.SequenceName}${(task.LotNumber!=0) ? '-'+task.LotNumber : ''}
+                        </a>
+                    </td>
+                    <td>${task.ProjectDescription}${formatNotes(task.Notes)}</td>
+                    <td>${((task.Level == 2) ? task.ParentDescription + '->' : '')}${task.taskDescription}</td>
+                    <td>${Math.round(parseFloat(task.PercentCompleted) * 100)}%</td>
+                    <td>${task.StartByDate}</td>
+                    <td class="${endDate < today ? 'past-date' : ''}">${task.EndByDate}</td>
+                    <td>${task.ActualDuration}</td>
+                    <td>${task.PM}</td>
+                </tr>
+            `;
             }).join('');
+    }
+
+    // Add this new function to handle clearing persistent filters
+    function clearPersistentFilters() {
+        // Clear the filters from store
+        store.filters.pm = null;
+        store.filters.jobNumber = null;
+
+        // Clear from localStorage
+        localStorage.removeItem('selectedPM');
+        localStorage.removeItem('selectedJobNumber');
+
+        // Update the UI buttons
+        document.querySelectorAll('.pm-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.job-button').forEach(btn => btn.classList.remove('active'));
+
+        // Reapply filters to update the display
+        applyFilters();
     }
 
     function updatePMButtons() {
@@ -517,6 +683,34 @@
                 } else {
                     store.filters.pm = null;
                     localStorage.removeItem('selectedPM');
+                }
+                applyFilters();
+            }
+        });
+    }
+
+    function updateJobButtons() {
+        // Get unique job numbers from all tasks
+        const jobNumbers = [...new Set(store.allTasks.map(task => task.JobNumber))].sort();
+        const jobButtons = document.getElementById('jobButtons');
+
+        jobButtons.innerHTML = jobNumbers
+            .map(jobNumber => `
+                <button class="job-button ${store.filters.jobNumber === jobNumber ? 'active' : ''}"
+                        data-job="${jobNumber}">${jobNumber}</button>
+            `).join('') + '<button class="job-button" id="clearJobFilter">Clear Job</button>';
+
+        jobButtons.addEventListener('click', (e) => {
+            if (e.target.classList.contains('job-button')) {
+                const jobNumber = e.target.dataset.job;
+                document.querySelectorAll('.job-button').forEach(btn => btn.classList.remove('active'));
+                if (jobNumber) {
+                    e.target.classList.add('active');
+                    store.filters.jobNumber = jobNumber;
+                    localStorage.setItem('selectedJobNumber', jobNumber);
+                } else {
+                    store.filters.jobNumber = null;
+                    localStorage.removeItem('selectedJobNumber');
                 }
                 applyFilters();
             }
@@ -548,9 +742,10 @@
 
     // Utility Functions
     function selectResource(resourceId) {
-        // Clear all lower-level filters except PM
+        // Clear all lower-level filters except PM and JobNumber
         store.filters = {
             pm: store.filters.pm,
+            jobNumber: store.filters.jobNumber,
             breakdown: '',
             schedule: '',
             showCompleted: false
@@ -566,6 +761,22 @@
         document.querySelectorAll('.resource-item').forEach(item => item.classList.remove('active'));
         document.querySelector(`.resource-item[data-id="${resourceId}"]`)?.classList.add('active');
         loadTasks(resourceId);
+    }
+
+    function filterByJobNumber(jobNumber) {
+        if (store.filters.jobNumber === jobNumber) {
+            // If clicking the same job number, clear the filter
+            store.filters.jobNumber = null;
+            localStorage.removeItem('selectedJobNumber');
+        } else {
+            // Set the new job number filter
+            store.filters.jobNumber = jobNumber;
+            localStorage.setItem('selectedJobNumber', jobNumber);
+        }
+
+        // Update the job buttons to reflect the new selection
+        updateJobButtons();
+        applyFilters();
     }
 
     function formatNotes(notes) {
